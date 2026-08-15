@@ -10,6 +10,177 @@
       "ui": {
         "type": "section",
         "cols": 12,
+        "icon": "tabler-layout-grid"
+      },
+      "name": "Layout",
+      "subtitle": "Compose the footer from rows of columns. Each column holds one or more blocks that draw from the content sections below — the address, links, socials and legals are edited once and placed anywhere. Leave the layout empty to use the built-in three-column arrangement.",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "footer_rows",
+          "type": "repeater",
+          "label": "Rows",
+          "itemLabel": "Row",
+          "columns": [
+            { "label": "Row Label", "key": "label" },
+            { "label": "Style", "key": "style" }
+          ],
+          "dialog": {
+            "width": 1100,
+            "create": { "title": "Add Footer Row", "subtitle": "A full-width band. Add columns inside it, then blocks inside each column." },
+            "update": { "title": "Edit Footer Row", "subtitle": "Columns share the row's width by their span (12 = full width, 6 = half, 4 = a third, 3 = a quarter)." }
+          },
+          "elements": [
+            {
+              "ui": { "type": "field", "cols": 6 },
+              "key": "label",
+              "type": "text",
+              "label": "Row Label",
+              "placeholder": "e.g. Main, Newsletter, Legal",
+              "hint": "For your own reference in this list; never shown to customers"
+            },
+            {
+              "ui": { "type": "field", "cols": 6 },
+              "key": "style",
+              "type": "select",
+              "label": "Row Style",
+              "options": {
+                "items": [
+                  { "title": "Standard", "value": "standard" },
+                  { "title": "Divider above", "value": "divided" },
+                  { "title": "Compact bar (legal line)", "value": "bar" }
+                ]
+              },
+              "default": "standard"
+            },
+            {
+              "ui": { "type": "field", "cols": 12 },
+              "key": "columns",
+              "type": "repeater",
+              "label": "Columns",
+              "itemLabel": "Column",
+              "columns": [
+                { "label": "Heading", "key": "heading" },
+                { "label": "Span", "key": "span" }
+              ],
+              "dialog": {
+                "width": 900,
+                "create": { "title": "Add Column" },
+                "update": { "title": "Edit Column" }
+              },
+              "elements": [
+                {
+                  "ui": { "type": "field", "cols": 8 },
+                  "key": "heading",
+                  "type": "text",
+                  "label": "Column Heading",
+                  "placeholder": "e.g. Find us, Discover, Opening time",
+                  "hint": "Optional. Small uppercase label above the column's blocks",
+                  "translatable": true
+                },
+                {
+                  "ui": { "type": "field", "cols": 4 },
+                  "key": "span",
+                  "type": "select",
+                  "label": "Width",
+                  "options": {
+                    "items": [
+                      { "title": "Full (12)", "value": "12" },
+                      { "title": "Two thirds (8)", "value": "8" },
+                      { "title": "Half (6)", "value": "6" },
+                      { "title": "Third (4)", "value": "4" },
+                      { "title": "Quarter (3)", "value": "3" }
+                    ]
+                  },
+                  "default": "4"
+                },
+                {
+                  "ui": { "type": "field", "cols": 12 },
+                  "key": "blocks",
+                  "type": "repeater",
+                  "label": "Blocks",
+                  "itemLabel": "Block",
+                  "columns": [
+                    { "label": "Type", "key": "type" },
+                    { "label": "Title", "key": "title" }
+                  ],
+                  "dialog": {
+                    "width": 700,
+                    "create": { "title": "Add Block", "subtitle": "What this column shows. Blocks stack top to bottom." },
+                    "update": { "title": "Edit Block" }
+                  },
+                  "elements": [
+                    {
+                      "ui": { "type": "field", "cols": 12 },
+                      "key": "type",
+                      "type": "select",
+                      "label": "Block Type",
+                      "options": {
+                        "items": [
+                          { "title": "Brand — logo/name and tagline", "value": "brand" },
+                          { "title": "Contact — address, phone, hours (from Outlet)", "value": "contact" },
+                          { "title": "Links — the Footer Links list", "value": "links" },
+                          { "title": "Social channels", "value": "socials" },
+                          { "title": "Text — a paragraph or rich text", "value": "text" },
+                          { "title": "Form — any form built in Forms", "value": "form" },
+                          { "title": "Copyright line (from Legals)", "value": "copyright" }
+                        ]
+                      },
+                      "default": "links"
+                    },
+                    {
+                      "ui": { "type": "field", "cols": 12, "hidden_if": "type,copyright|type,socials" },
+                      "key": "title",
+                      "type": "text",
+                      "label": "Block Title",
+                      "placeholder": "e.g. Be the first to hear our stories",
+                      "hint": "Optional heading shown above this block",
+                      "translatable": true
+                    },
+                    {
+                      "ui": { "type": "field", "cols": 12, "show_if": "type,text" },
+                      "key": "content",
+                      "type": "richtext",
+                      "label": "Text",
+                      "placeholder": "Receive thoughtful updates, seasonal inspirations, and moments worth sharing.",
+                      "translatable": true
+                    },
+                    {
+                      "ui": { "type": "field", "cols": 12, "show_if": "type,form" },
+                      "key": "form_slug",
+                      "type": "autocomplete",
+                      "label": "Form",
+                      "hint": "Any active form from the Forms module. It renders inline and submits to the same place its leads always go.",
+                      "placeholder": "Search forms…",
+                      "options": {
+                        "url": "/admin/forms",
+                        "master": "data",
+                        "map": { "title": "title.en", "value": "slug" }
+                      }
+                    },
+                    {
+                      "ui": { "type": "field", "cols": 12, "show_if": "type,form" },
+                      "key": "form_intro",
+                      "type": "textarea",
+                      "label": "Form Intro",
+                      "placeholder": "A line above the form",
+                      "translatable": true
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
         "icon": "tabler-map-pin"
       },
       "name": "Outlet",

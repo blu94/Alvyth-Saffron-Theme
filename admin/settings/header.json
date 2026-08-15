@@ -124,7 +124,7 @@
             "enabled": true,
             "key": "children",
             "label": "Dropdown Links",
-            "maxDepth": 2,
+            "maxDepth": 4,
             "dialog": {
               "width": 600,
               "create": { "title": "Add Dropdown Link" },

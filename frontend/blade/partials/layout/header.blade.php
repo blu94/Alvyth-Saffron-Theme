@@ -33,23 +33,25 @@
     }
     $logoUrl = $logoPath ? (Str::startsWith($logoPath, ['/', 'http']) ? $logoPath : '/storage/' . ltrim($logoPath, '/')) : '';
 
-    // Two levels: a top link and its dropdown. The repeater is `recursive` in the schema
-    // (the same core BuilderRepeater mechanism Ella's mega menu uses), so each item may
-    // carry `children` — resolved here once so the markup never touches the raw bag.
-    $resolveLink = function (array $l) use ($t, $linkUrl) {
-        return ['label' => $t($l['label'] ?? ''), 'url' => $linkUrl($l['url'] ?? '')];
+    // Three levels: top link → dropdown → nested group. The repeater is `recursive` in the
+    // schema (the same core BuilderRepeater mechanism Ella's mega menu uses), so any item
+    // may carry `children` — resolved recursively here once so the markup never touches
+    // the raw bag. Note the admin's theme-settings tree already sits one level deep, so
+    // the schema's maxDepth has to be one higher than the levels you want to expose.
+    $resolveLink = function (array $l) use (&$resolveLink, $t, $linkUrl) {
+        return [
+            'label'    => $t($l['label'] ?? ''),
+            'url'      => $linkUrl($l['url'] ?? ''),
+            'children' => collect($l['children'] ?? [])
+                ->map(fn ($c) => $resolveLink($c))
+                ->filter(fn ($c) => $c['label'] !== '')
+                ->values()
+                ->all(),
+        ];
     };
 
     $headerLinks = collect($settings['header_links'] ?? [])
-        ->map(function ($l) use ($resolveLink) {
-            $item = $resolveLink($l);
-            $item['children'] = collect($l['children'] ?? [])
-                ->map($resolveLink)
-                ->filter(fn ($c) => $c['label'] !== '')
-                ->values()
-                ->all();
-            return $item;
-        })
+        ->map(fn ($l) => $resolveLink($l))
         ->filter(fn ($l) => $l['label'] !== '')
         ->values();
 
@@ -104,8 +106,22 @@
                                 </button>
                                 <div class="saffron-header__dropdown">
                                     @foreach($link['children'] as $child)
-                                        <a href="{{ $child['url'] ?: '#' }}" class="saffron-header__dropdown-link"
-                                           @if($child['url'] === $currentPath) aria-current="page" @endif>{{ $child['label'] }}</a>
+                                        @if(empty($child['children']))
+                                            <a href="{{ $child['url'] ?: '#' }}" class="saffron-header__dropdown-link"
+                                               @if($child['url'] === $currentPath) aria-current="page" @endif>{{ $child['label'] }}</a>
+                                        @else
+                                            {{-- A third level renders as a titled group inside the same
+                                                 panel — a fly-out-of-a-fly-out is the one dropdown pattern
+                                                 nobody can operate on a laptop trackpad. --}}
+                                            <div class="saffron-header__dropdown-group">
+                                                <a href="{{ $child['url'] ?: '#' }}" class="saffron-header__dropdown-link saffron-header__dropdown-link--group"
+                                                   @if($child['url'] === $currentPath) aria-current="page" @endif>{{ $child['label'] }}</a>
+                                                @foreach($child['children'] as $grandchild)
+                                                    <a href="{{ $grandchild['url'] ?: '#' }}" class="saffron-header__dropdown-link saffron-header__dropdown-link--sub"
+                                                       @if($grandchild['url'] === $currentPath) aria-current="page" @endif>{{ $grandchild['label'] }}</a>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                     @endforeach
                                 </div>
                             </div>
@@ -177,6 +193,9 @@
                          short enough that a nested accordion would only hide things. --}}
                     @foreach($link['children'] as $child)
                         <a href="{{ $child['url'] ?: '#' }}" class="saffron-mobile-nav__link saffron-mobile-nav__link--child">{{ $child['label'] }}</a>
+                        @foreach($child['children'] as $grandchild)
+                            <a href="{{ $grandchild['url'] ?: '#' }}" class="saffron-mobile-nav__link saffron-mobile-nav__link--grandchild">{{ $grandchild['label'] }}</a>
+                        @endforeach
                     @endforeach
                 @endforeach
                 @if($ctaLabel !== '')

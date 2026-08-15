@@ -64,57 +64,78 @@
 
 <footer class="saffron-footer">
     <div class="saffron-container">
-        <div class="row gy-4">
-            <div class="col-12 col-lg-4">
-                <div class="saffron-footer__brand">{{ $siteTitle }}</div>
-                @if($tagline !== '')
-                    <p class="saffron-footer__tagline mt-2 mb-0">{{ $tagline }}</p>
-                @endif
-            </div>
+        @php
+            // The operator-composed layout: rows → columns → blocks (admin/settings/footer.json
+            // "Layout"). Empty means "use the built-in three-column arrangement" below, so a
+            // shop that never opens the layout section keeps the footer it had.
+            $footerRows = collect($settings['footer_rows'] ?? [])
+                ->map(function ($row) {
+                    $row['columns'] = collect($row['columns'] ?? [])
+                        ->map(function ($col) {
+                            $col['blocks'] = array_values(array_filter($col['blocks'] ?? [], fn ($b) => is_array($b)));
+                            return $col;
+                        })
+                        ->filter(fn ($col) => $col['blocks'] !== [])
+                        ->values()
+                        ->all();
+                    return $row;
+                })
+                ->filter(fn ($row) => $row['columns'] !== [])
+                ->values();
+        @endphp
 
-            <div class="col-12 col-sm-6 col-lg-4">
-                <div class="saffron-footer__heading">{{ __('Find us') }}</div>
-                @if($address !== '')
-                    <p class="saffron-footer__meta mb-2">{!! nl2br(e($address)) !!}</p>
-                @endif
-                @if($phone !== '')
-                    <p class="saffron-footer__meta mb-2">
-                        <a href="tel:{{ preg_replace('/[^0-9+]/', '', $phone) }}" class="saffron-footer__link d-inline p-0">{{ $phone }}</a>
-                    </p>
-                @endif
-                @if($hours !== '')
-                    <p class="saffron-footer__meta mb-0">{{ $hours }}</p>
-                @endif
-            </div>
-
-            <div class="col-12 col-sm-6 col-lg-4">
-                @if($footerLinks->isNotEmpty())
-                    <div class="saffron-footer__heading">{{ __('More') }}</div>
-                    <nav aria-label="{{ __('Footer') }}">
-                        @foreach($footerLinks as $link)
-                            <a href="{{ $link['url'] ?: '#' }}" class="saffron-footer__link"
-                               @if($link['target'] === '_blank') target="_blank" rel="noopener" @endif>{{ $link['label'] }}</a>
-                        @endforeach
-                    </nav>
-                @endif
-
-                @if($socials->isNotEmpty())
-                    <div class="saffron-footer__socials {{ $footerLinks->isNotEmpty() ? 'mt-3' : '' }}">
-                        @foreach($socials as $social)
-                            <a href="{{ $social['url'] }}" class="saffron-footer__social"
-                               @if($social['target'] === '_blank') target="_blank" rel="noopener" @endif
-                               aria-label="{{ Str::headline(Str::after($social['icon'], 'tabler-brand-')) ?: __('Social') }}">
-                                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.8"
-                                     fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $socialIcon($social['icon']) !!}</svg>
-                            </a>
+        @if($footerRows->isNotEmpty())
+            @foreach($footerRows as $row)
+                @php $rowStyle = $row['style'] ?? 'standard'; @endphp
+                <div class="saffron-footer__row saffron-footer__row--{{ $rowStyle }}">
+                    <div class="row gy-4">
+                        @foreach($row['columns'] as $column)
+                            @php
+                                // Bootstrap's grid caps at 12; anything unrecognised falls back to a
+                                // third, which is what a footer column most often is.
+                                $span = (int) ($column['span'] ?? 4);
+                                $span = in_array($span, [3, 4, 6, 8, 12], true) ? $span : 4;
+                                $colHeading = $t($column['heading'] ?? '');
+                            @endphp
+                            <div class="col-12 col-md-{{ $span < 6 ? 6 : $span }} col-lg-{{ $span }}">
+                                @if($colHeading !== '')
+                                    <div class="saffron-footer__heading">{{ $colHeading }}</div>
+                                @endif
+                                @foreach($column['blocks'] as $block)
+                                    @include('partials.layout.footer-block', ['block' => $block])
+                                @endforeach
+                            </div>
                         @endforeach
                     </div>
-                @endif
-            </div>
-        </div>
+                </div>
+            @endforeach
+        @else
+            <div class="row gy-4">
+                <div class="col-12 col-lg-4">
+                    @include('partials.layout.footer-block', ['block' => ['type' => 'brand']])
+                </div>
 
-        @if($copyright !== '')
-            <div class="saffron-footer__bar">{{ $copyright }}</div>
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="saffron-footer__heading">{{ __('Find us') }}</div>
+                    @include('partials.layout.footer-block', ['block' => ['type' => 'contact']])
+                </div>
+
+                <div class="col-12 col-sm-6 col-lg-4">
+                    @if($footerLinks->isNotEmpty())
+                        <div class="saffron-footer__heading">{{ __('More') }}</div>
+                    @endif
+                    @include('partials.layout.footer-block', ['block' => ['type' => 'links']])
+                    @if($socials->isNotEmpty())
+                        <div class="{{ $footerLinks->isNotEmpty() ? 'mt-3' : '' }}">
+                            @include('partials.layout.footer-block', ['block' => ['type' => 'socials']])
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            @if($copyright !== '')
+                <div class="saffron-footer__bar">{{ $copyright }}</div>
+            @endif
         @endif
     </div>
 </footer>

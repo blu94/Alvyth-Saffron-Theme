@@ -167,6 +167,38 @@
   }
 }
 
+.saffron-header__dropdown-group {
+  padding-top: 0.35rem;
+  margin-top: 0.35rem;
+  border-top: 1px solid $color-line;
+
+  &:first-child {
+    padding-top: 0;
+    margin-top: 0;
+    border-top: 0;
+  }
+}
+
+.saffron-header__dropdown-link--group {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $color-muted;
+  padding-bottom: 0.25rem;
+}
+
+.saffron-header__dropdown-link--sub {
+  padding-left: 1.6rem;
+}
+
+.saffron-mobile-nav__link--grandchild {
+  padding-left: 2.2rem;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: $color-muted;
+}
+
 .saffron-header__item--has-dropdown {
   &:hover,
   &:focus-within,
@@ -347,6 +379,131 @@
   padding-top: 1.25rem;
   font-size: 0.8125rem;
   color: rgba($hex-white, 0.55);
+}
+
+// ─── Composed footer (rows → columns → blocks) ────────────────────────────────
+.saffron-footer__row {
+  + .saffron-footer__row {
+    margin-top: 2.5rem;
+  }
+
+  &--divided {
+    border-top: 1px solid rgba($hex-white, 0.12);
+    padding-top: 2.5rem;
+  }
+
+  // The legal line: tighter, smaller, quieter — and its columns sit on one baseline.
+  &--bar {
+    border-top: 1px solid rgba($hex-white, 0.12);
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    font-size: 0.8125rem;
+    color: rgba($hex-white, 0.55);
+
+    .row { align-items: center; }
+    .saffron-footer__link { display: inline-block; padding: 0 0.6rem 0 0; font-size: 0.8125rem; }
+    .saffron-footer__block { margin-bottom: 0; }
+  }
+}
+
+.saffron-footer__block {
+  + .saffron-footer__block {
+    margin-top: 1.4rem;
+  }
+}
+
+.saffron-footer__block-title {
+  font-family: $heading-font-family;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: $color-white;
+  margin-bottom: 0.75rem;
+}
+
+.saffron-footer__text {
+  color: rgba($hex-white, 0.68);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+
+  p:last-child { margin-bottom: 0; }
+  a { color: rgba($hex-white, 0.85); }
+}
+
+.saffron-footer__copyright {
+  font-size: 0.8125rem;
+  color: rgba($hex-white, 0.55);
+}
+
+// ─── Inline forms (DynamicForm) ────────────────────────────────────────────────
+// Neutral on the page; inverted inside the footer, where the surround is dark.
+.saffron-form__intro,
+.saffron-form__desc {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: $color-muted;
+  margin-bottom: 1rem;
+}
+
+.saffron-form__title {
+  font-family: $heading-font-family;
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.saffron-form__field {
+  + .saffron-form__field { margin-top: 0.75rem; }
+}
+
+.saffron-form__label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+.saffron-form__input {
+  display: block;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  color: $color-primary;
+  background-color: $color-card-surface;
+  border: 1px solid $color-line;
+  border-radius: calc(#{$card-radius} - 6px);
+  transition: border-color 0.16s ease;
+
+  &:focus {
+    outline: none;
+    border-color: $color-accent;
+  }
+}
+
+.saffron-form__submit { width: 100%; }
+
+.saffron-form__state {
+  font-size: 0.875rem;
+  margin: 0.75rem 0 0;
+
+  &--success { color: $color-accent; }
+  &--error   { color: $color-danger; }
+}
+
+.saffron-footer .saffron-form {
+  .saffron-form__intro,
+  .saffron-form__desc  { color: rgba($hex-white, 0.68); }
+  .saffron-form__title { color: $color-white; }
+  .saffron-form__label { color: rgba($hex-white, 0.75); }
+
+  .saffron-form__input {
+    color: $color-white;
+    background-color: rgba($hex-white, 0.06);
+    border-color: rgba($hex-white, 0.2);
+
+    &::placeholder { color: rgba($hex-white, 0.45); }
+    &:focus { border-color: $color-accent; }
+  }
 }
 
 // ─── Go to top ────────────────────────────────────────────────────────────────
