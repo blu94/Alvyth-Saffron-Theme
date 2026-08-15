@@ -1,5 +1,5 @@
 @if($slides->isNotEmpty())
-<section class="saffron-hero {{ $heightClass }}" id="{{ $uid }}">
+<section class="saffron-hero {{ $heightClass }}" id="{{ $uid }}" {!! $motionAttrs !!}>
     @foreach($slides as $i => $slide)
         <div class="saffron-hero__slide saffron-hero__slide--{{ $slide['align'] }} @if($i === 0) is-active @endif" data-hero-slide>
             <picture>
@@ -17,15 +17,15 @@
             </picture>
 
             @if($slide['title'] !== '' || $slide['subtitle'] !== '' || $slide['buttons']->isNotEmpty())
-                <div class="saffron-hero__content">
+                <div class="saffron-hero__content" data-saffron-reveal-group>
                     @if($slide['title'] !== '')
-                        <h2 class="saffron-hero__title">{{ $slide['title'] }}</h2>
+                        <h2 class="saffron-hero__title" data-saffron-reveal>{{ $slide['title'] }}</h2>
                     @endif
                     @if($slide['subtitle'] !== '')
-                        <p class="saffron-hero__subtitle">{{ $slide['subtitle'] }}</p>
+                        <p class="saffron-hero__subtitle" data-saffron-reveal>{{ $slide['subtitle'] }}</p>
                     @endif
                     @if($slide['buttons']->isNotEmpty())
-                        <div class="saffron-hero__actions">
+                        <div class="saffron-hero__actions" data-saffron-reveal>
                             @foreach($slide['buttons'] as $button)
                                 <a href="{{ $button['url'] }}" target="{{ $button['target'] }}"
                                    class="saffron-btn saffron-btn--accent">{{ $button['text'] }}</a>

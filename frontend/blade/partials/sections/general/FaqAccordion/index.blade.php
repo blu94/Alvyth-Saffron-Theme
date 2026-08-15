@@ -1,8 +1,8 @@
 @if($items->isNotEmpty())
-<section class="saffron-faq">
+<section class="saffron-faq" {!! $motionAttrs !!}>
     <div class="saffron-container">
         @if($heading !== '' || $subheading !== '')
-            <header class="saffron-faq__head">
+            <header class="saffron-faq__head" data-saffron-reveal>
                 @if($heading !== '')
                     <h2 class="saffron-section-title">{{ $heading }}</h2>
                 @endif
@@ -12,9 +12,9 @@
             </header>
         @endif
 
-        <div class="saffron-faq__list">
+        <div class="saffron-faq__list" data-saffron-reveal-group>
             @foreach($items as $item)
-                <details class="saffron-faq__item" @if($item['open']) open @endif>
+                <details class="saffron-faq__item" @if($item['open']) open @endif data-saffron-reveal>
                     <summary class="saffron-faq__question">
                         <span>{{ $item['question'] }}</span>
                         <svg class="saffron-faq__chevron" viewBox="0 0 24 24" width="18" height="18"

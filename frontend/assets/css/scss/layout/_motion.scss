@@ -1,0 +1,47 @@
+// Scroll reveals — the theme's Animation settings tab and each section's Styling → Animation.
+//
+// The hidden starting state exists only under `html.saffron-motion`, which the layout's
+// inline config script adds when the setting is on and the visitor has not asked for
+// reduced motion. JavaScript off, reduced motion, print, or the script failing to load
+// all leave every element exactly where it is; nothing is ever hidden without the code
+// that will show it again.
+//
+// The reveal target is always a layout wrapper (a section head, a grid column, an FAQ
+// item) rather than the card inside it, so a card's own hover transform keeps working
+// once the wrapper's transform is back to `none`.
+//
+// Transitions are declared on the revealed state only. That makes the effect class the
+// script assigns before observing instant even if the browser has already painted, and
+// the reset when "Animate Only Once" is off snaps back while the element is off-screen.
+
+$reveal-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+.saffron-motion [data-saffron-motion] [data-saffron-reveal] {
+  opacity: 0;
+
+  &.saffron-reveal--fade-up    { transform: translate3d(0, 28px, 0); }
+  &.saffron-reveal--fade-down  { transform: translate3d(0, -28px, 0); }
+  &.saffron-reveal--fade-left  { transform: translate3d(-32px, 0, 0); }
+  &.saffron-reveal--fade-right { transform: translate3d(32px, 0, 0); }
+  &.saffron-reveal--zoom-in    { transform: scale(0.92); }
+  &.saffron-reveal--fade-blur  { transform: translate3d(0, 12px, 0); filter: blur(8px); }
+
+  &.is-revealed {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition:
+      opacity   var(--saffron-reveal-duration, 700ms) $reveal-ease var(--saffron-reveal-delay, 0ms),
+      transform var(--saffron-reveal-duration, 700ms) $reveal-ease var(--saffron-reveal-delay, 0ms),
+      filter    var(--saffron-reveal-duration, 700ms) $reveal-ease var(--saffron-reveal-delay, 0ms);
+  }
+}
+
+@media (prefers-reduced-motion: reduce), print {
+  .saffron-motion [data-saffron-motion] [data-saffron-reveal] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}

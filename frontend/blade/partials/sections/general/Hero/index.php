@@ -3,6 +3,7 @@
 namespace Theme\Sections\General;
 
 use Illuminate\Support\Facades\View;
+use Theme\Backend\Support\Motion;
 
 /**
  * The opening banner. Slide data is **Ella-compatible on purpose**: a shop that
@@ -58,6 +59,7 @@ class Hero
             // Unique per render so two heroes on one page rotate independently.
             'uid'         => uniqid('saffron-hero-'),
             'locale'      => $locale,
+            'motionAttrs' => Motion::sectionAttributes($data),
             'data'        => $data,
         ])->render();
     }

@@ -1,7 +1,7 @@
-<section class="saffron-dish-grid {{ $ratioClass }}">
+<section class="saffron-dish-grid {{ $ratioClass }}" {!! $motionAttrs !!}>
     <div class="saffron-container">
         @if($heading !== '' || $subheading !== '')
-            <header class="saffron-dish-grid__head {{ $align === 'center' ? 'saffron-dish-grid__head--center' : '' }}">
+            <header class="saffron-dish-grid__head {{ $align === 'center' ? 'saffron-dish-grid__head--center' : '' }}" data-saffron-reveal>
                 @if($heading !== '')
                     <h2 class="saffron-section-title">{{ $heading }}</h2>
                 @endif
@@ -26,16 +26,16 @@
                 </div>
             @endif
         @else
-            <div class="row g-3 g-md-4">
+            <div class="row g-3 g-md-4" data-saffron-reveal-group>
                 @foreach($dishes as $dish)
-                    <div class="{{ $layout === 'list' ? 'col-12' : $gridColClass }}">
+                    <div class="{{ $layout === 'list' ? 'col-12' : $gridColClass }}" data-saffron-reveal>
                         <x-theme.component name="DishCard" :data="['dish' => $dish, 'settings' => $cardSettings]" />
                     </div>
                 @endforeach
             </div>
 
             @if($ctaLabel !== '')
-                <div class="saffron-dish-grid__foot">
+                <div class="saffron-dish-grid__foot" data-saffron-reveal>
                     <a href="{{ $ctaUrl }}" class="saffron-btn saffron-btn--dark">{{ $ctaLabel }}</a>
                 </div>
             @endif

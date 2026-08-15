@@ -5,6 +5,7 @@ namespace Theme\Sections\General;
 use App\Repositories\Category\CategoryInterface;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Theme\Backend\Support\Motion;
 
 /**
  * The full menu, grouped into sections.
@@ -133,6 +134,7 @@ class MenuSections
                 'add_button_label' => $data['add_button_label'] ?? 'Add',
             ],
             'ratioClass'       => $this->ratioClass($data['image_ratio'] ?? ''),
+            'motionAttrs'      => Motion::sectionAttributes($data),
             'data'             => $data,
             'locale'           => $locale,
         ])->render();

@@ -16,6 +16,9 @@
                 },
                 {
                     "$ref": "footer.json"
+                },
+                {
+                    "$ref": "animation.json"
                 }
             ]
         }

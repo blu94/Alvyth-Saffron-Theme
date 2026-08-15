@@ -3,6 +3,7 @@
 namespace Theme\Sections\General;
 
 use Illuminate\Support\Facades\View;
+use Theme\Backend\Support\Motion;
 
 /**
  * A row of promo tiles — a discount code, a bundle, a delivery threshold.
@@ -40,6 +41,7 @@ class PromoStrip
             'items'   => $items,
             'colClass' => $cols,
             'locale'  => $locale,
+            'motionAttrs' => Motion::sectionAttributes($data),
             'data'    => $data,
         ])->render();
     }

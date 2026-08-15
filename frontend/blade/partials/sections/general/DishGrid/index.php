@@ -5,6 +5,7 @@ namespace Theme\Sections\General;
 use App\Repositories\Product\ProductInterface;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Theme\Backend\Support\Motion;
 
 /**
  * One curated row of dishes — "Most Popular", "New This Week", "Chef's Picks".
@@ -91,6 +92,7 @@ class DishGrid
                 'show_add_button'  => $data['show_add_button'] ?? true,
                 'add_button_label' => $data['add_button_label'] ?? 'Add',
             ],
+            'motionAttrs'  => Motion::sectionAttributes($data),
             'data'         => $data,
             'locale'       => $locale,
         ])->render();

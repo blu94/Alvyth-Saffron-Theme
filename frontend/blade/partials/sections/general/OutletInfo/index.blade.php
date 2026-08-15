@@ -1,8 +1,8 @@
 @if($address !== '' || $phone !== '' || !empty($days) || $note !== '')
-<section class="saffron-outlet">
+<section class="saffron-outlet" {!! $motionAttrs !!}>
     <div class="saffron-container">
-        <div class="row g-4 g-lg-5">
-            <div class="col-12 col-lg-5">
+        <div class="row g-4 g-lg-5" data-saffron-reveal-group>
+            <div class="col-12 col-lg-5" data-saffron-reveal>
                 <h2 class="saffron-section-title">{{ $heading }}</h2>
 
                 @if($address !== '')
@@ -29,7 +29,7 @@
             </div>
 
             @if(!empty($days))
-                <div class="col-12 col-lg-7">
+                <div class="col-12 col-lg-7" data-saffron-reveal>
                     <h3 class="saffron-outlet__hours-title">{{ __('Opening hours') }}</h3>
                     <dl class="saffron-outlet__hours">
                         @foreach($days as $day)

@@ -4,6 +4,7 @@ namespace Theme\Sections\General;
 
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Theme\Backend\Support\Motion;
 
 /**
  * Delivery areas, allergens, payment — the questions a shop answers twenty times a day.
@@ -33,6 +34,7 @@ class FaqAccordion
             'subheading' => $this->translate($data['subheading'] ?? '', $locale),
             'items'      => $items,
             'locale'     => $locale,
+            'motionAttrs' => Motion::sectionAttributes($data),
             'data'       => $data,
         ])->render();
     }

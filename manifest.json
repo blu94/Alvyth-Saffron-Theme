@@ -6,8 +6,10 @@
   "schema_paths": {
     "settings": "admin/settings/index.json",
     "sections": [
+      "admin/sections/Hero.json",
       "admin/sections/MenuSections.json",
       "admin/sections/DishGrid.json",
+      "admin/sections/DishMarquee.json",
       "admin/sections/DishSheet.json",
       "admin/sections/StoreStatus.json",
       "admin/sections/PromoStrip.json",

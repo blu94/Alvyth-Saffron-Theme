@@ -1,7 +1,7 @@
-<section class="saffron-menu {{ $ratioClass }}">
+<section class="saffron-menu {{ $ratioClass }}" {!! $motionAttrs !!}>
     <div class="saffron-container">
         @if($heading !== '' || $subheading !== '')
-            <header class="saffron-menu__head">
+            <header class="saffron-menu__head" data-saffron-reveal>
                 @if($heading !== '')
                     <h2 class="saffron-section-title">{{ $heading }}</h2>
                 @endif
@@ -38,7 +38,7 @@
 
             @foreach($sections as $section)
                 <div id="{{ $section['anchor'] }}" class="saffron-menu__section">
-                    <header class="saffron-menu__section-head">
+                    <header class="saffron-menu__section-head" data-saffron-reveal>
                         <h3 class="saffron-menu__section-title">{{ $section['title'] }}</h3>
                         @if($showSectionCount)
                             <span class="saffron-menu__section-count">
@@ -51,9 +51,9 @@
                         <p class="saffron-menu__section-desc">{{ $section['desc'] }}</p>
                     @endif
 
-                    <div class="row g-3 g-md-4">
+                    <div class="row g-3 g-md-4" data-saffron-reveal-group>
                         @foreach($section['dishes'] as $dish)
-                            <div class="{{ $layout === 'list' ? 'col-12' : $gridColClass }}">
+                            <div class="{{ $layout === 'list' ? 'col-12' : $gridColClass }}" data-saffron-reveal>
                                 <x-theme.component name="DishCard" :data="['dish' => $dish, 'settings' => $cardSettings]" />
                             </div>
                         @endforeach

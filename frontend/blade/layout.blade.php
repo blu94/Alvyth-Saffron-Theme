@@ -117,6 +117,29 @@
     @if(file_exists(public_path($path = "themes/{$themeSlug}/frontend/assets/js/storefront.min.js")))
         <script src="{{ asset($path) }}?v={{ filemtime(public_path($path)) }}{{ $assetRevSuffix }}"></script>
     @endif
+
+    @if(($settings['animations_enabled'] ?? true) && file_exists(public_path($path = "themes/{$themeSlug}/frontend/assets/js/motion.js")))
+        @php
+            // Theme-wide reveal settings, handed to motion.js. The html class is what
+            // arms the hidden starting state in _motion.scss, and it is only added when
+            // the visitor has not asked for reduced motion — so nothing is ever hidden
+            // for someone whose device will not animate it back in.
+            $motionConfig = [
+                'effect'   => (string) ($settings['animation_effect'] ?? 'fade-up'),
+                'duration' => (int) ($settings['animation_duration'] ?? 700),
+                'stagger'  => (int) ($settings['animation_stagger'] ?? 100),
+                'offset'   => (int) ($settings['animation_offset'] ?? 10),
+                'once'     => filter_var($settings['animation_once'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            ];
+        @endphp
+        <script>
+            window.SaffronMotion = @json($motionConfig);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.documentElement.classList.add('saffron-motion');
+            }
+        </script>
+        <script defer src="{{ asset($path) }}?v={{ filemtime(public_path($path)) }}{{ $assetRevSuffix }}"></script>
+    @endif
 </head>
 <body class="saffron-body">
 

@@ -4,6 +4,7 @@ namespace Theme\Sections\General;
 
 use Illuminate\Support\Facades\View;
 use Theme\Backend\Repositories\ServiceWindowRepository;
+use Theme\Backend\Support\Motion;
 
 /**
  * Open / closed / opens-at banner.
@@ -54,6 +55,7 @@ class StoreStatus
             'openMessage'   => $openMessage,
             'showWhenOpen'  => (bool) ($data['show_when_open'] ?? false),
             'locale'        => $locale,
+            'motionAttrs'   => Motion::sectionAttributes($data),
             'data'          => $data,
         ])->render();
     }

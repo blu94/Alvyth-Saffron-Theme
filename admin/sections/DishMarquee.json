@@ -1,10 +1,10 @@
 {
-    "type": "FAQ_ACCORDION_SECTION",
-    "component": "FaqAccordionSection",
-    "name": "FAQ Accordion",
-    "description": "Delivery areas, allergens, payment — the questions a shop answers twenty times a day.",
+    "type": "DISH_MARQUEE_SECTION",
+    "component": "DishMarqueeSection",
+    "name": "Dish Marquee",
+    "description": "A strip of signature dishes that glides across the page — photo, name, a line of description and the price, looping endlessly.",
     "ui": {
-        "icon": "tabler-help-circle"
+        "icon": "tabler-carousel-horizontal"
     },
     "contents": {
         "elements": [
@@ -13,73 +13,62 @@
                 "key": "heading",
                 "type": "text",
                 "label": "Heading",
-                "placeholder": "e.g. Good to know",
+                "placeholder": "e.g. Signature Dishes",
                 "translatable": true,
-                "default": "Good to know"
+                "default": "Signature Dishes"
             },
             {
                 "ui": { "type": "field", "cols": 12 },
                 "key": "subheading",
                 "type": "textarea",
                 "label": "Subheading",
-                "placeholder": "e.g. Anything else, just call us.",
+                "placeholder": "e.g. The plates our regulars come back for.",
+                "translatable": true
+            },
+            {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "source",
+                "type": "select",
+                "label": "Pick Dishes By",
+                "hint": "Category and tag are matched on slug",
+                "options": {
+                    "items": [
+                        { "title": "Newest Dishes", "value": "latest" },
+                        { "title": "Category Slug", "value": "category" },
+                        { "title": "Tag Slug", "value": "tag" }
+                    ]
+                },
+                "default": "latest"
+            },
+            {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "source_slug",
+                "type": "text",
+                "label": "Category Or Tag Slug",
+                "placeholder": "e.g. signature",
+                "hint": "Required when picking by category or tag",
+                "default": ""
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "cta_label",
+                "type": "text",
+                "label": "Footer Link Label",
+                "placeholder": "e.g. View the full menu",
+                "hint": "Leave empty to hide the link",
                 "translatable": true,
                 "default": ""
             },
             {
                 "ui": { "type": "field", "cols": 12 },
-                "key": "items",
-                "type": "repeater",
-                "label": "Questions",
-                "itemLabel": "Question",
-                "columns": [
-                    { "label": "Question", "key": "question" },
-                    { "label": "Status", "key": "status", "type": "status" }
-                ],
-                "dialog": {
-                    "width": 700,
-                    "create": { "title": "Add Question" },
-                    "update": { "title": "Edit Question" }
-                },
-                "elements": [
-                    {
-                        "ui": { "type": "field", "cols": 12 },
-                        "key": "question",
-                        "type": "text",
-                        "label": "Question",
-                        "placeholder": "e.g. How far do you deliver?",
-                        "translatable": true,
-                        "rules": ["required"]
-                    },
-                    {
-                        "ui": { "type": "field", "cols": 12 },
-                        "key": "answer",
-                        "type": "textarea",
-                        "label": "Answer",
-                        "placeholder": "e.g. Within 5 km of the outlet. Enter your address at checkout to check.",
-                        "translatable": true
-                    },
-                    {
-                        "ui": { "type": "field", "cols": 6 },
-                        "key": "open_by_default",
-                        "type": "switch",
-                        "label": "Open By Default",
-                        "default": false
-                    },
-                    {
-                        "ui": { "type": "field", "cols": 6 },
-                        "key": "status",
-                        "type": "select",
-                        "label": "Status",
-                        "options": {
-                            "items": [
-                                { "title": "Active", "value": "active" },
-                                { "title": "Draft", "value": "draft" }
-                            ]
-                        },
-                        "default": "active"
-                    }
-                ]
+                "key": "cta_url",
+                "type": "link",
+                "label": "Footer Link URL",
+                "default": {
+                    "url": "/menu",
+                    "type": "internal",
+                    "target": "_self"
+                }
             }
         ]
     },
@@ -93,7 +82,66 @@
                         "name": "General",
                         "elements": [
                             {
-                                "ui": { "type": "field", "cols": 12 },
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "limit",
+                                "type": "number",
+                                "label": "How Many Dishes",
+                                "placeholder": "e.g. 8",
+                                "hint": "The strip repeats them to fill the width, so six to ten is plenty",
+                                "default": 8
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "card_size",
+                                "type": "select",
+                                "label": "Card Size",
+                                "options": {
+                                    "items": [
+                                        { "title": "Compact", "value": "compact" },
+                                        { "title": "Regular", "value": "regular" },
+                                        { "title": "Large", "value": "large" }
+                                    ]
+                                },
+                                "default": "regular"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "speed",
+                                "type": "select",
+                                "label": "Glide Speed",
+                                "hint": "How long one full pass takes",
+                                "options": {
+                                    "items": [
+                                        { "title": "Leisurely (60s)", "value": "60" },
+                                        { "title": "Normal (40s)", "value": "40" },
+                                        { "title": "Brisk (25s)", "value": "25" }
+                                    ]
+                                },
+                                "default": "40"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "direction",
+                                "type": "select",
+                                "label": "Direction",
+                                "options": {
+                                    "items": [
+                                        { "title": "Right to left", "value": "left" },
+                                        { "title": "Left to right", "value": "right" }
+                                    ]
+                                },
+                                "default": "left"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "pause_on_hover",
+                                "type": "switch",
+                                "label": "Pause On Hover",
+                                "hint": "The strip stops while the pointer rests on it, so a dish can be read and clicked",
+                                "default": true
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
                                 "key": "status",
                                 "type": "select",
                                 "label": "Status",
@@ -104,6 +152,21 @@
                                     ]
                                 },
                                 "default": "active"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "show_price",
+                                "type": "switch",
+                                "label": "Show Price",
+                                "default": true
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "show_description",
+                                "type": "switch",
+                                "label": "Show Description",
+                                "hint": "The first line or two of the dish description",
+                                "default": true
                             }
                         ]
                     },
@@ -119,14 +182,14 @@
                                         "key": "data.style.section.id",
                                         "type": "text",
                                         "label": "Custom CSS ID",
-                                        "placeholder": "e.g. faq"
+                                        "placeholder": "e.g. signature-dishes"
                                     },
                                     {
                                         "ui": { "type": "field", "cols": 6 },
                                         "key": "data.style.section.class",
                                         "type": "text",
                                         "label": "Custom CSS Class",
-                                        "placeholder": "e.g. my-faq"
+                                        "placeholder": "e.g. my-marquee"
                                     }
                                 ]
                             },

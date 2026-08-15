@@ -4,6 +4,7 @@ namespace Theme\Sections\General;
 
 use Illuminate\Support\Facades\View;
 use Theme\Backend\Models\ServiceWindow;
+use Theme\Backend\Support\Motion;
 
 /**
  * Where the shop is, how to reach it, and the week's hours.
@@ -67,6 +68,7 @@ class OutletInfo
             'note'    => $this->translate($data['note'] ?? '', $locale),
             'days'    => $days,
             'locale'  => $locale,
+            'motionAttrs' => Motion::sectionAttributes($data),
             'data'    => $data,
         ])->render();
     }

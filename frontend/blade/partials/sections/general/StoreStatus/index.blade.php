@@ -5,8 +5,8 @@
 @endphp
 
 @if($render)
-<section class="saffron-store-status {{ $isOpen ? 'saffron-store-status--open' : 'saffron-store-status--closed' }}">
-    <div class="saffron-container saffron-store-status__inner">
+<section class="saffron-store-status {{ $isOpen ? 'saffron-store-status--open' : 'saffron-store-status--closed' }}" {!! $motionAttrs !!}>
+    <div class="saffron-container saffron-store-status__inner" data-saffron-reveal>
         <span class="saffron-store-status__dot" aria-hidden="true"></span>
 
         <p class="saffron-store-status__text mb-0">

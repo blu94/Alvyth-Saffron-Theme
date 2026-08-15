@@ -1,0 +1,121 @@
+{
+  "ui": {
+    "type": "tab",
+    "name": "Animation",
+    "icon": "tabler-sparkles"
+  },
+  "name": "Animation",
+  "elements": [
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-arrow-autofit-up"
+      },
+      "name": "Scroll Reveal Defaults",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "animations_enabled",
+          "type": "switch",
+          "label": "Enable Scroll Animations",
+          "hint": "Master switch. Section headings, dish cards, promo tiles and FAQ items ease into view as the visitor scrolls; each section chooses its own effect under Styling → Animation. Visitors who ask their device to reduce motion never see them",
+          "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "animation_effect",
+          "type": "select",
+          "label": "Default Effect",
+          "hint": "Used by any section left on Theme default. Each section picks its own effect, speed, stagger and delay under Styling → Animation",
+          "options": {
+            "items": [
+              { "title": "Fade up", "value": "fade-up" },
+              { "title": "Fade down", "value": "fade-down" },
+              { "title": "Fade in", "value": "fade-in" },
+              { "title": "Fade from left", "value": "fade-left" },
+              { "title": "Fade from right", "value": "fade-right" },
+              { "title": "Zoom in", "value": "zoom-in" },
+              { "title": "Fade & un-blur", "value": "fade-blur" }
+            ]
+          },
+          "default": "fade-up"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "animation_duration",
+          "type": "select",
+          "label": "Speed",
+          "hint": "Default speed for sections left on Theme default",
+          "options": {
+            "items": [
+              { "title": "Fast (0.4s)", "value": "400" },
+              { "title": "Normal (0.7s)", "value": "700" },
+              { "title": "Slow (1s)", "value": "1000" },
+              { "title": "Very slow (1.4s)", "value": "1400" }
+            ]
+          },
+          "default": "700"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "animation_stagger",
+          "type": "select",
+          "label": "Stagger Between Items",
+          "hint": "Default gap between cards, tiles and FAQ items in one section, for sections left on Theme default",
+          "options": {
+            "items": [
+              { "title": "None — all together", "value": "0" },
+              { "title": "Subtle (60ms)", "value": "60" },
+              { "title": "Normal (100ms)", "value": "100" },
+              { "title": "Relaxed (160ms)", "value": "160" }
+            ]
+          },
+          "default": "100"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "animation_offset",
+          "type": "select",
+          "label": "Start When",
+          "hint": "How far an element must scroll into the viewport before it animates",
+          "options": {
+            "items": [
+              { "title": "As soon as it enters", "value": "0" },
+              { "title": "10% into view", "value": "10" },
+              { "title": "20% into view", "value": "20" },
+              { "title": "30% into view", "value": "30" }
+            ]
+          },
+          "default": "10"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "animation_once",
+          "type": "switch",
+          "label": "Animate Only Once",
+          "hint": "On: each element animates the first time it appears and then stays. Off: it animates again every time it scrolls back into view",
+          "default": true
+        }
+      ]
+    }
+  ]
+}
