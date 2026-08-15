@@ -123,45 +123,69 @@
           "recursive": {
             "enabled": true,
             "key": "children",
-            "label": "Dropdown Links",
+            "label": "Sub-links / Blocks",
             "maxDepth": 6,
+            "hidden_if": "item_type,promo|item_type,custom",
             "dialog": {
-              "width": 600,
-              "create": { "title": "Add Dropdown Link" },
-              "update": { "title": "Edit Dropdown Link" }
+              "width": 900,
+              "create": {
+                "title": "Add Sub-link or Block",
+                "subtitle": "A dropdown link, or — under a Mega Menu — a link column, a promotion banner or a custom block."
+              },
+              "update": {
+                "title": "Edit Sub-link or Block"
+              }
             }
           },
-          "default": [
-            { "label": { "en": "Home" }, "url": { "url": "/", "type": "internal", "target": "_self" } },
-            { "label": { "en": "Menu" }, "url": { "url": "/collections", "type": "internal", "target": "_self" } },
-            { "label": { "en": "Blog" }, "url": { "url": "/blogs", "type": "internal", "target": "_self" } }
-          ],
           "columns": [
-            { "label": "Label", "key": "label" },
-            { "label": "URL", "key": "url" }
+            {
+              "label": "Label",
+              "key": "label"
+            },
+            {
+              "label": "URL",
+              "key": "url",
+              "type": "link"
+            },
+            {
+              "label": "Type",
+              "key": "item_type"
+            },
+            {
+              "label": "Status",
+              "key": "status",
+              "type": "status"
+            }
           ],
           "dialog": {
-            "width": 600,
-            "create": { "title": "Add Header Link" },
-            "update": { "title": "Edit Header Link" }
+            "width": 1000,
+            "create": {
+              "title": "Add Header Link",
+              "subtitle": "A plain link, a link with a dropdown, or a Mega Menu whose sub-items become columns."
+            },
+            "update": {
+              "title": "Edit Header Link",
+              "subtitle": "For a Mega Menu, use the Sub-links / Blocks table to add link columns and promotion banners side by side."
+            }
           },
           "elements": [
             {
               "ui": {
                 "type": "field",
-                "cols": 12
+                "cols": 12,
+                "hidden_if": "item_type,promo|item_type,custom"
               },
               "key": "label",
               "type": "text",
               "label": "Label",
               "placeholder": "e.g. Menu",
-              "translatable": true,
-              "rules": ["required"]
+              "translatable": true
             },
             {
               "ui": {
                 "type": "field",
-                "cols": 12
+                "cols": 12,
+                "hidden_if": "menu_type,mega|item_type,promo|item_type,custom"
               },
               "key": "url",
               "type": "link",
@@ -171,6 +195,154 @@
                 "type": "internal",
                 "target": "_self"
               }
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 6,
+                "show_if": "depth,2"
+              },
+              "key": "menu_type",
+              "type": "select",
+              "label": "Menu Type",
+              "hint": "Normal shows sub-links in a dropdown list. Mega spreads them as columns across a wide panel.",
+              "default": "normal",
+              "options": {
+                "items": [
+                  {
+                    "title": "Normal Dropdown",
+                    "value": "normal"
+                  },
+                  {
+                    "title": "Mega Menu",
+                    "value": "mega"
+                  }
+                ]
+              }
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 6,
+                "show_if": "depth,2"
+              },
+              "key": "mega_menu_layout",
+              "type": "select",
+              "label": "Mega Layout",
+              "hint": "Only used when Menu Type is Mega",
+              "default": "full-width",
+              "options": {
+                "items": [
+                  {
+                    "title": "Full Width",
+                    "value": "full-width"
+                  },
+                  {
+                    "title": "Fixed Width",
+                    "value": "fixed-width"
+                  }
+                ]
+              }
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 12,
+                "show_if": "depth,4"
+              },
+              "key": "item_type",
+              "type": "select",
+              "label": "Item Type",
+              "hint": "Under a Mega Menu: a link column (its own sub-links become the list), a promotion banner, or custom text/HTML. Under a Normal dropdown, leave as Link.",
+              "default": "link",
+              "options": {
+                "items": [
+                  {
+                    "title": "Standard Link / Link Column",
+                    "value": "link"
+                  },
+                  {
+                    "title": "Promotion Banner",
+                    "value": "promo"
+                  },
+                  {
+                    "title": "Custom HTML / Text",
+                    "value": "custom"
+                  }
+                ]
+              }
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 12,
+                "show_if": "item_type,promo"
+              },
+              "key": "promo_image",
+              "type": "image",
+              "label": "Promo Image"
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 6,
+                "show_if": "item_type,promo"
+              },
+              "key": "promo_title",
+              "type": "text",
+              "label": "Promo Title",
+              "placeholder": "e.g. Weekend set lunch",
+              "translatable": true
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 6,
+                "show_if": "item_type,promo"
+              },
+              "key": "promo_button",
+              "type": "text",
+              "label": "Promo Button Text",
+              "placeholder": "e.g. Order now",
+              "translatable": true
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 12,
+                "show_if": "item_type,promo"
+              },
+              "key": "promo_url",
+              "type": "link",
+              "label": "Promo URL",
+              "default": {
+                "url": "",
+                "type": "internal",
+                "target": "_self"
+              }
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 12,
+                "show_if": "item_type,custom"
+              },
+              "key": "custom_content",
+              "type": "richtext",
+              "label": "Custom Content",
+              "placeholder": "Opening hours, a note, an announcement…",
+              "translatable": true
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 12
+              },
+              "key": "status",
+              "type": "switch",
+              "label": "Visible",
+              "hint": "Turn off to hide this item without deleting it",
+              "default": true
             }
           ]
         },
@@ -185,8 +357,14 @@
           "hint": "Where the links sit between the logo and the icons",
           "options": {
             "items": [
-              { "title": "Center", "value": "center" },
-              { "title": "Beside the logo", "value": "left" }
+              {
+                "title": "Center",
+                "value": "center"
+              },
+              {
+                "title": "Beside the logo",
+                "value": "left"
+              }
             ]
           },
           "default": "center"

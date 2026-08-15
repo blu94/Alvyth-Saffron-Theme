@@ -212,7 +212,152 @@
       transform: translateX(-50%) translateY(0);
       transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s;
     }
+
+    > .saffron-header__mega {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+    }
+    > .saffron-header__mega--full-width { transform: translateY(0); }
+    > .saffron-header__mega--fixed-width { transform: translateX(-50%) translateY(0); }
   }
+}
+
+// ─── Mega menu (Ella's header_menu_web model) ─────────────────────────────────
+// A full-width panel spans the header's container (`.saffron-header__inner`, which is
+// `position: relative`), so nothing between the panel and it may be a containing block:
+// the item goes static, as Ella's does. The centered nav is `position: absolute` and
+// WOULD trap `left/right: 0` at its own width — so a nav that holds a mega item is
+// centred with the flex idiom instead (auto margins), which keeps it non-positioned.
+// The trade-off is that centring then measures free space, not the container, so a
+// shop pairing a mega menu with a very wide icon cluster may sit a few px off-centre.
+.saffron-header__item--mega {
+  position: static;
+}
+
+.saffron-header__nav--center:has(.saffron-header__item--mega) {
+  position: static;
+  transform: none;
+  margin-inline: auto;
+
+  ~ .saffron-header__actions { margin-inline-start: 0; }
+}
+
+.saffron-header__mega {
+  position: absolute;
+  top: 100%;
+  z-index: 300;
+  background-color: $color-card-surface;
+  border-top: 1px solid $color-line;
+  box-shadow: $card-shadow-hover;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+
+  &--full-width {
+    left: 0;
+    right: 0;
+    transform: translateY(-8px);
+  }
+
+  &--fixed-width {
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    min-width: 600px;
+    max-width: 900px;
+    border: 1px solid $color-line;
+    border-radius: calc(#{$card-radius} - 4px);
+  }
+}
+
+.saffron-header__mega-inner {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 1.75rem 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.saffron-header__mega-col {
+  padding: 0 1.25rem;
+
+  &--links {
+    flex: 1;
+    min-width: 140px;
+
+    & + & { border-left: 1px solid $color-line; }
+  }
+
+  &--promo { flex: 0 0 220px; }
+
+  &--custom {
+    flex: 1;
+    font-size: 0.875rem;
+    color: $color-secondary;
+    p:last-child { margin-bottom: 0; }
+  }
+}
+
+.saffron-header__mega-heading {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: $color-primary;
+
+  &:hover { opacity: 0.7; }
+}
+
+.saffron-header__mega-link {
+  display: block;
+  padding: 0.3rem 0;
+  font-size: 0.875rem;
+  text-decoration: none;
+  color: $color-secondary;
+  transition: color 0.15s;
+
+  &:hover,
+  &[aria-current="page"] { color: $color-primary; }
+}
+
+.saffron-header__mega-promo {
+  display: block;
+  text-decoration: none;
+  color: $color-primary;
+
+  &:hover .saffron-header__mega-promo-img { transform: scale(1.03); }
+}
+
+.saffron-header__mega-promo-img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: calc(#{$card-radius} - 6px);
+  transition: transform 0.3s ease;
+}
+
+.saffron-header__mega-promo-title {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.saffron-header__mega-promo-btn {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding-bottom: 1px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid $color-accent;
+  color: $color-accent;
 }
 
 .saffron-header__actions {

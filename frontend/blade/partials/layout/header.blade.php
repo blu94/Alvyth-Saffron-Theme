@@ -38,21 +38,56 @@
     // may carry `children` — resolved recursively here once so the markup never touches
     // the raw bag. Note the admin's theme-settings tree already sits one level deep, so
     // the schema's maxDepth has to be one higher than the levels you want to expose.
+    // Modelled on Ella's header_menu_web: a top item is a plain link, a normal dropdown, or
+    // a MEGA menu whose sub-items are columns (link column / promo banner / custom block).
+    // Everything is resolved here so the markup only reads plain values.
     $resolveLink = function (array $l) use (&$resolveLink, $t, $linkUrl) {
+        $itemType = (string) ($l['item_type'] ?? 'link');
+        $promoImg = $l['promo_image'] ?? null;
+        if (is_array($promoImg)) {
+            $promoImg = $promoImg[0]['path'] ?? ($promoImg['path'] ?? '');
+        }
+        $promoImg = (string) ($promoImg ?? '');
+        if ($promoImg !== '' && ! Str::startsWith($promoImg, ['/', 'http'])) {
+            $promoImg = '/storage/' . ltrim($promoImg, '/');
+        }
+
         return [
-            'label'    => $t($l['label'] ?? ''),
-            'url'      => $linkUrl($l['url'] ?? ''),
-            'children' => collect($l['children'] ?? [])
+            'label'       => $t($l['label'] ?? ''),
+            'url'         => $linkUrl($l['url'] ?? ''),
+            'visible'     => (bool) ($l['status'] ?? true),
+            'menu_type'   => (string) ($l['menu_type'] ?? 'normal'),
+            'mega_layout' => (string) ($l['mega_menu_layout'] ?? 'full-width'),
+            'item_type'   => $itemType,
+            'promo'       => [
+                'image'  => $promoImg,
+                'title'  => $t($l['promo_title'] ?? ''),
+                'button' => $t($l['promo_button'] ?? ''),
+                'url'    => $linkUrl($l['promo_url'] ?? ''),
+            ],
+            'custom'      => $t($l['custom_content'] ?? ''),
+            'children'    => collect($l['children'] ?? [])
                 ->map(fn ($c) => $resolveLink($c))
-                ->filter(fn ($c) => $c['label'] !== '')
+                ->filter(fn ($c) => $c['visible'] && ($c['label'] !== '' || $c['item_type'] !== 'link'))
                 ->values()
                 ->all(),
         ];
     };
 
-    $headerLinks = collect($settings['header_links'] ?? [])
+    // Example links for a shop that has not authored any yet. Kept HERE, not as the
+    // schema's `default`: the recursive repeater spreads the whole element into every
+    // injected child, so a schema default pre-filled three grandchildren into each new
+    // dropdown link the operator added.
+    $exampleLinks = [
+        ['label' => 'Home', 'url' => '/'],
+        ['label' => 'Menu', 'url' => '/collections'],
+        ['label' => 'Blog', 'url' => '/blogs'],
+    ];
+
+    $rawLinks = $settings['header_links'] ?? null;
+    $headerLinks = collect(is_array($rawLinks) && $rawLinks !== [] ? $rawLinks : $exampleLinks)
         ->map(fn ($l) => $resolveLink($l))
-        ->filter(fn ($l) => $l['label'] !== '')
+        ->filter(fn ($l) => $l['visible'] && $l['label'] !== '')
         ->values();
 
     $showSearch = $settings['header_show_search'] ?? true;
@@ -93,7 +128,8 @@
                                  every child; the caret is a real button so a touch device —
                                  which has no hover — has something to tap that is not the
                                  parent link itself. --}}
-                            <div class="saffron-header__item saffron-header__item--has-dropdown">
+                            @php $isMega = $link['menu_type'] === 'mega'; @endphp
+                            <div class="saffron-header__item saffron-header__item--has-dropdown {{ $isMega ? 'saffron-header__item--mega' : '' }}">
                                 <a href="{{ $link['url'] ?: '#' }}" class="saffron-header__link"
                                    @if($link['url'] === $currentPath) aria-current="page" @endif>{{ $link['label'] }}</a>
                                 <button type="button" class="saffron-header__caret" aria-expanded="false"
@@ -104,6 +140,46 @@
                                         <path d="M6 9l6 6 6-6"/>
                                     </svg>
                                 </button>
+
+                                @if($isMega)
+                                {{-- MEGA MENU (Ella's header_menu_web model): every child is a column —
+                                     item_type link → heading + its own sub-links; promo → image banner;
+                                     custom → richtext block. --}}
+                                <div class="saffron-header__mega saffron-header__mega--{{ $link['mega_layout'] }}">
+                                    <div class="saffron-header__mega-inner">
+                                        @foreach($link['children'] as $column)
+                                            @if($column['item_type'] === 'promo')
+                                                <div class="saffron-header__mega-col saffron-header__mega-col--promo">
+                                                    <a href="{{ $column['promo']['url'] ?: '#' }}" class="saffron-header__mega-promo">
+                                                        @if($column['promo']['image'] !== '')
+                                                            <img src="{{ $column['promo']['image'] }}" alt="{{ $column['promo']['title'] }}" class="saffron-header__mega-promo-img" loading="lazy">
+                                                        @endif
+                                                        @if($column['promo']['title'] !== '')
+                                                            <span class="saffron-header__mega-promo-title">{{ $column['promo']['title'] }}</span>
+                                                        @endif
+                                                        @if($column['promo']['button'] !== '')
+                                                            <span class="saffron-header__mega-promo-btn">{{ $column['promo']['button'] }}</span>
+                                                        @endif
+                                                    </a>
+                                                </div>
+                                            @elseif($column['item_type'] === 'custom')
+                                                {{-- Operator-authored richtext, the same trust the Text Block section extends. --}}
+                                                <div class="saffron-header__mega-col saffron-header__mega-col--custom">{!! $column['custom'] !!}</div>
+                                            @else
+                                                <div class="saffron-header__mega-col saffron-header__mega-col--links">
+                                                    @if($column['label'] !== '')
+                                                        <a href="{{ $column['url'] ?: '#' }}" class="saffron-header__mega-heading">{{ $column['label'] }}</a>
+                                                    @endif
+                                                    @foreach($column['children'] as $sub)
+                                                        <a href="{{ $sub['url'] ?: '#' }}" class="saffron-header__mega-link"
+                                                           @if($sub['url'] === $currentPath) aria-current="page" @endif>{{ $sub['label'] }}</a>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @else
                                 <div class="saffron-header__dropdown">
                                     @foreach($link['children'] as $child)
                                         @if(empty($child['children']))
@@ -124,6 +200,7 @@
                                         @endif
                                     @endforeach
                                 </div>
+                                @endif
                             </div>
                         @endif
                     @endforeach
@@ -192,10 +269,19 @@
                          drawer already IS the expanded state, and a restaurant's nav is
                          short enough that a nested accordion would only hide things. --}}
                     @foreach($link['children'] as $child)
-                        <a href="{{ $child['url'] ?: '#' }}" class="saffron-mobile-nav__link saffron-mobile-nav__link--child">{{ $child['label'] }}</a>
-                        @foreach($child['children'] as $grandchild)
-                            <a href="{{ $grandchild['url'] ?: '#' }}" class="saffron-mobile-nav__link saffron-mobile-nav__link--grandchild">{{ $grandchild['label'] }}</a>
-                        @endforeach
+                        @if($child['item_type'] === 'promo')
+                            {{-- A promo banner has no place in a phone drawer; its link does. --}}
+                            @if($child['promo']['title'] !== '' || $child['promo']['button'] !== '')
+                                <a href="{{ $child['promo']['url'] ?: '#' }}" class="saffron-mobile-nav__link saffron-mobile-nav__link--child">{{ $child['promo']['title'] ?: $child['promo']['button'] }}</a>
+                            @endif
+                        @elseif($child['item_type'] === 'custom')
+                            {{-- Custom blocks are desktop furniture; skipped in the drawer. --}}
+                        @else
+                            <a href="{{ $child['url'] ?: '#' }}" class="saffron-mobile-nav__link saffron-mobile-nav__link--child">{{ $child['label'] }}</a>
+                            @foreach($child['children'] as $grandchild)
+                                <a href="{{ $grandchild['url'] ?: '#' }}" class="saffron-mobile-nav__link saffron-mobile-nav__link--grandchild">{{ $grandchild['label'] }}</a>
+                            @endforeach
+                        @endif
                     @endforeach
                 @endforeach
                 @if($ctaLabel !== '')
