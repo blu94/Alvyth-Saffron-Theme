@@ -105,7 +105,7 @@
           ]
         },
         {
-          "ui": { "type": "button", "class": "mt-4", "color": "primary", "size": "large" },
+          "ui": { "type": "button", "class": "mt-4", "color": "primary" },
           "type": "button",
           "action": "save",
           "label": "Move Order",

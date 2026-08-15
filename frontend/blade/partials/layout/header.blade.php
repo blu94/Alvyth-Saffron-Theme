@@ -41,6 +41,9 @@
     $showSearch = $settings['header_show_search'] ?? true;
     $showCart   = $settings['header_show_cart'] ?? true;
 
+    // Centered by default — the restaurant look. 'left' docks the links beside the logo.
+    $navCentered = ($settings['header_nav_position'] ?? 'center') === 'center';
+
     $ctaLabel = $t($settings['header_cta_label'] ?? '');
     $ctaUrl   = $linkUrl($settings['header_cta_url'] ?? '') ?: '/';
 
@@ -63,7 +66,7 @@
             </a>
 
             @if($headerLinks->isNotEmpty())
-                <nav class="saffron-header__nav" aria-label="{{ __('Primary') }}">
+                <nav class="saffron-header__nav @if($navCentered) saffron-header__nav--center @endif" aria-label="{{ __('Primary') }}">
                     @foreach($headerLinks as $link)
                         <a href="{{ $link['url'] ?: '#' }}" class="saffron-header__link"
                            @if($link['url'] === $currentPath) aria-current="page" @endif>{{ $link['label'] }}</a>

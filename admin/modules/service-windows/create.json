@@ -10,8 +10,7 @@
               "ui": {
                 "type": "button",
                 "color": "primary",
-                "icon": "tabler-plus",
-                "size": "large"
+                "icon": "tabler-plus"
               },
               "action": "save",
               "label": "Create Window",

@@ -46,7 +46,7 @@
           "ui": { "type": "field", "cols": 4 },
           "key": "min_select",
           "type": "number",
-          "label": "Minimum Answers",
+          "label": "Minimum Selections",
           "placeholder": "e.g. 1",
           "hint": "1 makes the question compulsory. 0 lets the customer skip it",
           "default": 0,
@@ -56,7 +56,7 @@
           "ui": { "type": "field", "cols": 4 },
           "key": "max_select",
           "type": "number",
-          "label": "Maximum Answers",
+          "label": "Maximum Selections",
           "placeholder": "Leave empty for unlimited",
           "hint": "Ignored when the selection is single, which always allows exactly one",
           "rules": ["integer", "min:1"]
@@ -69,17 +69,17 @@
         "cols": 12,
         "icon": "tabler-list-check"
       },
-      "name": "The Answers",
-      "subtitle": "One row per choice the customer can pick — fries, salad, rice. A group with no answers asks a question nobody can answer, and a group attached to no dish is never shown at all: attach it from the dish's Modifiers tab once you have saved it here.",
+      "name": "The Options",
+      "subtitle": "One row per choice the customer can pick — fries, salad, rice. A group with no options asks a question nobody can answer, and a group attached to no dish is never shown at all: attach it from the dish's Modifiers tab once you have saved it here.",
       "elements": [
         {
           "ui": { "type": "field", "cols": 12 },
           "key": "modifiers",
           "type": "repeater",
-          "label": "Answers",
-          "itemLabel": "Answer",
+          "label": "Options",
+          "itemLabel": "Option",
           "columns": [
-            { "label": "Answer", "key": "title" },
+            { "label": "Option", "key": "title" },
             { "label": "Price", "key": "price_delta" },
             { "label": "Default", "key": "is_default" },
             { "label": "Status", "key": "status", "type": "status" }
@@ -87,17 +87,17 @@
           "dialog": {
             "width": 700,
             "create": {
-              "title": "Add Answer",
+              "title": "Add Option",
               "subtitle": "Leave the price at 0.00 unless you have decided how paid add-ons are charged."
             },
-            "update": { "title": "Edit Answer" }
+            "update": { "title": "Edit Option" }
           },
           "elements": [
             {
               "ui": { "type": "field", "cols": 12 },
               "key": "title",
               "type": "text",
-              "label": "Answer",
+              "label": "Option",
               "placeholder": "e.g. Extra cheese",
               "translatable": true,
               "rules": ["required", "max:120"]
@@ -116,7 +116,7 @@
               "key": "is_default",
               "type": "switch",
               "label": "Pre-selected",
-              "hint": "A single-selection group keeps only the first pre-selected answer",
+              "hint": "A single-selection group keeps only the first pre-selected option",
               "default": false
             },
             {
@@ -124,7 +124,7 @@
               "key": "product_id",
               "type": "autocomplete",
               "label": "Linked Dish (Optional)",
-              "hint": "Only needed when this answer is itself a sellable product — the route paid add-ons will take",
+              "hint": "Only needed when this option is itself a sellable product — the route paid add-ons will take",
               "options": {
                 "url": "/admin/products",
                 "master": "data",
@@ -187,8 +187,7 @@
               "ui": {
                 "type": "button",
                 "color": "primary",
-                "icon": "tabler-checkbox",
-                "size": "large"
+                "icon": "tabler-checkbox"
               },
               "action": "save",
               "label": "Save Changes",

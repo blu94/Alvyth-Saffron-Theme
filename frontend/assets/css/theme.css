@@ -326,6 +326,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 1rem;
   min-height: 68px;
+  position: relative;
 }
 
 .saffron-header__brand {
@@ -356,6 +357,13 @@ h1, h2, h3, h4, h5, h6 {
   .saffron-header__nav {
     display: flex;
   }
+}
+
+.saffron-header__nav--center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-inline-start: 0;
 }
 
 .saffron-header__link {

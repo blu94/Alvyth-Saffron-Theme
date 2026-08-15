@@ -168,6 +168,23 @@
             "type": "field",
             "cols": 6
           },
+          "key": "header_nav_position",
+          "type": "select",
+          "label": "Navigation Position",
+          "hint": "Where the links sit between the logo and the icons",
+          "options": {
+            "items": [
+              { "title": "Center", "value": "center" },
+              { "title": "Beside the logo", "value": "left" }
+            ]
+          },
+          "default": "center"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
           "key": "header_show_search",
           "type": "switch",
           "label": "Show Search",

@@ -42,6 +42,8 @@
   align-items: center;
   gap: 1rem;
   min-height: 68px;
+  // The anchor for the centered nav below.
+  position: relative;
 }
 
 .saffron-header__brand {
@@ -71,6 +73,16 @@
   @include lg {
     display: flex;
   }
+}
+
+.saffron-header__nav--center {
+  // Out of the flex flow and pinned to the true middle. Auto margins were tried first and
+  // centred the nav in the FREE space instead — the actions block is ~3× the logo's width,
+  // which parked the links visibly left of centre (measured 96px off at 1030px).
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-inline-start: 0;
 }
 
 .saffron-header__link {

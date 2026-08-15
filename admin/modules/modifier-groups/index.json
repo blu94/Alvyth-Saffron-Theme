@@ -88,7 +88,7 @@
         },
         {
             "ui": { "type": "display" },
-            "label": "Answers",
+            "label": "Options",
             "key": "modifiers_count",
             "sortable": false,
             "align": "center"

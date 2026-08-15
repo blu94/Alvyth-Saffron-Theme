@@ -270,8 +270,7 @@
               "ui": {
                 "type": "button",
                 "color": "primary",
-                "icon": "tabler-checkbox",
-                "size": "large"
+                "icon": "tabler-checkbox"
               },
               "action": "save",
               "label": "Save Changes",
