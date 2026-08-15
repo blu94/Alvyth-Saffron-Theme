@@ -25,8 +25,11 @@ change or an unanswered product decision — both are itemised in
 | 9 | Notifications, order tracker, receipts, reorder | not started |
 | 10 | RBAC, `.agent/docs/restaurant.md` | docs **done**; `kitchen` resource outstanding |
 
-**Sections:** `MenuSections`, `DishGrid`, `DishSheet`, `StoreStatus`, `PromoStrip`,
-`OutletInfo`, `FaqAccordion`.
+**Sections:** `Hero`, `MenuSections`, `DishGrid`, `DishMarquee`, `DishSheet`, `StoreStatus`,
+`PromoStrip`, `OutletInfo`, `FaqAccordion`.
+**Animation:** every section above except `DishSheet` eases into view on scroll, with its own
+effect, speed, stagger and delay under *Styling → Animation*; the theme's **Animation** settings
+tab holds the master switch and the defaults a section inherits. See "Animation" below.
 **Admin modules:** `modifier-groups`, `service-windows` (weekly hours *and* dated holidays in
 one list, plus the Kitchen Queue page).
 **Extends:** `products` — a Modifiers tab on the dish's own form, via core's module extension
@@ -48,12 +51,13 @@ transaction, plus JSON, `php -l` and Blade compile-lint passes over every file.
 ```
 manifest.json                 name/slug/preview + schema_paths + modules
 admin/
-├── settings/                 index.json → $ref general / header / footer / restaurant
+├── settings/                 index.json → $ref general / restaurant / header / footer / animation
 ├── modules/                  own admin screens (modifier-groups, service-windows, …)
 ├── extends/                  tabs added to a module core owns — {type}.json
 └── sections/                 one JSON schema per page-builder section
 backend/
 ├── Handlers/                 writes the keys admin/extends declares
+├── Support/                  Motion — section animation choices → data attributes
 ├── Models/, Repositories/, migrations/
 frontend/
 ├── blade/
@@ -63,7 +67,7 @@ frontend/
 │       ├── layout/           header, footer, dynamic-styles
 │       ├── components/       {Name}/index.blade.php + index.php
 │       └── sections/general/ {Name}/index.blade.php + index.php
-└── assets/{css,js}
+└── assets/{css,js}           js/motion.js — scroll reveals + marquee fill (no Vue, no CDN)
 ```
 
 ## Development
@@ -77,6 +81,48 @@ Import into the running dev stack — packages, transports, extracts, migrates a
 Run from the **repository root**, not from this directory. SCSS is compiled by that script
 via `npx sass`; `frontend/assets/css/theme.css` is a build output and must be regenerated
 after editing any `.scss` file, because it is what gets packaged.
+
+## Animation
+
+Modelled on the scroll-reveal system fine-dining themes ship (WOW.js + animate.css on the
+Armanello demo this was checked against), but self-contained: no CDN library, no build step.
+
+**Where the options are.** Every section carries its own controls under *Styling → Animation*
+— **Scroll Animation** (theme default / none / fade up / fade down / fade in / fade from left /
+fade from right / zoom in / fade & un-blur), **Animation Speed**, **Stagger Between Items** and
+**Animation Delay**. Whatever a section leaves on *Theme default* falls back to the theme's
+**Animation** settings tab, which also holds the master switch (**Enable Scroll Animations**),
+**Start When** (how far into the viewport an element must be) and **Animate Only Once**.
+`DishSheet` deliberately has no animation options — it is the ordering UI, and hiding it until
+scrolled would be a bug, not a flourish.
+
+**How it renders.** A section root prints `{!! $motionAttrs !!}` (from
+`Theme\Backend\Support\Motion::sectionAttributes($data)`), which becomes
+`data-saffron-motion="{effect}"` plus `-delay`, and `-duration` / `-stagger` only when the
+section chose its own. Inside, the *layout wrapper* of each thing that should move — a section
+head, a grid column, an FAQ item, never the card itself, so the card's own hover transform keeps
+working — carries `data-saffron-reveal`; a container with `data-saffron-reveal-group` staggers
+its reveals. `js/motion.js` resolves section-first, theme-default second, and reveals with an
+IntersectionObserver; stagger is computed **per batch** that enters the viewport together, so a
+card that scrolls in alone later shows at once instead of waiting for a queue it was never in.
+
+**Nothing is ever hidden without the code that shows it.** The hidden starting state in
+`_motion.scss` exists only under `html.saffron-motion`, which the layout's inline config
+script adds when the setting is on **and** the visitor has not asked for reduced motion.
+JavaScript off, `prefers-reduced-motion`, print, or the script failing to load all leave the page
+exactly as rendered. Verified in a headless browser: reveals with staggered delays, a section's
+own effect/speed/stagger/delay overriding the theme defaults, reduced motion → content visible and
+the marquee stopped, JavaScript disabled → content visible.
+
+**Dish Marquee** is the one Armanello element added as a section: the featured-dish scroller.
+It picks dishes the same way `DishGrid` does (newest / category slug / tag slug), renders a light
+card (photo, name, one line, price — no Add button, because a strip that never stops moving is
+the wrong place to start an order; every card links to the dish sheet), and glides with a pure
+CSS animation whose speed and direction reach the stylesheet through `@push('dynamic_styles')`
+on the section's own id, the way Ella's ticker does — so it moves with JavaScript off.
+`motion.js` only appends clone pairs when the shop has too few dishes to fill the width. Under
+reduced motion the strip stops, the clones disappear and it becomes an ordinary horizontal
+scroller.
 
 ## Conventions this theme is bound by
 
