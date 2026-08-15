@@ -1,0 +1,147 @@
+{
+    "type": "DISH_SHEET_SECTION",
+    "component": "DishSheetSection",
+    "name": "Dish Sheet",
+    "description": "The configure-and-add block: size, modifier groups, special instructions, quantity and a live total.",
+    "ui": {
+        "icon": "tabler-tools-kitchen"
+    },
+    "contents": {
+        "elements": [
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "product_id",
+                "type": "number",
+                "label": "Dish ID",
+                "placeholder": "Leave empty on a dish page",
+                "hint": "Leave empty and the sheet configures whichever dish the page is for. Set an ID only to pin this block to one dish on a landing page.",
+                "default": null
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "show_notes",
+                "type": "switch",
+                "label": "Allow Special Instructions",
+                "hint": "A free-text note carried to the kitchen as an option value",
+                "default": true
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "notes_label",
+                "type": "text",
+                "label": "Special Instructions Label",
+                "placeholder": "e.g. Special instructions",
+                "translatable": true,
+                "default": "Special instructions"
+            }
+        ]
+    },
+    "settings": {
+        "elements": [
+            {
+                "ui": {
+                    "type": "tabs",
+                    "cols": 12,
+                    "icon": "tabler-settings"
+                },
+                "elements": [
+                    {
+                        "ui": {
+                            "type": "tab",
+                            "name": "General",
+                            "icon": "tabler-info-circle"
+                        },
+                        "name": "General",
+                        "elements": [
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "max_quantity",
+                                "type": "number",
+                                "label": "Maximum Quantity Per Line",
+                                "placeholder": "e.g. 20",
+                                "default": 20
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "notes_max",
+                                "type": "number",
+                                "label": "Special Instructions Character Limit",
+                                "placeholder": "e.g. 140",
+                                "default": 140
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "size_key",
+                                "type": "text",
+                                "label": "Size Option Key",
+                                "placeholder": "e.g. Size",
+                                "hint": "The label the kitchen sees on the ticket for the chosen variant",
+                                "default": "Size"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "notes_key",
+                                "type": "text",
+                                "label": "Instructions Option Key",
+                                "placeholder": "e.g. Notes",
+                                "hint": "The label the kitchen sees on the ticket for the customer's note",
+                                "default": "Notes"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 12 },
+                                "key": "sold_out_label",
+                                "type": "text",
+                                "label": "Sold Out Wording",
+                                "placeholder": "e.g. Sold out for today",
+                                "translatable": true,
+                                "default": "Sold out for today"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 12 },
+                                "key": "status",
+                                "type": "select",
+                                "label": "Status",
+                                "options": {
+                                    "items": [
+                                        { "title": "Active", "value": "active" },
+                                        { "title": "Disabled", "value": "disabled" }
+                                    ]
+                                },
+                                "default": "active"
+                            }
+                        ]
+                    },
+                    {
+                        "ui": {
+                            "type": "tab",
+                            "name": "Styling",
+                            "icon": "tabler-palette"
+                        },
+                        "name": "Styling",
+                        "elements": [
+                            {
+                                "ui": { "type": "row", "cols": 12 },
+                                "elements": [
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.id",
+                                        "type": "text",
+                                        "label": "Custom CSS ID",
+                                        "placeholder": "e.g. dish-sheet"
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.class",
+                                        "type": "text",
+                                        "label": "Custom CSS Class",
+                                        "placeholder": "e.g. my-dish-sheet"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

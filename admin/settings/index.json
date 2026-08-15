@@ -1,0 +1,23 @@
+{
+    "elements": [
+        {
+            "ui": {
+                "type": "tabs"
+            },
+            "elements": [
+                {
+                    "$ref": "general.json"
+                },
+                {
+                    "$ref": "restaurant.json"
+                },
+                {
+                    "$ref": "header.json"
+                },
+                {
+                    "$ref": "footer.json"
+                }
+            ]
+        }
+    ]
+}

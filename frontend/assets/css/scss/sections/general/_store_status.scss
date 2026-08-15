@@ -1,0 +1,49 @@
+@use "../../base/colors" as *;
+@use "../../base/variables" as *;
+
+.saffron-store-status {
+  border-block: 1px solid $color-line;
+  background-color: $hex-sand-50;
+}
+
+.saffron-store-status--closed {
+  background-color: rgba($hex-danger, 0.06);
+  border-color: rgba($hex-danger, 0.22);
+}
+
+.saffron-store-status__inner {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding-block: 0.75rem;
+}
+
+.saffron-store-status__dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: $color-success;
+  transform: translateY(-2px);
+
+  .saffron-store-status--closed & {
+    background-color: $color-danger;
+  }
+}
+
+.saffron-store-status__text {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.saffron-store-status__meta {
+  color: $color-muted;
+  margin-inline-start: 0.35rem;
+}
+
+.saffron-store-status__note {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.875rem;
+  color: $color-secondary;
+}

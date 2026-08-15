@@ -1,0 +1,102 @@
+{
+    "type": "STORE_STATUS_SECTION",
+    "component": "StoreStatusSection",
+    "name": "Store Status",
+    "description": "Open / closed / opens-at banner, read from the theme's service windows. Presentation only — it does not refuse an out-of-hours order.",
+    "ui": {
+        "icon": "tabler-clock-hour-9"
+    },
+    "contents": {
+        "elements": [
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "closed_message",
+                "type": "textarea",
+                "label": "Closed Message",
+                "placeholder": "Leave empty to use the theme setting",
+                "hint": "Falls back to Theme Settings → Restaurant → Closed Shop Message",
+                "translatable": true,
+                "default": ""
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "open_message",
+                "type": "text",
+                "label": "Open Message",
+                "placeholder": "e.g. Taking orders now",
+                "translatable": true,
+                "default": ""
+            }
+        ]
+    },
+    "settings": {
+        "elements": [
+            {
+                "ui": { "type": "tabs", "cols": 12, "icon": "tabler-settings" },
+                "elements": [
+                    {
+                        "ui": { "type": "tab", "name": "General", "icon": "tabler-info-circle" },
+                        "name": "General",
+                        "elements": [
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "show_when_open",
+                                "type": "switch",
+                                "label": "Show Banner While Open",
+                                "hint": "Off shows the banner only when the shop is closed",
+                                "default": false
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "timezone",
+                                "type": "text",
+                                "label": "Shop Timezone",
+                                "placeholder": "e.g. Asia/Kuala_Lumpur",
+                                "hint": "An IANA name. Empty uses the application timezone. Windows are compared in this zone, so a 09:00 opening is 09:00 here whatever the season",
+                                "default": ""
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 12 },
+                                "key": "status",
+                                "type": "select",
+                                "label": "Status",
+                                "options": {
+                                    "items": [
+                                        { "title": "Active", "value": "active" },
+                                        { "title": "Disabled", "value": "disabled" }
+                                    ]
+                                },
+                                "default": "active"
+                            }
+                        ]
+                    },
+                    {
+                        "ui": { "type": "tab", "name": "Styling", "icon": "tabler-palette" },
+                        "name": "Styling",
+                        "elements": [
+                            {
+                                "ui": { "type": "row", "cols": 12 },
+                                "elements": [
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.id",
+                                        "type": "text",
+                                        "label": "Custom CSS ID",
+                                        "placeholder": "e.g. store-status"
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.class",
+                                        "type": "text",
+                                        "label": "Custom CSS Class",
+                                        "placeholder": "e.g. my-status"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

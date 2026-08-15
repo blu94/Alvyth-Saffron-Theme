@@ -1,0 +1,125 @@
+{
+    "type": "OUTLET_INFO_SECTION",
+    "component": "OutletInfoSection",
+    "name": "Outlet Info",
+    "description": "Address, phone and the week's opening hours, read from the theme's service windows.",
+    "ui": {
+        "icon": "tabler-map-pin"
+    },
+    "contents": {
+        "elements": [
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "heading",
+                "type": "text",
+                "label": "Heading",
+                "placeholder": "e.g. Find us",
+                "translatable": true,
+                "default": "Find us"
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "address",
+                "type": "textarea",
+                "label": "Address",
+                "placeholder": "Leave empty to use the footer address",
+                "hint": "Falls back to Theme Settings → Footer → Outlet Address",
+                "translatable": true,
+                "default": ""
+            },
+            {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "phone",
+                "type": "text",
+                "label": "Phone",
+                "placeholder": "Leave empty to use the footer phone",
+                "default": ""
+            },
+            {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "email",
+                "type": "text",
+                "label": "Email",
+                "placeholder": "e.g. hello@example.com",
+                "default": ""
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "map_url",
+                "type": "link",
+                "label": "Directions Link",
+                "default": { "url": "", "type": "external", "target": "_blank" }
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "note",
+                "type": "textarea",
+                "label": "Note",
+                "placeholder": "e.g. Parking behind the building. Pickup at the side counter.",
+                "translatable": true,
+                "default": ""
+            }
+        ]
+    },
+    "settings": {
+        "elements": [
+            {
+                "ui": { "type": "tabs", "cols": 12, "icon": "tabler-settings" },
+                "elements": [
+                    {
+                        "ui": { "type": "tab", "name": "General", "icon": "tabler-info-circle" },
+                        "name": "General",
+                        "elements": [
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "show_hours",
+                                "type": "switch",
+                                "label": "Show Opening Hours",
+                                "hint": "Read live from Service Windows. Nothing renders until at least one window is authored",
+                                "default": true
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "status",
+                                "type": "select",
+                                "label": "Status",
+                                "options": {
+                                    "items": [
+                                        { "title": "Active", "value": "active" },
+                                        { "title": "Disabled", "value": "disabled" }
+                                    ]
+                                },
+                                "default": "active"
+                            }
+                        ]
+                    },
+                    {
+                        "ui": { "type": "tab", "name": "Styling", "icon": "tabler-palette" },
+                        "name": "Styling",
+                        "elements": [
+                            {
+                                "ui": { "type": "row", "cols": 12 },
+                                "elements": [
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.id",
+                                        "type": "text",
+                                        "label": "Custom CSS ID",
+                                        "placeholder": "e.g. outlet"
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.class",
+                                        "type": "text",
+                                        "label": "Custom CSS Class",
+                                        "placeholder": "e.g. my-outlet"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

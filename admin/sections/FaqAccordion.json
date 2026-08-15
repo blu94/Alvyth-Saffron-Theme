@@ -1,0 +1,139 @@
+{
+    "type": "FAQ_ACCORDION_SECTION",
+    "component": "FaqAccordionSection",
+    "name": "FAQ Accordion",
+    "description": "Delivery areas, allergens, payment — the questions a shop answers twenty times a day.",
+    "ui": {
+        "icon": "tabler-help-circle"
+    },
+    "contents": {
+        "elements": [
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "heading",
+                "type": "text",
+                "label": "Heading",
+                "placeholder": "e.g. Good to know",
+                "translatable": true,
+                "default": "Good to know"
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "subheading",
+                "type": "textarea",
+                "label": "Subheading",
+                "placeholder": "e.g. Anything else, just call us.",
+                "translatable": true,
+                "default": ""
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "items",
+                "type": "repeater",
+                "label": "Questions",
+                "itemLabel": "Question",
+                "columns": [
+                    { "label": "Question", "key": "question" },
+                    { "label": "Status", "key": "status", "type": "status" }
+                ],
+                "dialog": {
+                    "width": 700,
+                    "create": { "title": "Add Question" },
+                    "update": { "title": "Edit Question" }
+                },
+                "elements": [
+                    {
+                        "ui": { "type": "field", "cols": 12 },
+                        "key": "question",
+                        "type": "text",
+                        "label": "Question",
+                        "placeholder": "e.g. How far do you deliver?",
+                        "translatable": true,
+                        "rules": ["required"]
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 12 },
+                        "key": "answer",
+                        "type": "textarea",
+                        "label": "Answer",
+                        "placeholder": "e.g. Within 5 km of the outlet. Enter your address at checkout to check.",
+                        "translatable": true
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 6 },
+                        "key": "open_by_default",
+                        "type": "switch",
+                        "label": "Open By Default",
+                        "default": false
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 6 },
+                        "key": "status",
+                        "type": "select",
+                        "label": "Status",
+                        "options": {
+                            "items": [
+                                { "title": "Active", "value": "active" },
+                                { "title": "Draft", "value": "draft" }
+                            ]
+                        },
+                        "default": "active"
+                    }
+                ]
+            }
+        ]
+    },
+    "settings": {
+        "elements": [
+            {
+                "ui": { "type": "tabs", "cols": 12, "icon": "tabler-settings" },
+                "elements": [
+                    {
+                        "ui": { "type": "tab", "name": "General", "icon": "tabler-info-circle" },
+                        "name": "General",
+                        "elements": [
+                            {
+                                "ui": { "type": "field", "cols": 12 },
+                                "key": "status",
+                                "type": "select",
+                                "label": "Status",
+                                "options": {
+                                    "items": [
+                                        { "title": "Active", "value": "active" },
+                                        { "title": "Disabled", "value": "disabled" }
+                                    ]
+                                },
+                                "default": "active"
+                            }
+                        ]
+                    },
+                    {
+                        "ui": { "type": "tab", "name": "Styling", "icon": "tabler-palette" },
+                        "name": "Styling",
+                        "elements": [
+                            {
+                                "ui": { "type": "row", "cols": 12 },
+                                "elements": [
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.id",
+                                        "type": "text",
+                                        "label": "Custom CSS ID",
+                                        "placeholder": "e.g. faq"
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.class",
+                                        "type": "text",
+                                        "label": "Custom CSS Class",
+                                        "placeholder": "e.g. my-faq"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

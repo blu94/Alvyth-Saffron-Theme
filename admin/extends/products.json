@@ -1,0 +1,76 @@
+{
+  "extends": "products",
+  "owns": ["modifier_groups"],
+  "handler": "Theme\\Backend\\Handlers\\ProductModifierGroups",
+  "tabs": [
+    {
+      "name": "Modifiers",
+      "ui": {
+        "type": "tab",
+        "icon": "tabler-adjustments-alt"
+      },
+      "elements": [
+        {
+          "ui": {
+            "type": "section",
+            "cols": 12,
+            "icon": "tabler-adjustments-alt"
+          },
+          "name": "Questions Asked About This Dish",
+          "subtitle": "Groups are authored once under Modifier Groups and attached here. The dish sheet asks them in the order below.",
+          "elements": [
+            {
+              "ui": { "type": "field", "cols": 12 },
+              "key": "modifier_groups",
+              "type": "repeater",
+              "label": "Modifier Groups",
+              "itemLabel": "Group",
+              "columns": [
+                { "label": "Group", "key": "modifier_group_id" },
+                { "label": "Required", "key": "required_override" }
+              ],
+              "dialog": {
+                "width": 620,
+                "create": {
+                  "title": "Attach A Group",
+                  "subtitle": "Pick a question this dish should ask. Attach the parent dish and every variant inherits it."
+                },
+                "update": { "title": "Edit Attachment" }
+              },
+              "elements": [
+                {
+                  "ui": { "type": "field", "cols": 12 },
+                  "key": "modifier_group_id",
+                  "type": "autocomplete",
+                  "label": "Group",
+                  "placeholder": "Search modifier groups",
+                  "options": {
+                    "url": "/admin/modules/modifier-groups",
+                    "master": "data",
+                    "map": { "title": "title.en", "value": "id" }
+                  },
+                  "rules": ["required", "integer", "exists:modifier_groups,id"]
+                },
+                {
+                  "ui": { "type": "field", "cols": 12 },
+                  "key": "required_override",
+                  "type": "select",
+                  "label": "Required",
+                  "hint": "Inherit uses the group's own minimum selection. Override only where this dish differs.",
+                  "default": "",
+                  "options": [
+                    { "label": "Inherit from group", "value": "" },
+                    { "label": "Required", "value": "1" },
+                    { "label": "Optional", "value": "0" }
+                  ],
+                  "rules": ["nullable"]
+                }
+              ],
+              "rules": ["nullable", "array"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

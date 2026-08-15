@@ -1,0 +1,46 @@
+@use "sass:map";
+
+// Bootstrap 5 standard breakpoints — the layout ships Bootstrap's grid, so the
+// theme's own media queries must agree with it rather than introduce a second scale.
+$grid-breakpoints: (
+  xs: 0,
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  xxl: 1400px
+);
+
+@mixin media-breakpoint-up($name) {
+  $min: map.get($grid-breakpoints, $name);
+  @if $min and $min != 0 {
+    @media (min-width: $min) {
+      @content;
+    }
+  } @else {
+    @content;
+  }
+}
+
+@mixin media-breakpoint-down($name) {
+  $max: map.get($grid-breakpoints, $name);
+  @if $max and $max != 0 {
+    @media (max-width: ($max - 0.02px)) {
+      @content;
+    }
+  } @else {
+    @content;
+  }
+}
+
+@mixin sm { @include media-breakpoint-up(sm) { @content; } }
+@mixin md { @include media-breakpoint-up(md) { @content; } }
+@mixin lg { @include media-breakpoint-up(lg) { @content; } }
+@mixin xl { @include media-breakpoint-up(xl) { @content; } }
+@mixin xxl { @include media-breakpoint-up(xxl) { @content; } }
+
+@mixin sm-down { @include media-breakpoint-down(sm) { @content; } }
+@mixin md-down { @include media-breakpoint-down(md) { @content; } }
+@mixin lg-down { @include media-breakpoint-down(lg) { @content; } }
+@mixin xl-down { @include media-breakpoint-down(xl) { @content; } }
+@mixin xxl-down { @include media-breakpoint-down(xxl) { @content; } }

@@ -1,0 +1,22 @@
+{
+  "name": "Ovynt Saffron Theme",
+  "slug": "saffron",
+  "title": "Ovynt Saffron Theme",
+  "preview": "/preview.png",
+  "schema_paths": {
+    "settings": "admin/settings/index.json",
+    "sections": [
+      "admin/sections/MenuSections.json",
+      "admin/sections/DishGrid.json",
+      "admin/sections/DishSheet.json",
+      "admin/sections/StoreStatus.json",
+      "admin/sections/PromoStrip.json",
+      "admin/sections/OutletInfo.json",
+      "admin/sections/FaqAccordion.json"
+    ]
+  },
+  "modules": [
+    "modifier-groups",
+    "service-windows"
+  ]
+}

@@ -1,0 +1,43 @@
+@use "colors" as *;
+@use "variables" as *;
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: $heading-font-family;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  color: $color-primary;
+}
+
+.saffron-eyebrow {
+  font-family: $body-font-family;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $color-accent-dark;
+}
+
+.saffron-section-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  margin-bottom: 0.5rem;
+}
+
+.saffron-section-lede {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: $color-muted;
+  max-width: 56ch;
+}
+
+// One-line and two-line clamps. A menu with mixed-length descriptions still keeps
+// its card heights aligned.
+.saffron-clamp-1,
+.saffron-clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.saffron-clamp-1 { -webkit-line-clamp: 1; }
+.saffron-clamp-2 { -webkit-line-clamp: 2; }

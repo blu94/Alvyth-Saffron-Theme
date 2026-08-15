@@ -1,0 +1,8 @@
+# Packaging artefact written by scripts/import-theme.ps1 on every full import.
+theme.zip
+
+# Import timestamp used to decide fast-sync vs full import. Machine-local.
+.sync-state
+
+# Playwright MCP browser artifacts (screenshots, traces). Machine-local.
+.playwright-mcp/

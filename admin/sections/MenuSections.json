@@ -1,0 +1,233 @@
+{
+    "type": "MENU_SECTIONS_SECTION",
+    "component": "MenuSectionsSection",
+    "name": "Menu Sections",
+    "description": "The full menu, grouped into sections. Each section is a product category and lists its active dishes.",
+    "ui": {
+        "icon": "tabler-tools-kitchen-2"
+    },
+    "contents": {
+        "elements": [
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "heading",
+                "type": "text",
+                "label": "Heading",
+                "placeholder": "e.g. Our Menu",
+                "hint": "Leave empty to render the menu with no heading",
+                "translatable": true,
+                "default": "Our Menu"
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "subheading",
+                "type": "textarea",
+                "label": "Subheading",
+                "placeholder": "e.g. Cooked to order, every order.",
+                "translatable": true
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "only_slugs",
+                "type": "text",
+                "label": "Limit To These Category Slugs",
+                "placeholder": "e.g. burgers, sides, drinks",
+                "hint": "Comma-separated. Leave empty to show every active product category. Order and visibility are otherwise controlled from Categories.",
+                "default": ""
+            }
+        ]
+    },
+    "settings": {
+        "elements": [
+            {
+                "ui": {
+                    "type": "tabs",
+                    "cols": 12,
+                    "icon": "tabler-settings"
+                },
+                "elements": [
+                    {
+                        "ui": {
+                            "type": "tab",
+                            "name": "General",
+                            "icon": "tabler-info-circle"
+                        },
+                        "name": "General",
+                        "elements": [
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "layout",
+                                "type": "select",
+                                "label": "Dish Layout",
+                                "options": {
+                                    "items": [
+                                        { "title": "Grid", "value": "grid" },
+                                        { "title": "List", "value": "list" }
+                                    ]
+                                },
+                                "default": "grid"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "columns_desktop",
+                                "type": "select",
+                                "label": "Dishes Per Row (Desktop)",
+                                "options": {
+                                    "items": [
+                                        { "title": "2 Columns", "value": "2" },
+                                        { "title": "3 Columns", "value": "3" },
+                                        { "title": "4 Columns", "value": "4" }
+                                    ]
+                                },
+                                "default": "3"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "limit_per_section",
+                                "type": "number",
+                                "label": "Max Dishes Per Section",
+                                "placeholder": "e.g. 24",
+                                "hint": "0 shows every active dish in the section",
+                                "default": 0
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "show_section_nav",
+                                "type": "switch",
+                                "label": "Show Section Jump Links",
+                                "hint": "A row of anchors to each menu section",
+                                "default": true
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "show_section_count",
+                                "type": "switch",
+                                "label": "Show Dish Count Per Section",
+                                "default": false
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "hide_empty_sections",
+                                "type": "switch",
+                                "label": "Hide Empty Sections",
+                                "hint": "A category with no active dishes is skipped",
+                                "default": true
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 12 },
+                                "key": "status",
+                                "type": "select",
+                                "label": "Status",
+                                "options": {
+                                    "items": [
+                                        { "title": "Active", "value": "active" },
+                                        { "title": "Disabled", "value": "disabled" }
+                                    ]
+                                },
+                                "default": "active"
+                            }
+                        ]
+                    },
+                    {
+                        "ui": {
+                            "type": "tab",
+                            "name": "Dish Card",
+                            "icon": "tabler-id"
+                        },
+                        "name": "Dish Card",
+                        "elements": [
+                            {
+                                "ui": { "type": "row", "cols": 12 },
+                                "elements": [
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "image_ratio",
+                                        "type": "select",
+                                        "label": "Image Ratio",
+                                        "options": {
+                                            "items": [
+                                                { "title": "Inherit From Theme Settings", "value": "" },
+                                                { "title": "Square (1:1)", "value": "1/1" },
+                                                { "title": "Landscape (4:3)", "value": "4/3" },
+                                                { "title": "Wide (16:9)", "value": "16/9" },
+                                                { "title": "Portrait (3:4)", "value": "3/4" }
+                                            ]
+                                        },
+                                        "default": ""
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "show_price",
+                                        "type": "switch",
+                                        "label": "Show Price",
+                                        "default": true
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "show_tags",
+                                        "type": "switch",
+                                        "label": "Show Tags As Badges",
+                                        "default": true
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "show_description",
+                                        "type": "switch",
+                                        "label": "Show Short Description",
+                                        "default": true
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "show_add_button",
+                                        "type": "switch",
+                                        "label": "Show Add Button",
+                                        "hint": "Links to the dish page until the dish sheet ships",
+                                        "default": true
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "add_button_label",
+                                        "type": "text",
+                                        "label": "Add Button Label",
+                                        "placeholder": "e.g. Add",
+                                        "translatable": true,
+                                        "default": "Add"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "ui": {
+                            "type": "tab",
+                            "name": "Styling",
+                            "icon": "tabler-palette"
+                        },
+                        "name": "Styling",
+                        "elements": [
+                            {
+                                "ui": { "type": "row", "cols": 12 },
+                                "elements": [
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.id",
+                                        "type": "text",
+                                        "label": "Custom CSS ID",
+                                        "placeholder": "e.g. full-menu"
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.class",
+                                        "type": "text",
+                                        "label": "Custom CSS Class",
+                                        "placeholder": "e.g. my-menu"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

@@ -1,0 +1,142 @@
+{
+  "ui": {
+    "type": "tab",
+    "name": "General",
+    "icon": "tabler-adjustments"
+  },
+  "name": "General",
+  "elements": [
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-palette"
+      },
+      "name": "Global Colors",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 4
+          },
+          "key": "primary",
+          "type": "color",
+          "label": "Primary Color",
+          "hint": "Headings, body text and solid buttons",
+          "default": "#1F1A17"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 4
+          },
+          "key": "secondary",
+          "type": "color",
+          "label": "Secondary Color",
+          "hint": "Muted copy, captions and borders",
+          "default": "#7A6A5A"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 4
+          },
+          "key": "accent",
+          "type": "color",
+          "label": "Accent Color",
+          "hint": "Saffron highlight — price, badges, Add buttons",
+          "default": "#E8A33D"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 4
+          },
+          "key": "surface",
+          "type": "color",
+          "label": "Page Background",
+          "hint": "Warm base the menu sits on",
+          "default": "#FFFDF8"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 4
+          },
+          "key": "cardSurface",
+          "type": "color",
+          "label": "Card Background",
+          "hint": "Dish cards and panels",
+          "default": "#FFFFFF"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 4
+          },
+          "key": "cardRadius",
+          "type": "text",
+          "label": "Card Corner Radius",
+          "placeholder": "e.g. 14px",
+          "hint": "Any CSS length. 0 for square cards",
+          "default": "14px"
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-typography"
+      },
+      "name": "Typography",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "font_family",
+          "type": "text",
+          "label": "Body Font Family",
+          "placeholder": "e.g. Inter, sans-serif",
+          "hint": "CSS font-family stack for body copy. A Google font is fetched automatically",
+          "default": "Inter, sans-serif"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "heading_font_family",
+          "type": "text",
+          "label": "Heading Font Family",
+          "placeholder": "e.g. Fraunces, serif",
+          "hint": "CSS font-family stack for headings. A Google font is fetched automatically",
+          "default": "Fraunces, Georgia, serif"
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-hand-click"
+      },
+      "name": "User Interface",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "go_to_top_enabled",
+          "type": "switch",
+          "label": "Enable Go to Top",
+          "hint": "Show a button to scroll back to the top of the page",
+          "default": true
+        }
+      ]
+    }
+  ]
+}

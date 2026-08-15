@@ -1,0 +1,104 @@
+@use "colors" as *;
+@use "variables" as *;
+
+.saffron-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+  border-radius: $control-radius;
+  padding: 0.7rem 1.4rem;
+  font-family: $body-font-family;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease,
+    transform 0.16s ease;
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+.saffron-btn--accent {
+  background-color: $color-accent;
+  color: $color-black;
+
+  &:hover {
+    background-color: $color-accent-dark;
+    color: $color-white;
+  }
+}
+
+.saffron-btn--dark {
+  background-color: $color-primary;
+  color: $color-white;
+
+  &:hover {
+    background-color: $color-accent-dark;
+  }
+}
+
+.saffron-btn--outline {
+  background-color: transparent;
+  border-color: $color-line;
+  color: $color-primary;
+
+  &:hover {
+    border-color: $color-primary;
+  }
+}
+
+.saffron-btn--sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.saffron-btn--block {
+  width: 100%;
+}
+
+// The circular "+" on a dish card. Small, tappable, and never smaller than 40px so
+// it stays a comfortable target on a phone held one-handed.
+.saffron-btn--icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.saffron-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: $control-radius;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background-color: $color-surface;
+  border: 1px solid $color-line;
+  color: $color-secondary;
+}
+
+.saffron-badge--accent {
+  background-color: $color-accent;
+  border-color: $color-accent;
+  color: $color-black;
+}
+
+.saffron-badge--sold-out {
+  background-color: $color-primary;
+  border-color: $color-primary;
+  color: $color-white;
+}

@@ -1,0 +1,214 @@
+@use "../../../base/colors" as *;
+@use "../../../base/variables" as *;
+@use "../../../mixins/breakpoints" as *;
+
+// The menu search panel. Slides from the top rather than the side: a diner searching a menu
+// is scanning a short list, and a full-height side drawer sized for a fashion catalogue
+// leaves most of itself empty.
+
+.saffron-search {
+  position: fixed;
+  inset: 0;
+  z-index: 1080;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.saffron-search__backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba($hex-black, 0.45);
+}
+
+.saffron-search__panel {
+  position: relative;
+  max-height: 82vh;
+  overflow-y: auto;
+  background-color: $color-card-surface;
+  border-bottom: 1px solid $color-line;
+  box-shadow: $card-shadow-hover;
+  padding: 1.25rem 1rem 1.75rem;
+
+  @include md {
+    padding: 1.75rem 2rem 2.25rem;
+  }
+}
+
+.saffron-search__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.saffron-search__form {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1 1 auto;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid $color-black;
+  color: $color-black;
+}
+
+.saffron-search__input {
+  flex: 1 1 auto;
+  border: 0;
+  background: transparent;
+  font-family: $body-font-family;
+  font-size: 1.05rem;
+  color: $color-black;
+
+  &:focus {
+    outline: none;
+  }
+
+  // Chrome renders a clear button on type=search that collides with the spinner.
+  &::-webkit-search-cancel-button {
+    appearance: none;
+  }
+}
+
+.saffron-search__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid $color-line;
+  border-top-color: $color-accent;
+  border-radius: 50%;
+  animation: saffron-search-spin 0.7s linear infinite;
+}
+
+@keyframes saffron-search-spin {
+  to { transform: rotate(360deg); }
+}
+
+.saffron-search__close {
+  border: 0;
+  background: transparent;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: $color-muted;
+  cursor: pointer;
+
+  &:hover {
+    color: $color-black;
+  }
+}
+
+.saffron-search__body {
+  max-width: 720px;
+  margin: 1.25rem auto 0;
+}
+
+.saffron-search__label {
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $color-muted;
+}
+
+.saffron-search__count {
+  font-weight: 400;
+}
+
+.saffron-search__empty {
+  padding: 1.5rem 0;
+  color: $color-muted;
+}
+
+.saffron-search__result {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.6rem 0.5rem;
+  border-radius: $control-radius;
+  text-decoration: none;
+  color: $color-black;
+
+  &:hover {
+    background-color: $hex-sand-50;
+  }
+}
+
+.saffron-search__thumb {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: $control-radius;
+  overflow: hidden;
+  background-color: $hex-sand-100;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.saffron-search__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.saffron-search__cat {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $color-muted;
+}
+
+.saffron-search__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saffron-search__price {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+
+  s {
+    color: $color-muted;
+  }
+}
+
+.saffron-search__price--now {
+  color: $color-danger;
+  font-weight: 600;
+}
+
+.saffron-search__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.saffron-search__chip {
+  padding: 0.4rem 0.85rem;
+  border: 1px solid $color-line;
+  border-radius: 999px;
+  background-color: $color-white;
+  font-size: 0.85rem;
+  text-decoration: none;
+  color: $color-black;
+
+  &:hover {
+    border-color: $hex-sand-300;
+    background-color: $hex-sand-50;
+  }
+}
+
+// Stops the page scrolling behind an open panel.
+body.saffron-search-open {
+  overflow: hidden;
+}

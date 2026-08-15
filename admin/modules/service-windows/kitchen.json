@@ -1,0 +1,137 @@
+{
+  "ui": {
+    "type": "section",
+    "icon": "tabler-tools-kitchen-3",
+    "class": "pa-5"
+  },
+  "name": "Kitchen Queue",
+  "subtitle": "Every open order, oldest first, with its options spelled out. Reload to refresh.",
+  "elements": [
+    {
+      "ui": { "type": "row", "dense": false },
+      "elements": [
+        {
+          "ui": { "type": "column", "cols": 12, "md": 3 },
+          "elements": [
+            {
+              "ui": { "type": "field" },
+              "type": "display",
+              "key": "count_new",
+              "label": "New"
+            }
+          ]
+        },
+        {
+          "ui": { "type": "column", "cols": 12, "md": 3 },
+          "elements": [
+            {
+              "ui": { "type": "field" },
+              "type": "display",
+              "key": "count_preparing",
+              "label": "Preparing"
+            }
+          ]
+        },
+        {
+          "ui": { "type": "column", "cols": 12, "md": 3 },
+          "elements": [
+            {
+              "ui": { "type": "field" },
+              "type": "display",
+              "key": "count_ready",
+              "label": "Ready"
+            }
+          ]
+        },
+        {
+          "ui": { "type": "column", "cols": 12, "md": 3 },
+          "elements": [
+            {
+              "ui": { "type": "field" },
+              "type": "display",
+              "key": "count_out",
+              "label": "Out For Delivery"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ui": { "type": "divider", "class": "my-4" }
+    },
+    {
+      "ui": { "type": "field" },
+      "type": "display",
+      "key": "oldest",
+      "label": "Longest Waiting"
+    },
+    {
+      "ui": { "type": "field", "cols": 12, "readonly": true },
+      "key": "queue_summary",
+      "type": "textarea",
+      "label": "The Queue",
+      "hint": "One block per order: number, mode, state, minutes waiting, then each line with its options in brackets."
+    },
+    {
+      "ui": { "type": "section", "class": "bg-surface-variant pa-5 rounded-lg mt-2" },
+      "name": "Advance An Order",
+      "subtitle": "Pick the order and the state it has reached. Saving writes both status axes and meta.kitchen_state in one transaction.",
+      "elements": [
+        {
+          "ui": { "type": "row", "dense": true },
+          "elements": [
+            {
+              "ui": { "type": "field", "cols": 12, "md": 7 },
+              "key": "order_id",
+              "type": "select",
+              "label": "Order",
+              "placeholder": "Choose an open order",
+              "options": {
+                "url": "/admin/module/service-windows/options",
+                "master": "open_order"
+              }
+            },
+            {
+              "ui": { "type": "field", "cols": 12, "md": 5 },
+              "key": "to_state",
+              "type": "select",
+              "label": "Move To",
+              "placeholder": "Choose the new state",
+              "options": {
+                "url": "/admin/module/service-windows/options",
+                "master": "kitchen_state"
+              }
+            }
+          ]
+        },
+        {
+          "ui": { "type": "button", "class": "mt-4", "color": "primary", "size": "large" },
+          "type": "button",
+          "action": "save",
+          "label": "Move Order",
+          "icon": "tabler-arrow-right",
+          "color": "primary"
+        }
+      ]
+    },
+    {
+      "ui": { "type": "section", "class": "pa-5 rounded-lg mt-2" },
+      "name": "About This Screen",
+      "elements": [
+        {
+          "ui": { "type": "field", "cols": 12, "class": "text-medium-emphasis" },
+          "type": "display",
+          "key": "screen_notice",
+          "label": "Why it is a list and not a board",
+          "default": "The spec describes this as five columns of draggable cards. The admin's schema engine has no board or card-list field type, and a theme may not ship its own admin Vue components, so the queue is rendered from the field types that exist. The data behind it is already shaped as columns — adding a board display type to the schema engine is the only thing standing between this screen and the intended one. See ISSUES-SAFFRON-THEME.md O15."
+        },
+        {
+          "ui": { "type": "field", "cols": 12, "class": "text-medium-emphasis" },
+          "type": "display",
+          "key": "generated_at",
+          "label": "Data As Of"
+        }
+      ]
+    }
+  ]
+}

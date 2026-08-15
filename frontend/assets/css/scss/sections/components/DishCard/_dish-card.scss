@@ -1,0 +1,178 @@
+@use "../../../base/colors" as *;
+@use "../../../base/variables" as *;
+@use "../../../mixins/breakpoints" as *;
+
+// Per-section image-ratio override. Inline styles are forbidden in Blade, and the ratio
+// choices are a closed enum in the section schema, so a class per option is both
+// sufficient and deterministic — no style attribute, no pushed stylesheet.
+.saffron-ratio-1-1  { --dish-image-ratio: 1 / 1; }
+.saffron-ratio-4-3  { --dish-image-ratio: 4 / 3; }
+.saffron-ratio-16-9 { --dish-image-ratio: 16 / 9; }
+.saffron-ratio-3-4  { --dish-image-ratio: 3 / 4; }
+
+.saffron-dish-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: $color-card-surface;
+  border: 1px solid $color-line;
+  border-radius: $card-radius;
+  overflow: hidden;
+  transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+
+  &:hover {
+    border-color: $hex-sand-300;
+    box-shadow: $card-shadow-hover;
+    transform: translateY(-2px);
+  }
+}
+
+.saffron-dish-card--unavailable {
+  opacity: 0.72;
+
+  &:hover {
+    transform: none;
+  }
+
+  .saffron-dish-card__media {
+    filter: grayscale(0.85);
+  }
+}
+
+// ─── Media ────────────────────────────────────────────────────────────────────
+.saffron-dish-card__media {
+  position: relative;
+  display: block;
+  aspect-ratio: $dish-image-ratio;
+  background-color: $hex-sand-100;
+  overflow: hidden;
+}
+
+.saffron-dish-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+
+  .saffron-dish-card:hover & {
+    transform: scale(1.04);
+  }
+}
+
+.saffron-dish-card__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: $hex-sand-400;
+}
+
+.saffron-dish-card__badges {
+  position: absolute;
+  inset-block-start: 0.6rem;
+  inset-inline-start: 0.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  max-width: calc(100% - 1.2rem);
+}
+
+// ─── Body ─────────────────────────────────────────────────────────────────────
+.saffron-dish-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.saffron-dish-card__title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+
+  a {
+    text-decoration: none;
+    color: $color-primary;
+
+    &:hover {
+      color: $color-accent-dark;
+    }
+  }
+}
+
+.saffron-dish-card__desc {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: $color-muted;
+  margin: 0;
+}
+
+.saffron-dish-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.65rem;
+}
+
+.saffron-dish-card__price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: $color-primary;
+}
+
+.saffron-dish-card__price-from {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: $color-muted;
+}
+
+.saffron-dish-card__price-compare {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: $color-muted;
+  text-decoration: line-through;
+}
+
+.saffron-dish-card__unavailable-note {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $color-danger;
+}
+
+// ─── List layout ──────────────────────────────────────────────────────────────
+// A long menu reads faster as rows. Same markup, different arrangement — the driver
+// only switches a class.
+.saffron-dish-card--list {
+  flex-direction: row;
+  align-items: stretch;
+
+  .saffron-dish-card__media {
+    flex: 0 0 108px;
+    width: 108px;
+    aspect-ratio: 1 / 1;
+
+    @include md {
+      flex-basis: 148px;
+      width: 148px;
+    }
+  }
+
+  .saffron-dish-card__body {
+    padding: 0.85rem 1rem;
+  }
+
+  &:hover {
+    transform: none;
+  }
+}

@@ -1,0 +1,48 @@
+@use "../base/colors" as *;
+@use "../base/variables" as *;
+
+// 404 / 500 / maintenance share one centred shape.
+.saffron-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-block: clamp(3rem, 10vw, 7rem);
+}
+
+.saffron-status__code {
+  font-family: $heading-font-family;
+  font-size: clamp(4rem, 16vw, 8rem);
+  font-weight: 600;
+  line-height: 1;
+  color: $color-accent;
+  margin-bottom: 0.5rem;
+}
+
+.saffron-status__title {
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  margin-bottom: 0.75rem;
+}
+
+.saffron-status__text {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: $color-muted;
+  max-width: 46ch;
+  margin-bottom: 1.75rem;
+}
+
+.saffron-status__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+// The not-found plugin slot renders below the actions. It is plain plugin HTML, so
+// it gets a container and nothing that assumes a structure.
+.saffron-status__slot {
+  width: 100%;
+  margin-top: 2.5rem;
+}

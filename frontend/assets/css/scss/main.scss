@@ -1,0 +1,18 @@
+// Saffron — compiled to ../theme.css by scripts/import-theme.ps1 (npx sass).
+// theme.css is a build output: regenerate it after editing any partial here, because
+// it is what gets packaged into the theme zip.
+
+@use "base/colors";
+@use "base/variables";
+@use "base/reset";
+@use "base/base";
+@use "base/typography";
+@use "base/buttons";
+
+@use "layout/helpers";
+@use "layout/default";
+@use "layout/blank";
+@use "layout/page-status";
+
+@use "sections/components/components";
+@use "sections/general/index";

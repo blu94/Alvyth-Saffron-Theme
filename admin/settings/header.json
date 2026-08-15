@@ -1,0 +1,223 @@
+{
+  "ui": {
+    "type": "tab",
+    "name": "Header",
+    "icon": "tabler-layout-navbar"
+  },
+  "name": "Header",
+  "elements": [
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-bell"
+      },
+      "name": "Announcement Bar",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 4
+          },
+          "key": "announcement_enabled",
+          "type": "switch",
+          "label": "Show Announcement Bar",
+          "hint": "A single strip above the header",
+          "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 8
+          },
+          "key": "announcement_text",
+          "type": "text",
+          "label": "Announcement Text",
+          "placeholder": "e.g. Free delivery on orders over RM40",
+          "translatable": true,
+          "default": "Free delivery on orders over RM40"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "announcementBg",
+          "type": "color",
+          "label": "Announcement Background",
+          "default": "#1F1A17"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "announcementColor",
+          "type": "color",
+          "label": "Announcement Text Colour",
+          "default": "#FFFDF8"
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-photo"
+      },
+      "name": "Branding",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "header_logo",
+          "type": "image",
+          "label": "Logo",
+          "hint": "Falls back to the site title when empty",
+          "dropzoneOptions": {
+            "usage": "THEME_LOGO"
+          }
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "header_logo_height",
+          "type": "text",
+          "label": "Logo Height",
+          "placeholder": "e.g. 40px",
+          "default": "40px"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "headerBg",
+          "type": "color",
+          "label": "Header Background",
+          "default": "#FFFDF8"
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-menu-2"
+      },
+      "name": "Navigation",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "header_links",
+          "type": "repeater",
+          "label": "Header Links",
+          "itemLabel": "Link",
+          "columns": [
+            { "label": "Label", "key": "label" },
+            { "label": "URL", "key": "url" }
+          ],
+          "dialog": {
+            "width": 600,
+            "create": { "title": "Add Header Link" },
+            "update": { "title": "Edit Header Link" }
+          },
+          "elements": [
+            {
+              "ui": {
+                "type": "field",
+                "cols": 12
+              },
+              "key": "label",
+              "type": "text",
+              "label": "Label",
+              "placeholder": "e.g. Menu",
+              "translatable": true,
+              "rules": ["required"]
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 12
+              },
+              "key": "url",
+              "type": "link",
+              "label": "URL",
+              "default": {
+                "url": "",
+                "type": "internal",
+                "target": "_self"
+              }
+            }
+          ]
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "header_show_search",
+          "type": "switch",
+          "label": "Show Search",
+          "hint": "Search the menu from the header",
+          "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "header_show_cart",
+          "type": "switch",
+          "label": "Show Cart",
+          "hint": "Cart count and link",
+          "default": true
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-phone"
+      },
+      "name": "Order Call To Action",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "header_cta_label",
+          "type": "text",
+          "label": "Button Label",
+          "placeholder": "e.g. Order Now",
+          "hint": "Leave empty to hide the button",
+          "translatable": true,
+          "default": "Order Now"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "header_cta_url",
+          "type": "link",
+          "label": "Button URL",
+          "default": {
+            "url": "/menu",
+            "type": "internal",
+            "target": "_self"
+          }
+        }
+      ]
+    }
+  ]
+}

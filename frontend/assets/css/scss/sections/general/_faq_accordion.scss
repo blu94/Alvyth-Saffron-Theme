@@ -1,0 +1,73 @@
+@use "../../base/colors" as *;
+@use "../../base/variables" as *;
+
+.saffron-faq {
+  padding-block: $section-pad-y;
+}
+
+.saffron-faq__head {
+  text-align: center;
+  margin-bottom: 2rem;
+
+  .saffron-section-lede {
+    margin-inline: auto;
+  }
+}
+
+.saffron-faq__list {
+  max-width: 780px;
+  margin-inline: auto;
+  border: 1px solid $color-line;
+  border-radius: $card-radius;
+  background-color: $color-card-surface;
+  overflow: hidden;
+}
+
+.saffron-faq__item {
+  border-bottom: 1px solid $color-line;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &[open] .saffron-faq__chevron {
+    transform: rotate(180deg);
+  }
+}
+
+// A native <details> needs its default marker removed in two ways: the modern
+// ::details-marker and the legacy WebKit pseudo-element.
+.saffron-faq__question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+
+  &::marker,
+  &::-webkit-details-marker {
+    display: none;
+    content: "";
+  }
+
+  &:hover {
+    color: $color-accent-dark;
+  }
+}
+
+.saffron-faq__chevron {
+  flex: 0 0 auto;
+  color: $color-muted;
+  transition: transform 0.18s ease;
+}
+
+.saffron-faq__answer {
+  padding: 0 1.15rem 1.15rem;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: $color-secondary;
+}

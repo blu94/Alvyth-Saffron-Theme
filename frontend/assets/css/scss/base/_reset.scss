@@ -1,0 +1,47 @@
+@use "colors" as *;
+@use "variables" as *;
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  font-family: $body-font-family;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: $color-surface;
+  color: $color-primary;
+  margin: 0;
+  padding: 0;
+}
+
+// Sticky section navigation offsets an anchor jump by the header height, so a
+// menu section does not land underneath the bar the customer just clicked.
+[id] {
+  scroll-margin-top: 6rem;
+}
+
+img {
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+[v-cloak] {
+  display: none !important;
+}
+
+// Zero-inline-CSS compliance: every helper a partial needs lives here, never in a
+// style attribute.
+.pointer-events-none { pointer-events: none !important; }
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.object-fit-cover { object-fit: cover; }

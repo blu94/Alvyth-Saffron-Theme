@@ -1,0 +1,87 @@
+@use "../../base/colors" as *;
+@use "../../base/variables" as *;
+
+.saffron-outlet {
+  padding-block: $section-pad-y;
+}
+
+.saffron-outlet__address {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: $color-secondary;
+  margin-bottom: 0.75rem;
+}
+
+.saffron-outlet__contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+}
+
+.saffron-outlet__contact {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: $color-primary;
+  border-bottom: 1px solid $color-accent;
+
+  &:hover {
+    color: $color-accent-dark;
+  }
+}
+
+.saffron-outlet__note {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: $color-muted;
+}
+
+.saffron-outlet__hours-title {
+  font-family: $body-font-family;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $color-muted;
+  margin-bottom: 0.85rem;
+}
+
+.saffron-outlet__hours {
+  margin: 0;
+  border: 1px solid $color-line;
+  border-radius: $card-radius;
+  overflow: hidden;
+  background-color: $color-card-surface;
+}
+
+.saffron-outlet__hours-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid $color-line;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  dt {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: $color-secondary;
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+}
+
+.saffron-outlet__closed {
+  color: $color-muted;
+}

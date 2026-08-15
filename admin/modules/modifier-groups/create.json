@@ -1,0 +1,36 @@
+{
+  "$ref": "form.json",
+  "sidebar": {
+    "footer": {
+      "elements": [
+        {
+          "ui": { "type": "row", "dense": true },
+          "elements": [
+            {
+              "ui": {
+                "type": "button",
+                "color": "primary",
+                "icon": "tabler-plus",
+                "size": "large"
+              },
+              "action": "save",
+              "label": "Create Group",
+              "redirect": "/module/modifier-groups"
+            },
+            {
+              "ui": {
+                "type": "button",
+                "color": "secondary",
+                "variant": "tonal",
+                "icon": "tabler-arrow-left"
+              },
+              "action": "cancel",
+              "label": "Cancel",
+              "redirect": "/module/modifier-groups"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,54 @@
+@use "../../base/colors" as *;
+@use "../../base/variables" as *;
+
+.saffron-promo {
+  padding-block: $section-pad-y;
+}
+
+.saffron-promo__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  height: 100%;
+  padding: 1.25rem;
+  border: 1px solid $color-line;
+  border-radius: $card-radius;
+  background-color: $color-card-surface;
+  text-decoration: none;
+  color: inherit;
+}
+
+.saffron-promo__card--link {
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+
+  &:hover {
+    border-color: $color-accent;
+    box-shadow: $card-shadow-hover;
+    transform: translateY(-2px);
+  }
+}
+
+.saffron-promo__title {
+  font-size: 1.1875rem;
+  margin: 0;
+}
+
+.saffron-promo__text {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: $color-muted;
+}
+
+.saffron-promo__code {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 0.3rem 0.7rem;
+  border: 1px dashed $color-accent-dark;
+  border-radius: calc(#{$card-radius} - 6px);
+  background-color: rgba($hex-accent, 0.12);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: $color-accent-dark;
+}

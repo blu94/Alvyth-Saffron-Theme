@@ -1,0 +1,256 @@
+{
+    "type": "DISH_GRID_SECTION",
+    "component": "DishGridSection",
+    "name": "Dish Grid",
+    "description": "One curated row of dishes — Most Popular, New This Week, Chef's Picks.",
+    "ui": {
+        "icon": "tabler-bowl-spoon"
+    },
+    "contents": {
+        "elements": [
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "heading",
+                "type": "text",
+                "label": "Heading",
+                "placeholder": "e.g. Most Popular",
+                "translatable": true,
+                "default": "Most Popular"
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "subheading",
+                "type": "textarea",
+                "label": "Subheading",
+                "placeholder": "e.g. What everyone orders twice.",
+                "translatable": true
+            },
+            {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "source",
+                "type": "select",
+                "label": "Pick Dishes By",
+                "hint": "Category and tag are matched on slug",
+                "options": {
+                    "items": [
+                        { "title": "Newest Dishes", "value": "latest" },
+                        { "title": "Category Slug", "value": "category" },
+                        { "title": "Tag Slug", "value": "tag" }
+                    ]
+                },
+                "default": "latest"
+            },
+            {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "source_slug",
+                "type": "text",
+                "label": "Category Or Tag Slug",
+                "placeholder": "e.g. burgers",
+                "hint": "Required when picking by category or tag",
+                "default": ""
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "cta_label",
+                "type": "text",
+                "label": "Footer Link Label",
+                "placeholder": "e.g. See the full menu",
+                "hint": "Leave empty to hide the link",
+                "translatable": true,
+                "default": ""
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "cta_url",
+                "type": "link",
+                "label": "Footer Link URL",
+                "default": {
+                    "url": "/menu",
+                    "type": "internal",
+                    "target": "_self"
+                }
+            }
+        ]
+    },
+    "settings": {
+        "elements": [
+            {
+                "ui": {
+                    "type": "tabs",
+                    "cols": 12,
+                    "icon": "tabler-settings"
+                },
+                "elements": [
+                    {
+                        "ui": {
+                            "type": "tab",
+                            "name": "General",
+                            "icon": "tabler-info-circle"
+                        },
+                        "name": "General",
+                        "elements": [
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "layout",
+                                "type": "select",
+                                "label": "Dish Layout",
+                                "options": {
+                                    "items": [
+                                        { "title": "Grid", "value": "grid" },
+                                        { "title": "List", "value": "list" }
+                                    ]
+                                },
+                                "default": "grid"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "columns_desktop",
+                                "type": "select",
+                                "label": "Dishes Per Row (Desktop)",
+                                "options": {
+                                    "items": [
+                                        { "title": "2 Columns", "value": "2" },
+                                        { "title": "3 Columns", "value": "3" },
+                                        { "title": "4 Columns", "value": "4" }
+                                    ]
+                                },
+                                "default": "4"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "limit",
+                                "type": "number",
+                                "label": "How Many Dishes",
+                                "placeholder": "e.g. 8",
+                                "default": 8
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "align",
+                                "type": "select",
+                                "label": "Heading Alignment",
+                                "options": {
+                                    "items": [
+                                        { "title": "Left", "value": "start" },
+                                        { "title": "Centre", "value": "center" }
+                                    ]
+                                },
+                                "default": "center"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 12 },
+                                "key": "status",
+                                "type": "select",
+                                "label": "Status",
+                                "options": {
+                                    "items": [
+                                        { "title": "Active", "value": "active" },
+                                        { "title": "Disabled", "value": "disabled" }
+                                    ]
+                                },
+                                "default": "active"
+                            }
+                        ]
+                    },
+                    {
+                        "ui": {
+                            "type": "tab",
+                            "name": "Dish Card",
+                            "icon": "tabler-id"
+                        },
+                        "name": "Dish Card",
+                        "elements": [
+                            {
+                                "ui": { "type": "row", "cols": 12 },
+                                "elements": [
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "image_ratio",
+                                        "type": "select",
+                                        "label": "Image Ratio",
+                                        "options": {
+                                            "items": [
+                                                { "title": "Inherit From Theme Settings", "value": "" },
+                                                { "title": "Square (1:1)", "value": "1/1" },
+                                                { "title": "Landscape (4:3)", "value": "4/3" },
+                                                { "title": "Wide (16:9)", "value": "16/9" },
+                                                { "title": "Portrait (3:4)", "value": "3/4" }
+                                            ]
+                                        },
+                                        "default": ""
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "show_price",
+                                        "type": "switch",
+                                        "label": "Show Price",
+                                        "default": true
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "show_tags",
+                                        "type": "switch",
+                                        "label": "Show Tags As Badges",
+                                        "default": true
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "show_description",
+                                        "type": "switch",
+                                        "label": "Show Short Description",
+                                        "default": false
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "show_add_button",
+                                        "type": "switch",
+                                        "label": "Show Add Button",
+                                        "default": true
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "add_button_label",
+                                        "type": "text",
+                                        "label": "Add Button Label",
+                                        "placeholder": "e.g. Add",
+                                        "translatable": true,
+                                        "default": "Add"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "ui": {
+                            "type": "tab",
+                            "name": "Styling",
+                            "icon": "tabler-palette"
+                        },
+                        "name": "Styling",
+                        "elements": [
+                            {
+                                "ui": { "type": "row", "cols": 12 },
+                                "elements": [
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.id",
+                                        "type": "text",
+                                        "label": "Custom CSS ID",
+                                        "placeholder": "e.g. popular-dishes"
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.class",
+                                        "type": "text",
+                                        "label": "Custom CSS Class",
+                                        "placeholder": "e.g. my-dish-row"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

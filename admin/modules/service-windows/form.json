@@ -1,0 +1,296 @@
+{
+  "elements": [
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-clock-hour-9"
+      },
+      "name": "When Are You Open",
+      "subtitle": "Two kinds of entry live here: the hours you keep every week, and the individual dates that differ from them. Pick the kind first — the rest of the form follows it.",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "kind",
+          "type": "select",
+          "label": "Entry Type",
+          "hint": "Weekly hours repeat every week. A holiday or closure applies to one date and overrides the weekly hours for that day.",
+          "options": {
+            "items": [
+              {
+                "title": "Weekly hours",
+                "value": "recurring"
+              },
+              {
+                "title": "Holiday or closure",
+                "value": "exception"
+              }
+            ]
+          },
+          "default": "recurring",
+          "rules": [
+            "required",
+            "in:recurring,exception"
+          ]
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 4,
+            "show_if": "kind,recurring"
+          },
+          "key": "day_of_week",
+          "type": "select",
+          "label": "Day",
+          "options": {
+            "items": [
+              {
+                "title": "Monday",
+                "value": "1"
+              },
+              {
+                "title": "Tuesday",
+                "value": "2"
+              },
+              {
+                "title": "Wednesday",
+                "value": "3"
+              },
+              {
+                "title": "Thursday",
+                "value": "4"
+              },
+              {
+                "title": "Friday",
+                "value": "5"
+              },
+              {
+                "title": "Saturday",
+                "value": "6"
+              },
+              {
+                "title": "Sunday",
+                "value": "0"
+              }
+            ]
+          },
+          "default": "1",
+          "rules": [
+            "required_if:kind,recurring"
+          ]
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 4,
+            "show_if": "kind,exception"
+          },
+          "key": "date",
+          "type": "datetime",
+          "label": "Date",
+          "hint": "The single day this applies to",
+          "rules": [
+            "required_if:kind,exception"
+          ]
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 4,
+            "show_if": "kind,exception"
+          },
+          "key": "exception_type",
+          "type": "select",
+          "label": "What Happens",
+          "options": {
+            "items": [
+              {
+                "title": "Closed all day",
+                "value": "closed"
+              },
+              {
+                "title": "Open (replaces the usual hours)",
+                "value": "open"
+              },
+              {
+                "title": "Custom hours",
+                "value": "custom"
+              }
+            ]
+          },
+          "default": "closed",
+          "rules": [
+            "required_if:kind,exception",
+            "in:closed,open,custom"
+          ]
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 4
+          },
+          "key": "opens_at",
+          "type": "text",
+          "label": "Opens At",
+          "placeholder": "e.g. 11:00",
+          "hint": "24-hour, in the shop's own local time. Cleared on save when a holiday is closed all day.",
+          "rules": [
+            "required_if:kind,recurring"
+          ]
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 4
+          },
+          "key": "closes_at",
+          "type": "text",
+          "label": "Closes At",
+          "placeholder": "e.g. 22:00",
+          "hint": "A span past midnight needs two rows, one per day. Leaving either time empty reads as closed.",
+          "rules": [
+            "required_if:kind,recurring"
+          ]
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12,
+            "show_if": "kind,recurring"
+          },
+          "key": "mode",
+          "type": "select",
+          "label": "Applies To",
+          "hint": "Lunch delivery only, dine-in all day — this is how that is expressed. A holiday applies to every service, so this is fixed for one.",
+          "options": {
+            "items": [
+              {
+                "title": "Delivery and pickup",
+                "value": "both"
+              },
+              {
+                "title": "Delivery only",
+                "value": "delivery"
+              },
+              {
+                "title": "Pickup only",
+                "value": "pickup"
+              }
+            ]
+          },
+          "default": "both",
+          "rules": [
+            "required_if:kind,recurring"
+          ]
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12,
+            "show_if": "kind,exception"
+          },
+          "key": "reason",
+          "type": "text",
+          "label": "Reason",
+          "placeholder": "e.g. Hari Raya — back on Monday",
+          "hint": "Shown to customers on the Store Status banner",
+          "translatable": true,
+          "rules": [
+            "nullable"
+          ]
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-alert-triangle"
+      },
+      "name": "What This Does And Does Not Do",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12,
+            "class": "text-medium-emphasis"
+          },
+          "type": "display",
+          "key": "enforcement_notice",
+          "label": "Enforcement",
+          "default": "These windows are read by the storefront's Store Status banner and Outlet Info hours. They do NOT refuse an order placed outside them — nothing in core checks service hours at checkout, so a direct request can still place an order at 3 a.m. Refusing one is a core change (RESTAURANT-THEME-SPEC.md §14 item 6)."
+        }
+      ]
+    }
+  ],
+  "sidebar": {
+    "elements": [
+      {
+        "ui": {
+          "type": "row",
+          "dense": true
+        },
+        "elements": [
+          {
+            "ui": {
+              "type": "field"
+            },
+            "key": "status",
+            "type": "select",
+            "label": "Status",
+            "default": "active",
+            "options": {
+              "items": [
+                {
+                  "title": "Active",
+                  "value": "active"
+                },
+                {
+                  "title": "Draft",
+                  "value": "draft"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "footer": {
+      "elements": [
+        {
+          "ui": {
+            "type": "row",
+            "dense": true
+          },
+          "elements": [
+            {
+              "ui": {
+                "type": "button",
+                "color": "primary",
+                "icon": "tabler-checkbox",
+                "size": "large"
+              },
+              "action": "save",
+              "label": "Save Changes",
+              "redirect": false
+            },
+            {
+              "ui": {
+                "type": "button",
+                "color": "secondary",
+                "variant": "tonal",
+                "icon": "tabler-arrow-left"
+              },
+              "action": "cancel",
+              "label": "Cancel",
+              "redirect": "/module/service-windows"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

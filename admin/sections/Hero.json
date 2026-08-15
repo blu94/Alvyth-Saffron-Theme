@@ -1,0 +1,215 @@
+{
+  "type": "HERO_SECTION",
+  "component": "HeroSection",
+  "name": "Hero",
+  "description": "The full-width opening banner: image, headline, and a call to action. Multiple slides rotate.",
+  "ui": {
+    "icon": "tabler-photo"
+  },
+  "contents": {
+    "elements": [
+      {
+        "ui": {
+          "type": "field",
+          "cols": 12
+        },
+        "key": "slides",
+        "type": "repeater",
+        "label": "Slides",
+        "itemLabel": "Slide",
+        "columns": [
+          { "label": "Image", "key": "image", "type": "image" },
+          { "label": "Headline", "key": "title" },
+          { "label": "Status", "key": "status", "type": "status" }
+        ],
+        "dialog": {
+          "width": 900,
+          "create": { "title": "Add Slide" },
+          "update": { "title": "Edit Slide" }
+        },
+        "elements": [
+          {
+            "ui": { "type": "field", "cols": 12 },
+            "key": "image",
+            "type": "image",
+            "label": "Background Image",
+            "rules": ["required"]
+          },
+          {
+            "ui": { "type": "field", "cols": 6 },
+            "key": "image_tablet",
+            "type": "image",
+            "label": "Background Image (Tablet)"
+          },
+          {
+            "ui": { "type": "field", "cols": 6 },
+            "key": "image_mobile",
+            "type": "image",
+            "label": "Background Image (Mobile)"
+          },
+          {
+            "ui": { "type": "field", "cols": 8 },
+            "key": "title",
+            "type": "text",
+            "label": "Headline",
+            "placeholder": "e.g. Fire-baked, every morning",
+            "translatable": true
+          },
+          {
+            "ui": { "type": "field", "cols": 4 },
+            "key": "align",
+            "type": "select",
+            "label": "Content Position",
+            "default": "center",
+            "options": {
+              "items": [
+                { "title": "Top Left", "value": "top-left" },
+                { "title": "Top Center", "value": "top-center" },
+                { "title": "Top Right", "value": "top-right" },
+                { "title": "Center Left", "value": "center-left" },
+                { "title": "Center", "value": "center" },
+                { "title": "Center Right", "value": "center-right" },
+                { "title": "Bottom Left", "value": "bottom-left" },
+                { "title": "Bottom Center", "value": "bottom-center" },
+                { "title": "Bottom Right", "value": "bottom-right" }
+              ]
+            }
+          },
+          {
+            "ui": { "type": "field", "cols": 12 },
+            "key": "subtitle",
+            "type": "text",
+            "label": "Sub Headline",
+            "placeholder": "e.g. Order for delivery or pickup",
+            "translatable": true
+          },
+          {
+            "ui": { "type": "field", "cols": 12 },
+            "key": "buttons",
+            "type": "repeater",
+            "label": "Buttons",
+            "itemLabel": "Button",
+            "columns": [
+              { "label": "Text", "key": "text" },
+              { "label": "Status", "key": "status", "type": "status" }
+            ],
+            "dialog": {
+              "width": 600,
+              "create": { "title": "Add Button" },
+              "update": { "title": "Edit Button" }
+            },
+            "elements": [
+              {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "text",
+                "type": "text",
+                "label": "Text",
+                "placeholder": "e.g. Order Now",
+                "translatable": true
+              },
+              {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "link",
+                "type": "link",
+                "label": "Link"
+              },
+              {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "status",
+                "type": "toggle_status",
+                "label": "Status",
+                "default": "active"
+              }
+            ]
+          },
+          {
+            "ui": { "type": "field", "cols": 6 },
+            "key": "status",
+            "type": "toggle_status",
+            "label": "Status",
+            "default": "active"
+          }
+        ]
+      }
+    ]
+  },
+  "settings": {
+    "elements": [
+      {
+        "ui": {
+          "type": "tabs",
+          "cols": 12,
+          "icon": "tabler-settings"
+        },
+        "elements": [
+          {
+            "ui": {
+              "type": "tab",
+              "name": "General",
+              "icon": "tabler-info-circle"
+            },
+            "name": "General",
+            "elements": [
+              {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "height",
+                "type": "select",
+                "label": "Height",
+                "default": "standard",
+                "options": {
+                  "items": [
+                    { "title": "Compact", "value": "compact" },
+                    { "title": "Standard", "value": "standard" },
+                    { "title": "Tall", "value": "tall" }
+                  ]
+                }
+              },
+              {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "status",
+                "type": "select",
+                "label": "Status",
+                "default": "active",
+                "options": {
+                  "items": [
+                    { "title": "Active", "value": "active" },
+                    { "title": "Disabled", "value": "disabled" }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "ui": {
+              "type": "tab",
+              "name": "Styling",
+              "icon": "tabler-palette"
+            },
+            "name": "Styling",
+            "elements": [
+              {
+                "ui": { "type": "row", "cols": 12 },
+                "elements": [
+                  {
+                    "ui": { "type": "field", "cols": 6 },
+                    "key": "data.style.section.id",
+                    "type": "text",
+                    "label": "Custom CSS ID",
+                    "placeholder": "e.g. home-hero"
+                  },
+                  {
+                    "ui": { "type": "field", "cols": 6 },
+                    "key": "data.style.section.class",
+                    "type": "text",
+                    "label": "Custom CSS Class",
+                    "placeholder": "e.g. home-hero"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

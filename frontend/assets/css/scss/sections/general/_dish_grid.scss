@@ -1,0 +1,31 @@
+@use "../../base/colors" as *;
+@use "../../base/variables" as *;
+
+.saffron-dish-grid {
+  padding-block: $section-pad-y;
+}
+
+.saffron-dish-grid__head {
+  margin-bottom: 1.75rem;
+}
+
+.saffron-dish-grid__head--center {
+  text-align: center;
+
+  .saffron-section-lede {
+    margin-inline: auto;
+  }
+}
+
+.saffron-dish-grid__foot {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.saffron-dish-grid__empty {
+  border: 1px dashed $color-line;
+  border-radius: $card-radius;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: $color-muted;
+}

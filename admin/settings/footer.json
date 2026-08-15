@@ -1,0 +1,202 @@
+{
+  "ui": {
+    "type": "tab",
+    "name": "Footer",
+    "icon": "tabler-layout-bottombar"
+  },
+  "name": "Footer",
+  "elements": [
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-map-pin"
+      },
+      "name": "Outlet",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "footer_tagline",
+          "type": "text",
+          "label": "Tagline",
+          "placeholder": "e.g. Slow-cooked, fast-served.",
+          "translatable": true,
+          "default": ""
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "footer_address",
+          "type": "textarea",
+          "label": "Outlet Address",
+          "placeholder": "e.g. 12 Jalan Bukit Bintang, 55100 Kuala Lumpur",
+          "hint": "Shown in the footer. The pickup address used at checkout is a separate operational setting",
+          "translatable": true,
+          "default": ""
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "footer_phone",
+          "type": "text",
+          "label": "Phone",
+          "placeholder": "e.g. +60 3-1234 5678",
+          "default": ""
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "footer_hours",
+          "type": "text",
+          "label": "Opening Hours Summary",
+          "placeholder": "e.g. Daily 11am – 10pm",
+          "hint": "Free text. Enforced service windows are a later phase",
+          "translatable": true,
+          "default": ""
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-link"
+      },
+      "name": "Footer Links",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "footer_links",
+          "type": "repeater",
+          "label": "Links",
+          "itemLabel": "Link",
+          "columns": [
+            { "label": "Label", "key": "label" },
+            { "label": "URL", "key": "url" }
+          ],
+          "dialog": {
+            "width": 600,
+            "create": { "title": "Add Footer Link" },
+            "update": { "title": "Edit Footer Link" }
+          },
+          "elements": [
+            {
+              "ui": {
+                "type": "field",
+                "cols": 12
+              },
+              "key": "label",
+              "type": "text",
+              "label": "Label",
+              "placeholder": "e.g. Delivery Areas",
+              "translatable": true,
+              "rules": ["required"]
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 12
+              },
+              "key": "url",
+              "type": "link",
+              "label": "URL",
+              "default": {
+                "url": "",
+                "type": "internal",
+                "target": "_self"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-share"
+      },
+      "name": "Social Presence",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "footer_socials",
+          "type": "repeater",
+          "label": "Social Channels",
+          "itemLabel": "Social Link",
+          "columns": [
+            { "label": "Icon", "key": "icon" },
+            { "label": "URL", "key": "url" }
+          ],
+          "dialog": {
+            "width": 600,
+            "create": { "title": "Add Social Channel" },
+            "update": { "title": "Edit Social Channel" }
+          },
+          "elements": [
+            {
+              "ui": {
+                "type": "field",
+                "cols": 12
+              },
+              "key": "icon",
+              "type": "icon",
+              "label": "Icon",
+              "default": "tabler-brand-instagram"
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 12
+              },
+              "key": "url",
+              "type": "link",
+              "label": "Link URL",
+              "default": {
+                "url": "",
+                "type": "external",
+                "target": "_blank"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-copyright"
+      },
+      "name": "Legals",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "footer_copyright",
+          "type": "text",
+          "label": "Copyright Text",
+          "translatable": true,
+          "default": "© 2026 Ovynt. All rights reserved."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,161 @@
+{
+    "type": "PROMO_STRIP_SECTION",
+    "component": "PromoStripSection",
+    "name": "Promo Strip",
+    "description": "A row of promo tiles advertising discount codes, bundles or a delivery threshold.",
+    "ui": {
+        "icon": "tabler-discount-2"
+    },
+    "contents": {
+        "elements": [
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "heading",
+                "type": "text",
+                "label": "Heading",
+                "placeholder": "e.g. Deals on now",
+                "translatable": true,
+                "default": ""
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "items",
+                "type": "repeater",
+                "label": "Promos",
+                "itemLabel": "Promo",
+                "columns": [
+                    { "label": "Title", "key": "title" },
+                    { "label": "Code", "key": "code" },
+                    { "label": "Status", "key": "status", "type": "status" }
+                ],
+                "dialog": {
+                    "width": 700,
+                    "create": { "title": "Add Promo", "subtitle": "The code itself is a Discount record — this only advertises it." },
+                    "update": { "title": "Edit Promo" }
+                },
+                "elements": [
+                    {
+                        "ui": { "type": "field", "cols": 12 },
+                        "key": "eyebrow",
+                        "type": "text",
+                        "label": "Eyebrow",
+                        "placeholder": "e.g. This week only",
+                        "translatable": true
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 12 },
+                        "key": "title",
+                        "type": "text",
+                        "label": "Title",
+                        "placeholder": "e.g. 20% off your first order",
+                        "translatable": true,
+                        "rules": ["required"]
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 12 },
+                        "key": "text",
+                        "type": "textarea",
+                        "label": "Text",
+                        "placeholder": "e.g. Minimum spend RM30. Delivery only.",
+                        "translatable": true
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 6 },
+                        "key": "code",
+                        "type": "text",
+                        "label": "Discount Code",
+                        "placeholder": "e.g. FIRST20",
+                        "hint": "Must match an active Discount record. This field only displays it"
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 6 },
+                        "key": "status",
+                        "type": "select",
+                        "label": "Status",
+                        "options": {
+                            "items": [
+                                { "title": "Active", "value": "active" },
+                                { "title": "Draft", "value": "draft" }
+                            ]
+                        },
+                        "default": "active"
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 12 },
+                        "key": "link",
+                        "type": "link",
+                        "label": "Link URL (Optional)",
+                        "default": { "url": "", "type": "internal", "target": "_self" }
+                    }
+                ]
+            }
+        ]
+    },
+    "settings": {
+        "elements": [
+            {
+                "ui": { "type": "tabs", "cols": 12, "icon": "tabler-settings" },
+                "elements": [
+                    {
+                        "ui": { "type": "tab", "name": "General", "icon": "tabler-info-circle" },
+                        "name": "General",
+                        "elements": [
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "columns",
+                                "type": "select",
+                                "label": "Tiles Per Row (Desktop)",
+                                "options": {
+                                    "items": [
+                                        { "title": "2", "value": "2" },
+                                        { "title": "3", "value": "3" },
+                                        { "title": "4", "value": "4" }
+                                    ]
+                                },
+                                "default": "3"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "status",
+                                "type": "select",
+                                "label": "Status",
+                                "options": {
+                                    "items": [
+                                        { "title": "Active", "value": "active" },
+                                        { "title": "Disabled", "value": "disabled" }
+                                    ]
+                                },
+                                "default": "active"
+                            }
+                        ]
+                    },
+                    {
+                        "ui": { "type": "tab", "name": "Styling", "icon": "tabler-palette" },
+                        "name": "Styling",
+                        "elements": [
+                            {
+                                "ui": { "type": "row", "cols": 12 },
+                                "elements": [
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.id",
+                                        "type": "text",
+                                        "label": "Custom CSS ID",
+                                        "placeholder": "e.g. promos"
+                                    },
+                                    {
+                                        "ui": { "type": "field", "cols": 6 },
+                                        "key": "data.style.section.class",
+                                        "type": "text",
+                                        "label": "Custom CSS Class",
+                                        "placeholder": "e.g. my-promos"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

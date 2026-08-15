@@ -1,0 +1,77 @@
+// ─── SCSS Primitive Colors (No var() wrapping) ──────────────────────────────────
+// Saffron's palette is warm: an espresso ink, a taupe mid-tone, and a saffron
+// accent that carries price, badges and every call to action.
+$hex-black:        #1F1A17;
+$hex-white:        #ffffff;
+$hex-primary:      #1F1A17;
+$hex-secondary:    #7A6A5A;
+$hex-accent:       #E8A33D;
+$hex-accent-dark:  #C9862A;
+$hex-surface:      #FFFDF8;
+$hex-card:         #FFFFFF;
+$hex-danger:       #C0362C;
+$hex-success:      #2F7D53;
+$hex-warning:      #D98A15;
+
+$hex-sand-50:      #FBF7F0;
+$hex-sand-100:     #F5EEE3;
+$hex-sand-200:     #EADFCE;
+$hex-sand-300:     #D9C9B2;
+$hex-sand-400:     #B7A48A;
+$hex-sand-500:     #8E7B63;
+$hex-sand-600:     #6B5B47;
+$hex-sand-700:     #4C4034;
+$hex-sand-800:     #332B23;
+$hex-sand-900:     #211B16;
+
+// ─── Global Color Tokens ──────────────────────────────────────────────────────────
+// Runtime overrides arrive from admin-saved theme settings via
+// partials/layout/dynamic-styles.blade.php, which writes the same custom property
+// names onto :root. Anything declared here is the compiled-in fallback.
+:root {
+  --color-primary:      #{$hex-primary};
+  --color-secondary:    #{$hex-secondary};
+  --color-accent:       #{$hex-accent};
+  --color-accent-dark:  #{$hex-accent-dark};
+
+  --color-black:        #{$hex-black};
+  --color-white:        #{$hex-white};
+  --color-surface:      #{$hex-surface};
+  --color-card-surface: #{$hex-card};
+  --color-line:         #{$hex-sand-200};
+  --color-muted:        #{$hex-sand-500};
+
+  --color-danger:       #{$hex-danger};
+  --color-success:      #{$hex-success};
+  --color-warning:      #{$hex-warning};
+
+  --announcement-bg:    #{$hex-black};
+  --announcement-color: #{$hex-surface};
+  --header-bg:          #{$hex-surface};
+  --header-border:      #{$hex-sand-200};
+  --footer-bg:          #{$hex-sand-900};
+  --footer-color:       #{$hex-sand-100};
+}
+
+// ─── SCSS Color Aliases (resolve to CSS vars so runtime overrides inherit) ────────
+$color-black:         var(--color-black);
+$color-white:         var(--color-white);
+$color-surface:       var(--color-surface);
+$color-card-surface:  var(--color-card-surface);
+$color-line:          var(--color-line);
+$color-muted:         var(--color-muted);
+$color-primary:       var(--color-primary);
+$color-secondary:     var(--color-secondary);
+$color-accent:        var(--color-accent);
+$color-accent-dark:   var(--color-accent-dark);
+
+$color-danger:        var(--color-danger);
+$color-success:       var(--color-success);
+$color-warning:       var(--color-warning);
+
+$announcement-bg:     var(--announcement-bg);
+$announcement-color:  var(--announcement-color);
+$header-bg:           var(--header-bg);
+$header-border:       var(--header-border);
+$footer-bg:           var(--footer-bg);
+$footer-color:        var(--footer-color);

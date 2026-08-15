@@ -1,0 +1,33 @@
+@use "colors" as *;
+@use "variables" as *;
+
+// Focus is never removed, only restyled — a keyboard customer must be able to see
+// where they are in a menu that is mostly links and Add buttons.
+:focus-visible {
+  outline: 2px solid $color-accent;
+  outline-offset: 2px;
+}
+
+.saffron-surface {
+  background-color: $color-surface;
+}
+
+.saffron-card-surface {
+  background-color: $color-card-surface;
+}
+
+.saffron-hairline {
+  border-color: $color-line !important;
+}
+
+.saffron-muted {
+  color: $color-muted;
+}
+
+.saffron-accent {
+  color: $color-accent;
+}
+
+.saffron-section {
+  padding-block: $section-pad-y;
+}
