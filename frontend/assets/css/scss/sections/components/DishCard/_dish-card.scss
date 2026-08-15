@@ -115,7 +115,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  // Wrap, because the card is overflow:hidden. On a 156px-wide phone card a "from RM66.42"
+  // price (114px) plus the 60px Add button did not fit a 122px footer, and the button
+  // was clipped clean off — an unclickable Add on every dish with a from-price.
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
   margin-top: auto;
   padding-top: 0.65rem;
 }

@@ -61,6 +61,11 @@
 .saffron-btn--sm {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
+  // 32px tall by default; a finger needs ~40. Grown on coarse pointers only, so the
+  // desktop density the size exists for is untouched.
+  @media (pointer: coarse) {
+    min-height: 40px;
+  }
 }
 
 .saffron-btn--block {

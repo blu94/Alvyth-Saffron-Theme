@@ -205,6 +205,11 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
 }
+@media (pointer: coarse) {
+  .saffron-btn--sm {
+    min-height: 40px;
+  }
+}
 
 .saffron-btn--block {
   width: 100%;
@@ -502,8 +507,10 @@ h1, h2, h3, h4, h5, h6 {
   transform: none;
   margin-inline: auto;
 }
-.saffron-header__nav--center:has(.saffron-header__item--mega) ~ .saffron-header__actions {
-  margin-inline-start: 0;
+@media (min-width: 992px) {
+  .saffron-header__nav--center:has(.saffron-header__item--mega) ~ .saffron-header__actions {
+    margin-inline-start: 0;
+  }
 }
 
 .saffron-header__mega {
@@ -763,6 +770,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 .saffron-footer__link:hover {
   color: var(--color-accent);
+}
+@media (pointer: coarse) {
+  .saffron-footer__link {
+    padding: 0.55rem 0;
+  }
 }
 
 .saffron-footer__socials {
@@ -1179,7 +1191,8 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
   margin-top: auto;
   padding-top: 0.65rem;
 }

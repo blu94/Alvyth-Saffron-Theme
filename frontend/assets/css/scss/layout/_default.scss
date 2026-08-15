@@ -254,7 +254,12 @@
   transform: none;
   margin-inline: auto;
 
-  ~ .saffron-header__actions { margin-inline-start: 0; }
+  // Desktop only. The nav is display:none below lg but still in the DOM, so an
+  // unscoped sibling rule fired on phones too and removed the auto margin that pushes
+  // the icon cluster to the right edge — leaving a 70px hole after the hamburger.
+  @include lg {
+    ~ .saffron-header__actions { margin-inline-start: 0; }
+  }
 }
 
 .saffron-header__mega {
@@ -521,6 +526,12 @@
 
   &:hover {
     color: $color-accent;
+  }
+
+  // 31px rows on a phone are a mis-tap waiting to happen; pad them to a finger's height
+  // on coarse pointers and leave the tighter desktop rhythm alone.
+  @media (pointer: coarse) {
+    padding: 0.55rem 0;
   }
 }
 
