@@ -377,6 +377,79 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-primary);
 }
 
+.saffron-header__item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.saffron-header__caret {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-secondary);
+  cursor: pointer;
+  transition: transform 0.16s ease, color 0.16s ease;
+}
+.saffron-header__caret:hover {
+  color: var(--color-primary);
+}
+
+.saffron-header__dropdown {
+  position: absolute;
+  top: calc(100% + 0.65rem);
+  left: 50%;
+  min-width: 190px;
+  padding: 0.5rem 0;
+  border: 1px solid var(--color-line);
+  border-radius: calc(var(--card-radius) - 4px);
+  background-color: var(--color-card-surface);
+  box-shadow: var(--card-shadow-hover);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-6px);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s linear 0.16s;
+  z-index: 40;
+}
+.saffron-header__dropdown::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -0.75rem;
+  height: 0.75rem;
+}
+
+.saffron-header__dropdown-link {
+  display: block;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.16s ease, background-color 0.16s ease;
+}
+.saffron-header__dropdown-link:hover, .saffron-header__dropdown-link[aria-current=page] {
+  color: var(--color-primary);
+  background-color: rgba(232, 163, 61, 0.08);
+}
+
+.saffron-header__item--has-dropdown:hover > .saffron-header__caret, .saffron-header__item--has-dropdown:focus-within > .saffron-header__caret, .saffron-header__item--has-dropdown.is-open > .saffron-header__caret {
+  transform: rotate(180deg);
+}
+.saffron-header__item--has-dropdown:hover > .saffron-header__dropdown, .saffron-header__item--has-dropdown:focus-within > .saffron-header__dropdown, .saffron-header__item--has-dropdown.is-open > .saffron-header__dropdown {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s;
+}
+
 .saffron-header__actions {
   display: flex;
   align-items: center;
@@ -456,6 +529,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 .saffron-mobile-nav__link:last-of-type {
   border-bottom: 0;
+}
+
+.saffron-mobile-nav__link--child {
+  padding-left: 1.1rem;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: var(--color-secondary);
 }
 
 .saffron-footer {

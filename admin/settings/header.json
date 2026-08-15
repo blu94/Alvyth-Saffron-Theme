@@ -120,6 +120,17 @@
           "type": "repeater",
           "label": "Header Links",
           "itemLabel": "Link",
+          "recursive": {
+            "enabled": true,
+            "key": "children",
+            "label": "Dropdown Links",
+            "maxDepth": 2,
+            "dialog": {
+              "width": 600,
+              "create": { "title": "Add Dropdown Link" },
+              "update": { "title": "Edit Dropdown Link" }
+            }
+          },
           "default": [
             { "label": { "en": "Home" }, "url": { "url": "/", "type": "internal", "target": "_self" } },
             { "label": { "en": "Menu" }, "url": { "url": "/collections", "type": "internal", "target": "_self" } },

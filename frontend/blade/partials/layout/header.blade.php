@@ -33,8 +33,23 @@
     }
     $logoUrl = $logoPath ? (Str::startsWith($logoPath, ['/', 'http']) ? $logoPath : '/storage/' . ltrim($logoPath, '/')) : '';
 
+    // Two levels: a top link and its dropdown. The repeater is `recursive` in the schema
+    // (the same core BuilderRepeater mechanism Ella's mega menu uses), so each item may
+    // carry `children` — resolved here once so the markup never touches the raw bag.
+    $resolveLink = function (array $l) use ($t, $linkUrl) {
+        return ['label' => $t($l['label'] ?? ''), 'url' => $linkUrl($l['url'] ?? '')];
+    };
+
     $headerLinks = collect($settings['header_links'] ?? [])
-        ->map(fn ($l) => ['label' => $t($l['label'] ?? ''), 'url' => $linkUrl($l['url'] ?? '')])
+        ->map(function ($l) use ($resolveLink) {
+            $item = $resolveLink($l);
+            $item['children'] = collect($l['children'] ?? [])
+                ->map($resolveLink)
+                ->filter(fn ($c) => $c['label'] !== '')
+                ->values()
+                ->all();
+            return $item;
+        })
         ->filter(fn ($l) => $l['label'] !== '')
         ->values();
 
@@ -68,8 +83,33 @@
             @if($headerLinks->isNotEmpty())
                 <nav class="saffron-header__nav @if($navCentered) saffron-header__nav--center @endif" aria-label="{{ __('Primary') }}">
                     @foreach($headerLinks as $link)
-                        <a href="{{ $link['url'] ?: '#' }}" class="saffron-header__link"
-                           @if($link['url'] === $currentPath) aria-current="page" @endif>{{ $link['label'] }}</a>
+                        @if(empty($link['children']))
+                            <a href="{{ $link['url'] ?: '#' }}" class="saffron-header__link"
+                               @if($link['url'] === $currentPath) aria-current="page" @endif>{{ $link['label'] }}</a>
+                        @else
+                            {{-- Opens on hover AND on :focus-within, so the keyboard reaches
+                                 every child; the caret is a real button so a touch device —
+                                 which has no hover — has something to tap that is not the
+                                 parent link itself. --}}
+                            <div class="saffron-header__item saffron-header__item--has-dropdown">
+                                <a href="{{ $link['url'] ?: '#' }}" class="saffron-header__link"
+                                   @if($link['url'] === $currentPath) aria-current="page" @endif>{{ $link['label'] }}</a>
+                                <button type="button" class="saffron-header__caret" aria-expanded="false"
+                                        aria-label="{{ __('Show :section links', ['section' => $link['label']]) }}"
+                                        data-dropdown-toggle>
+                                    <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.4"
+                                         fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M6 9l6 6 6-6"/>
+                                    </svg>
+                                </button>
+                                <div class="saffron-header__dropdown">
+                                    @foreach($link['children'] as $child)
+                                        <a href="{{ $child['url'] ?: '#' }}" class="saffron-header__dropdown-link"
+                                           @if($child['url'] === $currentPath) aria-current="page" @endif>{{ $child['label'] }}</a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     @endforeach
                 </nav>
             @endif
@@ -132,6 +172,12 @@
                  aria-label="{{ __('Primary mobile') }}">
                 @foreach($headerLinks as $link)
                     <a href="{{ $link['url'] ?: '#' }}" class="saffron-mobile-nav__link">{{ $link['label'] }}</a>
+                    {{-- Children listed inline and indented, not behind a second tap: the
+                         drawer already IS the expanded state, and a restaurant's nav is
+                         short enough that a nested accordion would only hide things. --}}
+                    @foreach($link['children'] as $child)
+                        <a href="{{ $child['url'] ?: '#' }}" class="saffron-mobile-nav__link saffron-mobile-nav__link--child">{{ $child['label'] }}</a>
+                    @endforeach
                 @endforeach
                 @if($ctaLabel !== '')
                     <a href="{{ $ctaUrl }}" class="saffron-btn saffron-btn--accent saffron-btn--block mt-3">{{ $ctaLabel }}</a>
@@ -176,6 +222,39 @@
             return { mobileOpen, cartCount };
         },
     }).mount('#saffron-header');
+
+    // Dropdown toggles for pointers that cannot hover. Hover and keyboard focus open the
+    // panel in CSS alone; this only handles the caret tap, closes on outside tap / Escape,
+    // and keeps aria-expanded honest for screen readers. Delegated at the header rather
+    // than bound per caret so it costs one listener however many menus there are.
+    const header = document.getElementById('saffron-header');
+    if (!header) return;
+
+    const closeAll = () => {
+        header.querySelectorAll('.saffron-header__item.is-open').forEach((item) => {
+            item.classList.remove('is-open');
+            const caret = item.querySelector('[data-dropdown-toggle]');
+            if (caret) caret.setAttribute('aria-expanded', 'false');
+        });
+    };
+
+    header.addEventListener('click', (e) => {
+        const caret = e.target.closest('[data-dropdown-toggle]');
+        if (!caret) return;
+        e.preventDefault();
+        const item   = caret.closest('.saffron-header__item');
+        const opening = !item.classList.contains('is-open');
+        closeAll();
+        if (opening) {
+            item.classList.add('is-open');
+            caret.setAttribute('aria-expanded', 'true');
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.saffron-header__item--has-dropdown')) closeAll();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
 })();
 </script>
 
