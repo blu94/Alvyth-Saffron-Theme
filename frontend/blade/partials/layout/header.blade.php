@@ -3,7 +3,12 @@
     // $locale and $settings are absent there. Resolving the locale through `??` keeps this
     // partial from raising an undefined-variable warning — which HandleExceptions promotes
     // to an ErrorException, turning a missing 404 page into a 500.
-    $loc = $locale ?? app()->getLocale();
+    //
+    // $settings needs the same default: every `$settings['key'] ?? …` read below is
+    // null-safe on its own, but the BARE variable handed to SearchDrawer is not — it was
+    // the one read that still turned the degraded path into a 500.
+    $loc      = $locale ?? app()->getLocale();
+    $settings = $settings ?? [];
 
     $t = function ($value) use ($loc) {
         if (is_array($value)) return $value[$loc] ?? $value['en'] ?? (count($value) ? current($value) : '');

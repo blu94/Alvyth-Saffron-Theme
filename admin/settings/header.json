@@ -120,6 +120,11 @@
           "type": "repeater",
           "label": "Header Links",
           "itemLabel": "Link",
+          "default": [
+            { "label": { "en": "Home" }, "url": { "url": "/", "type": "internal", "target": "_self" } },
+            { "label": { "en": "Menu" }, "url": { "url": "/collections", "type": "internal", "target": "_self" } },
+            { "label": { "en": "Blog" }, "url": { "url": "/blogs", "type": "internal", "target": "_self" } }
+          ],
           "columns": [
             { "label": "Label", "key": "label" },
             { "label": "URL", "key": "url" }

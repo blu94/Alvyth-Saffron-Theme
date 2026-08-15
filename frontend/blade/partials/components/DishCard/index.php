@@ -3,6 +3,7 @@
 namespace Theme\Components;
 
 use App\Repositories\Setting\Application\ApplicationInterface;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 
@@ -112,10 +113,15 @@ class DishCard
             $isAvailable = ($dish->status ?? 'active') === 'active' && $sellableVariants->isNotEmpty();
         }
 
-        // Only a dish with no variants can be added straight from the card. Anything with
-        // sizes has a choice to make first, and the dish sheet that collects it is phase 2 —
-        // so those cards link through to the dish page instead of guessing a variant.
-        $canQuickAdd = $isAvailable && $dish->variants->where('status', 'active')->isEmpty();
+        // Only a dish the customer has nothing to decide about can be added straight from
+        // the card. Two kinds of decision exist: a size (variants) and a required modifier
+        // group ("Choose your side", min_select >= 1 or a per-dish override). The first
+        // version checked only variants, so a dish with a compulsory group was quick-added
+        // with an empty options bag and the kitchen received an order with no answers —
+        // checkout does not refuse it (§14 item 4 is core-blocked), so the card is the gate.
+        $canQuickAdd = $isAvailable
+            && $dish->variants->where('status', 'active')->isEmpty()
+            && ! $this->hasRequiredModifierGroup($dish->id);
 
         $uid = 'dish-card-' . $dish->id . '-' . Str::random(6);
 
@@ -162,6 +168,48 @@ class DishCard
             'locale'           => $locale,
             'data'             => $data,
         ])->render();
+    }
+
+    /**
+     * Every dish id with at least one effective-required modifier group, resolved once per
+     * request whatever the card count — this class promises a menu of sixty dishes stays at
+     * a fixed query count, and an exists() per card would quietly break that.
+     *
+     * "Effective" honours the per-dish pivot override the same way the dish sheet does:
+     * an override of true requires the group regardless of min_select; null defers to the
+     * group's own min_select >= 1 (ModifierGroup::isRequired()).
+     *
+     * @var array<int, true>|null
+     */
+    protected static ?array $requiredGroupDishIds = null;
+
+    protected function hasRequiredModifierGroup(int $dishId): bool
+    {
+        if (static::$requiredGroupDishIds === null) {
+            // Same degrade as DishSheet::resolveGroups(): the tables ship with this theme's
+            // migrations, and a storefront rendering before they run must lose quick-add
+            // gating, not the whole menu.
+            try {
+                static::$requiredGroupDishIds = DB::table('dish_modifier_group')
+                    ->join('modifier_groups', 'modifier_groups.id', '=', 'dish_modifier_group.modifier_group_id')
+                    ->where('modifier_groups.status', 'active')
+                    ->where(function ($query) {
+                        $query->where('dish_modifier_group.required_override', true)
+                            ->orWhere(function ($q) {
+                                $q->whereNull('dish_modifier_group.required_override')
+                                  ->where('modifier_groups.min_select', '>=', 1);
+                            });
+                    })
+                    ->pluck('dish_modifier_group.product_id')
+                    ->flip()
+                    ->all();
+            } catch (\Throwable $e) {
+                report($e);
+                static::$requiredGroupDishIds = [];
+            }
+        }
+
+        return isset(static::$requiredGroupDishIds[$dishId]);
     }
 
     /**

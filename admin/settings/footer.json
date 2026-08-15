@@ -82,6 +82,12 @@
           "type": "repeater",
           "label": "Links",
           "itemLabel": "Link",
+          "default": [
+            { "label": { "en": "Menu" }, "url": { "url": "/collections", "type": "internal", "target": "_self" } },
+            { "label": { "en": "Blog" }, "url": { "url": "/blogs", "type": "internal", "target": "_self" } },
+            { "label": { "en": "My Account" }, "url": { "url": "/profile", "type": "internal", "target": "_self" } },
+            { "label": { "en": "Cart" }, "url": { "url": "/cart", "type": "internal", "target": "_self" } }
+          ],
           "columns": [
             { "label": "Label", "key": "label" },
             { "label": "URL", "key": "url" }

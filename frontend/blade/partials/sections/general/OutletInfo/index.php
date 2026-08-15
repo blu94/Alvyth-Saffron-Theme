@@ -24,7 +24,11 @@ class OutletInfo
 
         if ($showHours) {
             try {
+                // Recurring rows only. Exceptions share the table (kind = exception) with
+                // day_of_week normalised to null — and Collection::where() compares loosely,
+                // so null == 0 made every dated holiday render as a permanent Sunday row.
                 $windows = ServiceWindow::where('status', 'active')
+                    ->recurring()
                     ->whereNull('scope_id')
                     ->orderBy('day_of_week')
                     ->orderBy('opens_at')

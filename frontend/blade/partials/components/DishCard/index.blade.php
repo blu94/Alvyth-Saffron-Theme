@@ -97,11 +97,12 @@
                     return;
                 }
 
-                // No options bag: a dish reaching this branch has no variants, and modifier
-                // groups do not exist until phase 3. When they do, build the options object
-                // in a stable key order — the client dedups cart lines on
-                // JSON.stringify(options) while the server ksorts before hashing, so an
-                // inconsistent key order shows two lines where the server sees one.
+                // No options bag, and that is now a guarantee rather than an assumption:
+                // the driver refuses quick-add to any dish with variants OR a required
+                // modifier group, so a dish reaching this branch genuinely has nothing to
+                // answer. If options are ever added here, build the object in a stable key
+                // order — the client dedups cart lines on JSON.stringify(options) while the
+                // server ksorts before hashing.
                 window.OvyntStore.addToCart(payload.dish, 1, {});
                 added.value = true;
                 window.setTimeout(() => { added.value = false; }, 1600);

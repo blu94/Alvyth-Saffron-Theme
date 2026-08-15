@@ -48,11 +48,19 @@
                                 <span class="saffron-dish-sheet__req">{{ __('Required') }}</span>
                             </legend>
                             <div class="saffron-dish-sheet__options">
+                                {{-- A sold-out size stays visible but cannot be picked — the driver
+                                     computes v.available for exactly this, and rendering it live
+                                     let a customer choose the Large that ran out and only find out
+                                     at cart validation. --}}
                                 <label v-for="v in variants" :key="v.id" class="saffron-choice"
-                                       :class="{ 'is-selected': selectedVariant === v.id }">
-                                    <input type="radio" name="{{ $uid }}-size" :value="v.id" v-model="selectedVariant">
+                                       :class="{ 'is-selected': selectedVariant === v.id, 'is-disabled': !v.available }">
+                                    <input type="radio" name="{{ $uid }}-size" :value="v.id" v-model="selectedVariant"
+                                           :disabled="!v.available">
                                     <span class="saffron-choice__label">@{{ v.label }}</span>
-                                    <span class="saffron-choice__price">@{{ money(v.price) }}</span>
+                                    <span class="saffron-choice__price">
+                                        <template v-if="v.available">@{{ money(v.price) }}</template>
+                                        <template v-else>{{ $soldOutLabel }}</template>
+                                    </span>
                                 </label>
                             </div>
                         </fieldset>
@@ -63,7 +71,7 @@
                             @{{ group.title }}
                             <span class="saffron-dish-sheet__req" v-if="group.required">{{ __('Required') }}</span>
                             <span class="saffron-dish-sheet__hint" v-else-if="group.max_select">
-                                @{{ 'Choose up to ' + group.max_select }}
+                                @{{ upToLabel(group.max_select) }}
                             </span>
                             <span class="saffron-dish-sheet__hint" v-else>{{ __('Optional') }}</span>
                         </legend>
@@ -142,7 +150,11 @@
             const groups   = ref(payload.groups);
             const maxQty   = payload.maxQty;
 
-            const selectedVariant = ref(variants.value.length ? variants.value[0].id : null);
+            // Preselect the first size that can actually be bought — preselecting a sold-out
+            // one would greet the customer with a disabled default.
+            const firstAvailable  = variants.value.find(v => v.available);
+            const selectedVariant = ref(firstAvailable ? firstAvailable.id
+                : (variants.value.length ? variants.value[0].id : null));
             const quantity        = ref(1);
             const notes           = ref('');
             const added           = ref(false);
@@ -185,6 +197,11 @@
                 });
                 return Math.max(0, unit) * quantity.value;
             });
+
+            // The driver ships this translated with a :n placeholder; interpolating here
+            // rather than concatenating keeps the word order right in every locale — the
+            // template used to hardcode English 'Choose up to N'.
+            const upToLabel = (n) => payload.labels.upTo.replace(':n', String(n));
 
             const isChosen  = (group, m) => (chosen[group.id] || []).includes(m.id);
             const isBlocked = (group, m) => {
@@ -243,7 +260,10 @@
             const buildOptions = () => {
                 const options = {};
 
-                if (selectedVariant.value && variants.value.length > 1) {
+                // Whenever a size is selected — including a dish with exactly ONE size. The
+                // old `length > 1` guard dropped the Size from single-variant tickets, and
+                // with it the kitchen's answer to which portion was ordered.
+                if (selectedVariant.value) {
                     const v = variants.value.find(x => x.id === selectedVariant.value);
                     if (v) options[payload.labels.sizeKey] = String(v.label);
                 }
@@ -272,13 +292,14 @@
                     return;
                 }
 
-                // The variant is the sellable record when one is chosen, so the cart line
-                // carries its id — not the parent's. Sending the parent would let the server
-                // price a dish the customer did not pick.
+                // The variant is the sellable record when one is chosen — a variant IS a
+                // Product with its own id, price and stock — so the cart line carries ITS
+                // id, never the parent's. The old `length > 1` guard sent the parent's id
+                // for a single-size dish: the sheet displayed the variant's price while the
+                // server priced and stock-checked the parent, so shown ≠ charged and a
+                // sold-out only-size was never refused.
                 const line = {
-                    id: selectedVariant.value && variants.value.length > 1
-                        ? selectedVariant.value
-                        : payload.dish.id,
+                    id: selectedVariant.value ? selectedVariant.value : payload.dish.id,
                     title: payload.dish.title,
                     price: basePrice.value,
                     image: payload.dish.image || null,
@@ -293,8 +314,8 @@
 
             return {
                 variants, groups, selectedVariant, quantity, notes, added, errors, formError,
-                addedLabel, maxQty, money, runningTotal, isChosen, isBlocked, pickSingle,
-                toggleMulti, setQty, addToCart,
+                addedLabel, maxQty, money, runningTotal, upToLabel, isChosen, isBlocked,
+                pickSingle, toggleMulti, setQty, addToCart,
             };
         },
     }).mount('#{{ $uid }}');

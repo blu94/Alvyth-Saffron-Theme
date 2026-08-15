@@ -11,11 +11,22 @@
     @if(isset($page) && $page->rows && $page->rows->count() > 0)
         @include('components.builder.engine', ['rows' => $page->rows])
     @else
+        @php
+            // `prep_time_label` is translatable, so a saved value arrives as a locale-keyed
+            // array — echoing it raw throws the moment the Restaurant tab is first saved,
+            // and this is the page a customer lands on having just paid. Resolved the same
+            // way the header resolves announcement_text.
+            $prepRaw  = $settings['prep_time_label'] ?? null;
+            $prepLoc  = $locale ?? app()->getLocale();
+            $prepText = is_array($prepRaw)
+                ? ($prepRaw[$prepLoc] ?? $prepRaw['en'] ?? (count($prepRaw) ? reset($prepRaw) : ''))
+                : (string) ($prepRaw ?? '');
+        @endphp
         <div class="saffron-status">
             <div class="saffron-status__code">&#10003;</div>
             <h1 class="saffron-status__title">{{ __('Order received') }}</h1>
             <p class="saffron-status__text">
-                {{ $settings['prep_time_label'] ?? __('We are getting started on it now.') }}
+                {{ $prepText !== '' ? $prepText : __('We are getting started on it now.') }}
             </p>
             <div class="saffron-status__actions">
                 <a href="{{ url('/profile') }}" class="saffron-btn saffron-btn--accent">{{ __('View your orders') }}</a>
