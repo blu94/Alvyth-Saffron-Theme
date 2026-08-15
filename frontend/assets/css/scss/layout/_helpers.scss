@@ -1,11 +1,21 @@
 @use "../base/colors" as *;
 @use "../base/variables" as *;
+@use "../mixins/breakpoints" as *;
 
 .saffron-container {
   width: 100%;
   max-width: 1240px;
   margin-inline: auto;
   padding-inline: 1rem;
+
+  // The dish sheet and outlet info lay out with Bootstrap's `g-lg-5` (a 3rem gutter),
+  // whose row pulls -1.5rem into the container's padding. At 1rem of padding that is
+  // 8px past the viewport on every width between lg and this container's max-width —
+  // a horizontal scrollbar on a 1024px laptop, found by the breakpoint sweep. Half a
+  // gutter of padding from lg up covers the widest gutter the theme uses.
+  @include lg {
+    padding-inline: 1.5rem;
+  }
 }
 
 .saffron-stack-sm > * + * { margin-top: 0.5rem; }

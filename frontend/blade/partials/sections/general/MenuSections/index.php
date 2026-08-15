@@ -6,6 +6,8 @@ use App\Repositories\Category\CategoryInterface;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 use Theme\Backend\Support\Motion;
+use Theme\Backend\Support\SectionSetting;
+use Theme\Backend\Support\ThemeSettings;
 
 /**
  * The full menu, grouped into sections.
@@ -32,11 +34,21 @@ class MenuSections
     {
         $data = $data ?? [];
 
+        // The section's Status control — Disabled renders nothing (audit A9).
+        if (($data['status'] ?? 'active') === 'disabled') {
+            return '';
+        }
+
+        // Theme-wide defaults from the Restaurant settings tab. Every presentation control
+        // below resolves section → theme → built-in, so "Theme default" on the section is
+        // a real choice and the tab's switches actually change the menu (audit A8).
+        $settings = ThemeSettings::all();
+
         $heading    = $this->translate($data['heading'] ?? '', $locale);
         $subheading = $this->translate($data['subheading'] ?? '', $locale);
 
-        $layout           = $data['layout'] ?? 'grid';
-        $colsDesktop      = (string) ($data['columns_desktop'] ?? '3');
+        $layout           = SectionSetting::choice($data['layout'] ?? '', $settings['menu_layout'] ?? '', 'grid');
+        $colsDesktop      = SectionSetting::choice($data['columns_desktop'] ?? '', $settings['menu_columns'] ?? '', '3');
         $limitPerSection  = (int) ($data['limit_per_section'] ?? 0);
         $showSectionNav   = $data['show_section_nav'] ?? true;
         $showSectionCount = $data['show_section_count'] ?? false;
@@ -124,14 +136,20 @@ class MenuSections
             'showSectionNav'   => $showSectionNav && $sections->count() > 1,
             'showSectionCount' => $showSectionCount,
             'usedTypeFilter'   => $usedTypeFilter,
-            'stickyNav'        => $data['menu_sticky_nav'] ?? true,
+            // A theme setting, not a section key: the section schema never declared
+            // `menu_sticky_nav`, so reading it from $data made the toggle permanently on.
+            'stickyNav'        => SectionSetting::bool(null, $settings['menu_sticky_nav'] ?? null, true),
             'cardSettings'     => [
                 'layout'           => $layout,
-                'show_price'       => $data['show_price'] ?? true,
-                'show_tags'        => $data['show_tags'] ?? true,
-                'show_description' => $data['show_description'] ?? true,
+                'show_price'       => SectionSetting::bool($data['show_price'] ?? null, $settings['dish_show_price'] ?? null, true),
+                'show_tags'        => SectionSetting::bool($data['show_tags'] ?? null, $settings['dish_show_tags'] ?? null, true),
+                'show_description' => SectionSetting::bool($data['show_description'] ?? null, $settings['dish_show_description'] ?? null, true),
                 'show_add_button'  => $data['show_add_button'] ?? true,
                 'add_button_label' => $data['add_button_label'] ?? 'Add',
+                // The card's sold-out badge wording. Comes from the theme's Restaurant tab
+                // and was never passed through, so the operator's phrase never reached a
+                // card (audit A7).
+                'sold_out_label'   => $settings['sold_out_label'] ?? '',
             ],
             'ratioClass'       => $this->ratioClass($data['image_ratio'] ?? ''),
             'motionAttrs'      => Motion::sectionAttributes($data),

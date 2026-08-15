@@ -7,6 +7,7 @@
      MENU_SECTIONS_SECTION block placed on an ordinary page through the page builder.
      That block is what this template renders. --}}
 <div class="saffron-page">
+    <x-theme.component name="Breadcrumbs" />
     @if(isset($page) && $page->rows && $page->rows->count() > 0)
         @include('components.builder.engine', ['rows' => $page->rows])
     @else

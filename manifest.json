@@ -14,7 +14,8 @@
       "admin/sections/StoreStatus.json",
       "admin/sections/PromoStrip.json",
       "admin/sections/OutletInfo.json",
-      "admin/sections/FaqAccordion.json"
+      "admin/sections/FaqAccordion.json",
+      "admin/sections/Newsletter.json"
     ]
   },
   "modules": [

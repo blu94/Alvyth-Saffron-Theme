@@ -390,6 +390,17 @@
           "label": "Show Cart",
           "hint": "Cart count and link",
           "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "header_show_locale_switcher",
+          "type": "switch",
+          "label": "Show Language Switcher",
+          "hint": "A language menu beside the icons. Appears only when more than one locale is active in Settings → Localization",
+          "default": true
         }
       ]
     },

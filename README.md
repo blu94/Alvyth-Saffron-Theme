@@ -26,7 +26,9 @@ change or an unanswered product decision — both are itemised in
 | 10 | RBAC, `.agent/docs/restaurant.md` | docs **done**; `kitchen` resource outstanding |
 
 **Sections:** `Hero`, `MenuSections`, `DishGrid`, `DishMarquee`, `DishSheet`, `StoreStatus`,
-`PromoStrip`, `OutletInfo`, `FaqAccordion`.
+`PromoStrip`, `OutletInfo`, `FaqAccordion`, `Newsletter`.
+**Components:** `DishCard`, `DishSheet`-backed `ProductDetails` override, `SearchDrawer`,
+`DynamicForm` (any Forms-module form, inline), `Breadcrumbs`, `StructuredData` (JSON-LD).
 **Animation:** every section above except `DishSheet` eases into view on scroll, with its own
 effect, speed, stagger and delay under *Styling → Animation*; the theme's **Animation** settings
 tab holds the master switch and the defaults a section inherits. See "Animation" below.
@@ -57,7 +59,9 @@ admin/
 └── sections/                 one JSON schema per page-builder section
 backend/
 ├── Handlers/                 writes the keys admin/extends declares
-├── Support/                  Motion — section animation choices → data attributes
+├── Support/                  Motion (animation → data attributes), ThemeSettings (the active
+│                             theme's saved settings, for drivers), SectionSetting (section →
+│                             theme → built-in resolution for presentation controls)
 ├── Models/, Repositories/, migrations/
 frontend/
 ├── blade/
@@ -124,6 +128,66 @@ on the section's own id, the way Ella's ticker does — so it moves with JavaScr
 reduced motion the strip stops, the clones disappear and it becomes an ordinary horizontal
 scroller.
 
+## Theme settings, and what a section may override
+
+The **Restaurant** tab holds theme-wide presentation defaults — menu layout, dishes per row,
+whether dish cards show a price, tags and a description, sticky section navigation, and the
+sold-out and closed-shop wording. A **Menu Sections** or **Dish Grid** block carries the same
+controls with a *Theme default* choice, and its driver resolves **section → theme → built-in**
+through `Theme\Backend\Support\SectionSetting`. That is the same shape the image ratio and
+the Animation controls use, and it is what makes the tab's switches change the menu: before it,
+each section schema stored a concrete default and the theme-wide value was read by nothing
+(audit A8). Every driver honours its own **Status → Disabled** (A9), and the sold-out wording
+reaches the cards and the dish sheet from one setting, which a Dish Sheet block may override
+(A7).
+
+Drivers read those settings through `Theme\Backend\Support\ThemeSettings::all()`, which
+loads the published `active-{database}.json` through the same cache key ThemeController uses.
+Nothing in core shares the settings with a section driver — the `View::shared('settings')`
+several drivers used to read was always `null`, so their theme-level fallbacks were dead code
+until this helper replaced it. A settings save in admin republishes that file; a value written
+straight to the `themes` row does not reach the storefront until it is republished.
+
+**Ordering-mode and review switches were removed from the tab.** Nothing consumed them: the
+mode picker is blocked on core (ISSUES O2–O4) and there is no review surface (B3). They come
+back with the features rather than sitting live in admin promising behaviour that does not
+exist.
+
+## Search engines
+
+`General → Search Engines → Structured Data` (on by default) prints schema.org JSON-LD built
+only from what the theme already knows: a `Restaurant` entity on every page — name, url,
+logo, telephone, email, the footer address, social profiles as `sameAs`, and
+`openingHoursSpecification` from the recurring whole-shop service windows (the same rows
+Outlet Info prints); a `Product` with an `Offer` / `AggregateOffer` on a dish page whose
+availability follows the stock rule core enforces; a `BreadcrumbList` beside the breadcrumbs;
+and a `FAQPage` beside an FAQ Accordion. The `StructuredData` component prints the first two
+from the layout head; the other two ship next to the markup they describe. Turn it off for a
+shop whose SEO plugin already publishes these entities. The SEO tab's own JSON-LD on a page
+is printed separately and left alone.
+
+`General → User Interface → Show Breadcrumbs` (on by default) draws a *Home › Categories ›
+Burgers › Dish* trail above dishes, categories, posts and pages, derived from the record the
+page resolved to. The listing crumbs are the shop's own CATEGORIES and BLOGS pages, titled
+however the operator titled them.
+
+## Header extras
+
+`Header → Show Language Switcher` shows a language menu in the icon cluster whenever more
+than one locale is active in Settings → Localization. It is Ella's `header_show_locale_switcher`
+with Ella's URL rule (strip the current locale segment, prefix the chosen one unless it is the
+default, keep the query string) drawn as a Saffron dropdown — the same hover / focus / caret
+machinery as a nav dropdown, end-aligned so it stays on-screen on a phone.
+
+## Newsletter
+
+The **Newsletter Signup** section is a heading, a subheading and a line of small print around a
+form from the **Forms** module — pick the form in the block, and an Email field plus a Submit
+button is the whole setup. It reuses the `DynamicForm` component in its `inline` variant, so a
+signup lands beside the shop's other leads and the success message is the form's own. Ella's
+section posts to a free-text endpoint that core does not have; this one deliberately does not.
+Three tones (sand / dark / accent) and two layouts (centered / split).
+
 ## Conventions this theme is bound by
 
 - **Zero build steps** on the storefront. Vue 3 CDN global build, no SFCs, no bundler. The
@@ -151,7 +215,8 @@ Verified against core, not assumed. Each is a limit on what this theme can promi
   demands an address is decided by `cartRequiresShipping()`, which reads the shared
   `Product.requires_shipping` column and has no notion of an ordering mode. Spec §14
   items 2 and 3 (phase 6) are what unlock it. Until then this theme can ship
-  **delivery-only** or **pickup-only** correctly, and the mode picker stays presentational.
+  **delivery-only** or **pickup-only** correctly. There is deliberately no mode picker and no
+  ordering-mode settings yet — both arrive with the core change.
 - **Nothing decrements or validates stock.** A sold-out dish keeps selling. Spec §14 item 1.
 - **`plugin_fields` are read but not persisted** — a scheduled time, table number or
   "no cutlery" is lost after pricing. Spec §14 item 2.

@@ -1,0 +1,100 @@
+@use "../../base/colors" as *;
+@use "../../base/variables" as *;
+@use "../../mixins/breakpoints" as *;
+
+// The signup strip. Three tones, two layouts; the form inside is the DynamicForm component
+// in its `inline` variant (see layout/_default.scss), so its email field and button share
+// one row and its labels are read by assistive tech but not drawn.
+
+.saffron-newsletter {
+  padding-block: $section-pad-y;
+  background-color: $hex-sand-100;
+  color: $color-primary;
+}
+
+.saffron-newsletter--dark {
+  background-color: $hex-sand-900;
+  color: $color-white;
+
+  .saffron-newsletter__lede,
+  .saffron-newsletter__note { color: rgba($hex-white, 0.7); }
+
+  .saffron-form__input {
+    color: $color-white;
+    background-color: rgba($hex-white, 0.07);
+    border-color: rgba($hex-white, 0.22);
+
+    &::placeholder { color: rgba($hex-white, 0.5); }
+    &:focus { border-color: $color-accent; }
+  }
+
+  .saffron-form__state--success { color: $color-accent; }
+}
+
+.saffron-newsletter--accent {
+  background-color: $color-accent;
+  color: $color-black;
+
+  .saffron-newsletter__lede,
+  .saffron-newsletter__note { color: rgba($hex-black, 0.72); }
+
+  .saffron-form__input {
+    background-color: rgba($hex-white, 0.92);
+    border-color: transparent;
+
+    &:focus { border-color: $color-primary; }
+  }
+
+  // The accent button would vanish against an accent background.
+  .saffron-form__submit {
+    background-color: $color-primary;
+    color: $color-white;
+
+    &:hover { background-color: $hex-sand-800; }
+  }
+
+  .saffron-form__state--success { color: $color-primary; }
+}
+
+.saffron-newsletter__inner {
+  display: grid;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.saffron-newsletter--centered .saffron-newsletter__inner {
+  max-width: 640px;
+  margin-inline: auto;
+  text-align: center;
+
+  .saffron-newsletter__lede { margin-inline: auto; }
+}
+
+.saffron-newsletter--split .saffron-newsletter__inner {
+  @include media-breakpoint-up(md) {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 3rem;
+  }
+}
+
+.saffron-newsletter__heading {
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  margin-bottom: 0.5rem;
+  // Headings carry the primary ink globally; on the dark and accent tones the section
+  // sets its own text colour and the heading must follow it, not stay espresso-on-espresso.
+  color: inherit;
+}
+
+.saffron-newsletter__lede {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: $color-muted;
+  max-width: 52ch;
+  margin-bottom: 0;
+}
+
+.saffron-newsletter__note {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  color: $color-muted;
+}

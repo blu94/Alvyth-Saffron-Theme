@@ -93,6 +93,31 @@
     $showSearch = $settings['header_show_search'] ?? true;
     $showCart   = $settings['header_show_cart'] ?? true;
 
+    // Locale switcher — Ella's header_show_locale_switcher, same URL rule: strip the
+    // current locale segment, prefix the chosen one unless it is the default, keep the
+    // query string minus any stale `locale` key. Only offered when the shop has more than
+    // one active locale; a one-language menu has nothing to switch to.
+    $availableLocales = $availableLocales ?? [];
+    $defaultLocale    = $defaultLocale ?? config('app.locale', 'en');
+    $showLocales      = ($settings['header_show_locale_switcher'] ?? true) && count($availableLocales) > 1;
+    $localeLinks      = [];
+    if ($showLocales) {
+        $segments = explode('/', trim(request()->path(), '/'));
+        if (!empty($segments) && array_key_exists($segments[0], $availableLocales)) {
+            array_shift($segments);
+        }
+        $newPath     = implode('/', $segments);
+        $queryParams = request()->query();
+        unset($queryParams['locale']);
+        foreach ($availableLocales as $code => $name) {
+            $localeUrl = $code === $defaultLocale ? url($newPath) : url($code . '/' . $newPath);
+            if (!empty($queryParams)) {
+                $localeUrl .= '?' . http_build_query($queryParams);
+            }
+            $localeLinks[] = ['code' => $code, 'name' => $name, 'url' => $localeUrl, 'current' => $code === $loc];
+        }
+    }
+
     // Centered by default — the restaurant look. 'left' docks the links beside the logo.
     $navCentered = ($settings['header_nav_position'] ?? 'center') === 'center';
 
@@ -208,6 +233,34 @@
             @endif
 
             <div class="saffron-header__actions">
+                @if($showLocales)
+                    {{-- Same open/close machinery as a nav dropdown (hover, :focus-within,
+                         caret tap via data-dropdown-toggle), so it works on every input the
+                         nav does. Panel is end-aligned: this sits at the viewport's right
+                         edge, where a centred panel would run off a phone screen. --}}
+                    <div class="saffron-header__item saffron-header__item--has-dropdown saffron-header__locale">
+                        <button type="button" class="saffron-header__icon-btn saffron-header__locale-btn"
+                                data-dropdown-toggle aria-expanded="false" aria-haspopup="true"
+                                aria-label="{{ __('Change language') }}">
+                            <span class="saffron-header__locale-code">{{ strtoupper($loc) }}</span>
+                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.4"
+                                 fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </button>
+                        <div class="saffron-header__dropdown saffron-header__dropdown--end">
+                            @foreach($localeLinks as $ll)
+                                <a href="{{ $ll['url'] }}" hreflang="{{ $ll['code'] }}"
+                                   class="saffron-header__dropdown-link saffron-header__locale-link"
+                                   @if($ll['current']) aria-current="true" @endif>
+                                    <span class="saffron-header__locale-link-code">{{ strtoupper($ll['code']) }}</span>
+                                    <span>{{ $ll['name'] }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 @if($showSearch)
                     <button type="button" class="saffron-header__icon-btn" data-search-open
                             aria-label="{{ __('Search the menu') }}" aria-haspopup="dialog">

@@ -3,6 +3,7 @@
 @section('content')
 {{-- A single post. `blog.json` maps the BLOG page type to this template, and the
      /blogs/{slug} resource path resolves to it too. --}}
+<x-theme.component name="Breadcrumbs" />
 <div class="saffron-container saffron-section">
     @if(isset($page) && $page->rows && $page->rows->count() > 0)
         @include('components.builder.engine', ['rows' => $page->rows])

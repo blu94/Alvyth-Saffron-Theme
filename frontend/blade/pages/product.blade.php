@@ -8,6 +8,7 @@
      instructions, live running total — is phase 2 and will land as its own theme section
      rather than as logic in this template. --}}
 <div class="saffron-dish-page">
+    <x-theme.component name="Breadcrumbs" />
     @if(isset($page) && $page->rows && $page->rows->count() > 0)
         @include('components.builder.engine', ['rows' => $page->rows])
     @else

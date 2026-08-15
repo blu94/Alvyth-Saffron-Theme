@@ -17,6 +17,10 @@ use Illuminate\Support\Str;
  * `$data['slug']` selects the form. Fields arrive from `GET /api/storefront/forms/{slug}` and
  * the answers go to `POST /api/storefront/forms/{slug}/submit`, so a form placed here files
  * its leads exactly where the same form on a page would.
+ *
+ * `$data['variant']` = `inline` lays the fields out in one row (email + button) for a
+ * signup strip; `$data['show_title']` = false drops the form's own title and description
+ * when the surrounding section already carries a heading — the Newsletter section uses both.
  */
 class DynamicForm
 {
@@ -28,12 +32,18 @@ class DynamicForm
             return '';
         }
 
-        return View::make($themeViewPath, [
-            'slug'   => $slug,
-            'uid'    => 'saffron-form-' . Str::slug($slug) . '-' . Str::random(6),
-            'intro'  => (string) ($data['intro'] ?? ''),
-            'locale' => $locale,
-            'labels' => [
+        $variant = (string) ($data['variant'] ?? '');
+
+        // Everything the script needs, as ONE variable for `@json()`. Blade's json directive
+        // splits its argument on top-level commas to find its optional $options and $depth
+        // parameters, so an inline array literal with several keys is compiled into
+        // json_encode($a, $b, $c) — it happened to parse with exactly three keys and would
+        // have broken silently on the fourth.
+        $payload = [
+            'slug'      => $slug,
+            'locale'    => $locale,
+            'showTitle' => filter_var($data['show_title'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            'labels'    => [
                 'loading'    => __('Loading…'),
                 'loadFailed' => __('This form could not be loaded just now.'),
                 'submit'     => __('Send'),
@@ -42,6 +52,15 @@ class DynamicForm
                 'failed'     => __('That could not be sent. Please try again.'),
                 'choose'     => __('Choose…'),
             ],
+        ];
+
+        return View::make($themeViewPath, [
+            'slug'         => $slug,
+            'uid'          => 'saffron-form-' . Str::slug($slug) . '-' . Str::random(6),
+            'intro'        => (string) ($data['intro'] ?? ''),
+            'variantClass' => $variant === 'inline' ? 'saffron-form--inline' : '',
+            'payload'      => $payload,
+            'locale'       => $locale,
         ])->render();
     }
 }

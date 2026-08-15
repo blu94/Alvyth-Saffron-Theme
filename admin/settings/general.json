@@ -135,6 +135,38 @@
           "label": "Enable Go to Top",
           "hint": "Show a button to scroll back to the top of the page",
           "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "breadcrumbs_enabled",
+          "type": "switch",
+          "label": "Show Breadcrumbs",
+          "hint": "A Home › Menu › Dish trail above menu categories, dishes, blog posts and pages",
+          "default": true
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-seo"
+      },
+      "name": "Search Engines",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "structured_data_enabled",
+          "type": "switch",
+          "label": "Structured Data (JSON-LD)",
+          "hint": "Describes the restaurant, its opening hours, each dish, breadcrumbs and FAQs to search engines using schema.org markup, built from the settings and menu you already maintain. Turn off if another tool already publishes it",
+          "default": true
         }
       ]
     }

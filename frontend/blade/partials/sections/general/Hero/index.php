@@ -19,6 +19,13 @@ class Hero
     {
         $data = $data ?? [];
 
+        // The section's own Status control (Settings → General). Every schema shipped it and
+        // no driver read it, so a section switched to Disabled kept rendering — audit A9.
+        // The render chain in core does not filter on it either, so each driver has to.
+        if (($data['status'] ?? 'active') === 'disabled') {
+            return '';
+        }
+
         $slides = collect($data['slides'] ?? [])
             ->filter(fn ($slide) => ($slide['status'] ?? 'active') === 'active')
             ->map(fn ($slide) => [

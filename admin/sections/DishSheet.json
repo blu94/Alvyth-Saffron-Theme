@@ -93,8 +93,9 @@
                                 "type": "text",
                                 "label": "Sold Out Wording",
                                 "placeholder": "e.g. Sold out for today",
+                                "hint": "Leave empty to use the theme's Sold Out Wording (Themes → Settings → Restaurant), which the dish cards also use",
                                 "translatable": true,
-                                "default": "Sold out for today"
+                                "default": ""
                             },
                             {
                                 "ui": { "type": "field", "cols": 12 },

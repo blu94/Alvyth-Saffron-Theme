@@ -39,7 +39,9 @@ class DishCard
         $showDescription = $settings['show_description'] ?? true;
         $showAddButton   = $settings['show_add_button'] ?? true;
         $addButtonLabel  = $this->translate($settings['add_button_label'] ?? 'Add', $locale) ?: 'Add';
-        $soldOutLabel    = $this->translate($settings['sold_out_label'] ?? 'Sold out', $locale) ?: 'Sold out';
+        // Passed in by the section from the theme's Restaurant tab; the fallback is the same
+        // phrase the dish sheet uses, so a card and its sheet never disagree on the wording.
+        $soldOutLabel    = $this->translate($settings['sold_out_label'] ?? '', $locale) ?: __('Sold out for today');
         $layout          = $settings['layout'] ?? 'grid';
 
         $appSettings      = $this->appSettingsRepo->getSettings();

@@ -7,6 +7,7 @@ use App\Repositories\Setting\Application\ApplicationInterface;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 use Theme\Backend\Models\ModifierGroup;
+use Theme\Backend\Support\ThemeSettings;
 
 /**
  * The configure-and-add block — the single most-used screen in the theme.
@@ -35,6 +36,19 @@ class DishSheet
     public function render(?array $data, string $locale, string $themeViewPath): string
     {
         $data = $data ?? [];
+
+        // The section's Status control — Disabled renders nothing (audit A9).
+        if (($data['status'] ?? 'active') === 'disabled') {
+            return '';
+        }
+
+        // Theme-wide wording lives on the Restaurant settings tab; a section may override it.
+        // The sheet used to read only its own key while the cards read the theme's, so one
+        // shop could show two different "sold out" phrases for the same dish (audit A7).
+        $settings     = ThemeSettings::all();
+        $soldOutLabel = $this->translate($data['sold_out_label'] ?? '', $locale)
+            ?: $this->translate($settings['sold_out_label'] ?? '', $locale)
+            ?: __('Sold out for today');
 
         $dish = $this->resolveDish($data);
 
@@ -155,7 +169,7 @@ class DishSheet
             'notesLabel'           => $this->translate($data['notes_label'] ?? '', $locale) ?: __('Special instructions'),
             'notesMax'             => $notesMax,
             'isAvailable'          => $isAvailable,
-            'soldOutLabel'         => $this->translate($data['sold_out_label'] ?? '', $locale) ?: __('Sold out for today'),
+            'soldOutLabel'         => $soldOutLabel,
             'hasUnpricedModifiers' => $hasUnpricedModifiers,
             'imageUrl'             => $this->primaryImageUrl($dish),
             'locale'               => $locale,

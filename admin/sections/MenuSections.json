@@ -59,27 +59,31 @@
                                 "key": "layout",
                                 "type": "select",
                                 "label": "Dish Layout",
+                                "hint": "Theme default follows Menu Layout in Themes → Settings → Restaurant",
                                 "options": {
                                     "items": [
+                                        { "title": "Theme default", "value": "inherit" },
                                         { "title": "Grid", "value": "grid" },
                                         { "title": "List", "value": "list" }
                                     ]
                                 },
-                                "default": "grid"
+                                "default": "inherit"
                             },
                             {
                                 "ui": { "type": "field", "cols": 6 },
                                 "key": "columns_desktop",
                                 "type": "select",
                                 "label": "Dishes Per Row (Desktop)",
+                                "hint": "Theme default follows Dishes Per Row in Themes → Settings → Restaurant",
                                 "options": {
                                     "items": [
+                                        { "title": "Theme default", "value": "inherit" },
                                         { "title": "2 Columns", "value": "2" },
                                         { "title": "3 Columns", "value": "3" },
                                         { "title": "4 Columns", "value": "4" }
                                     ]
                                 },
-                                "default": "3"
+                                "default": "inherit"
                             },
                             {
                                 "ui": { "type": "field", "cols": 6 },
@@ -158,23 +162,45 @@
                                     {
                                         "ui": { "type": "field", "cols": 6 },
                                         "key": "show_price",
-                                        "type": "switch",
+                                        "type": "select",
                                         "label": "Show Price",
-                                        "default": true
+                                        "hint": "Theme default follows Themes → Settings → Restaurant",
+                                        "options": {
+                                            "items": [
+                                                { "title": "Theme default", "value": "inherit" },
+                                                { "title": "Show", "value": "show" },
+                                                { "title": "Hide", "value": "hide" }
+                                            ]
+                                        },
+                                        "default": "inherit"
                                     },
                                     {
                                         "ui": { "type": "field", "cols": 6 },
                                         "key": "show_tags",
-                                        "type": "switch",
+                                        "type": "select",
                                         "label": "Show Tags As Badges",
-                                        "default": true
+                                        "options": {
+                                            "items": [
+                                                { "title": "Theme default", "value": "inherit" },
+                                                { "title": "Show", "value": "show" },
+                                                { "title": "Hide", "value": "hide" }
+                                            ]
+                                        },
+                                        "default": "inherit"
                                     },
                                     {
                                         "ui": { "type": "field", "cols": 6 },
                                         "key": "show_description",
-                                        "type": "switch",
+                                        "type": "select",
                                         "label": "Show Short Description",
-                                        "default": true
+                                        "options": {
+                                            "items": [
+                                                { "title": "Theme default", "value": "inherit" },
+                                                { "title": "Show", "value": "show" },
+                                                { "title": "Hide", "value": "hide" }
+                                            ]
+                                        },
+                                        "default": "inherit"
                                     },
                                     {
                                         "ui": { "type": "field", "cols": 6 },

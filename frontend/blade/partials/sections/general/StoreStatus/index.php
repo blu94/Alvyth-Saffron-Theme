@@ -5,6 +5,7 @@ namespace Theme\Sections\General;
 use Illuminate\Support\Facades\View;
 use Theme\Backend\Repositories\ServiceWindowRepository;
 use Theme\Backend\Support\Motion;
+use Theme\Backend\Support\ThemeSettings;
 
 /**
  * Open / closed / opens-at banner.
@@ -25,7 +26,12 @@ class StoreStatus
     public function render(?array $data, string $locale, string $themeViewPath): string
     {
         $data     = $data ?? [];
-        $settings = View::shared('settings') ?? [];
+        $settings = ThemeSettings::all();
+
+        // The section's Status control — Disabled renders nothing (audit A9).
+        if (($data['status'] ?? 'active') === 'disabled') {
+            return '';
+        }
 
         $timezone = (string) ($data['timezone'] ?? '') ?: config('app.timezone', 'UTC');
 

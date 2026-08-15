@@ -30,5 +30,8 @@
             @endforeach
         </div>
     </div>
+    @if($jsonLd !== '')
+        <script type="application/ld+json">{!! $jsonLd !!}</script>
+    @endif
 </section>
 @endif

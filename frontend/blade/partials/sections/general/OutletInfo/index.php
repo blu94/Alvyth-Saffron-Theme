@@ -5,6 +5,7 @@ namespace Theme\Sections\General;
 use Illuminate\Support\Facades\View;
 use Theme\Backend\Models\ServiceWindow;
 use Theme\Backend\Support\Motion;
+use Theme\Backend\Support\ThemeSettings;
 
 /**
  * Where the shop is, how to reach it, and the week's hours.
@@ -18,7 +19,12 @@ class OutletInfo
     public function render(?array $data, string $locale, string $themeViewPath): string
     {
         $data     = $data ?? [];
-        $settings = View::shared('settings') ?? [];
+        $settings = ThemeSettings::all();
+
+        // The section's Status control — Disabled renders nothing (audit A9).
+        if (($data['status'] ?? 'active') === 'disabled') {
+            return '';
+        }
 
         $showHours = (bool) ($data['show_hours'] ?? true);
         $days      = [];

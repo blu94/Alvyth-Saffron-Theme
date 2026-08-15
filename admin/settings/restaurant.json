@@ -22,7 +22,7 @@
           "key": "menu_layout",
           "type": "select",
           "label": "Menu Layout",
-          "hint": "Grid suits photographed dishes; list suits long menus",
+          "hint": "Grid suits photographed dishes; list suits long menus. A Menu Sections block set to Theme default follows this",
           "options": {
             "items": [
               { "title": "Grid", "value": "grid" },
@@ -39,7 +39,7 @@
           "key": "menu_columns",
           "type": "select",
           "label": "Dishes Per Row (Desktop)",
-          "hint": "Ignored when the layout is set to list",
+          "hint": "Ignored when the layout is set to list. A Menu Sections block set to Theme default follows this",
           "options": {
             "items": [
               { "title": "2", "value": "2" },
@@ -76,7 +76,7 @@
           "key": "dish_show_price",
           "type": "switch",
           "label": "Show Prices On Dish Cards",
-          "hint": "Turn off for a menu priced only on the dish page",
+          "hint": "Turn off for a menu priced only on the dish page. Any Menu Sections or Dish Grid block set to Theme default follows this",
           "default": true
         },
         {
@@ -87,7 +87,7 @@
           "key": "dish_show_tags",
           "type": "switch",
           "label": "Show Tags As Badges",
-          "hint": "Spicy, New, Halal, Vegan — read from the dish's tags",
+          "hint": "Spicy, New, Halal, Vegan — read from the dish's tags. Blocks set to Theme default follow this",
           "default": true
         },
         {
@@ -98,7 +98,7 @@
           "key": "dish_show_description",
           "type": "switch",
           "label": "Show Short Description",
-          "hint": "One clamped line under the dish name",
+          "hint": "One clamped line under the dish name. Blocks set to Theme default follow this",
           "default": true
         },
         {
@@ -111,62 +111,6 @@
           "label": "Sticky Section Navigation",
           "hint": "Pin the menu-section jump links while the customer scrolls",
           "default": true
-        }
-      ]
-    },
-    {
-      "ui": {
-        "type": "section",
-        "cols": 12,
-        "icon": "tabler-moped"
-      },
-      "name": "Ordering Modes",
-      "elements": [
-        {
-          "ui": {
-            "type": "field",
-            "cols": 4
-          },
-          "key": "mode_delivery_enabled",
-          "type": "switch",
-          "label": "Offer Delivery",
-          "hint": "Priced through the existing shipping zones and methods",
-          "default": true
-        },
-        {
-          "ui": {
-            "type": "field",
-            "cols": 4
-          },
-          "key": "mode_pickup_enabled",
-          "type": "switch",
-          "label": "Offer Pickup",
-          "hint": "No address and no fee. See the warning below before enabling with delivery",
-          "default": true
-        },
-        {
-          "ui": {
-            "type": "field",
-            "cols": 4
-          },
-          "key": "mode_dinein_enabled",
-          "type": "switch",
-          "label": "Offer Dine-In",
-          "hint": "Table number is captured at checkout",
-          "default": false
-        },
-        {
-          "ui": {
-            "type": "field",
-            "cols": 12
-          },
-          "key": "mode_notice",
-          "type": "textarea",
-          "label": "Ordering Mode Notice",
-          "placeholder": "e.g. Delivery within 5 km. Pickup ready at the counter.",
-          "hint": "Shown above the mode picker. Note that only one mode is enforced at checkout today — whether an address is demanded is decided by each dish's shipping flag, not by the mode the customer picked.",
-          "translatable": true,
-          "default": ""
         }
       ]
     },
@@ -200,7 +144,7 @@
           "type": "text",
           "label": "Sold Out Wording",
           "placeholder": "e.g. Sold out for today",
-          "hint": "Shown on a dish that is no longer active",
+          "hint": "Shown on the dish card and the dish sheet when a dish — or every size of it — has stock 0. A Dish Sheet block can override it",
           "translatable": true,
           "default": "Sold out for today"
         },
@@ -216,27 +160,6 @@
           "hint": "Presentation only until service-window enforcement lands in core",
           "translatable": true,
           "default": "We're closed right now — browse the menu and we'll take your order when we reopen."
-        }
-      ]
-    },
-    {
-      "ui": {
-        "type": "section",
-        "cols": 12,
-        "icon": "tabler-star"
-      },
-      "name": "Reviews",
-      "elements": [
-        {
-          "ui": {
-            "type": "field",
-            "cols": 12
-          },
-          "key": "review_prompt_enabled",
-          "type": "switch",
-          "label": "Show Review Prompt",
-          "hint": "Invite a rating after an order is marked delivered",
-          "default": true
         }
       ]
     }

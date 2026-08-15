@@ -9,6 +9,7 @@
      Blade would put data logic in the presentation layer. Drop a Menu Sections block on
      the category instead. --}}
 <div class="saffron-collection">
+    <x-theme.component name="Breadcrumbs" />
     @if(isset($page) && $page->rows && $page->rows->count() > 0)
         @include('components.builder.engine', ['rows' => $page->rows])
     @else

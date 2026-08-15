@@ -17,6 +17,11 @@ class PromoStrip
     {
         $data = $data ?? [];
 
+        // The section's Status control — Disabled renders nothing (audit A9).
+        if (($data['status'] ?? 'active') === 'disabled') {
+            return '';
+        }
+
         $items = collect($data['items'] ?? [])
             ->filter(fn ($item) => ($item['status'] ?? 'active') === 'active')
             ->map(fn ($item) => [

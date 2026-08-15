@@ -1,4 +1,4 @@
-<div id="{{ $uid }}" class="saffron-form" v-cloak>
+<div id="{{ $uid }}" class="saffron-form {{ $variantClass }}" v-cloak>
     @if($intro !== '')
         <p class="saffron-form__intro">{{ $intro }}</p>
     @endif
@@ -8,8 +8,8 @@
     <p v-else-if="loadError" class="saffron-form__state saffron-form__state--error">@{{ loadError }}</p>
 
     <form v-else-if="schema" class="saffron-form__body" @submit.prevent="submitForm" novalidate>
-        <h3 v-if="schema.title" class="saffron-form__title">@{{ t(schema.title) }}</h3>
-        <p v-if="schema.description" class="saffron-form__desc">@{{ t(schema.description) }}</p>
+        <h3 v-if="showTitle && schema.title" class="saffron-form__title">@{{ t(schema.title) }}</h3>
+        <p v-if="showTitle && schema.description" class="saffron-form__desc">@{{ t(schema.description) }}</p>
 
         <div v-for="field in schema.fields" :key="field.id" class="saffron-form__field">
             <template v-if="['text', 'email', 'number', 'date', 'url', 'tel'].includes(field.type)">
@@ -61,7 +61,7 @@
 <script>
 (function () {
     const { createApp, ref, reactive, computed, onMounted } = Vue;
-    const payload = @json(['slug' => $slug, 'labels' => $labels, 'locale' => $locale]);
+    const payload = @json($payload);
 
     createApp({
         setup() {
@@ -73,6 +73,7 @@
             const success     = ref(null);
             const submitting  = ref(false);
             const labels      = payload.labels;
+            const showTitle   = payload.showTitle !== false;
 
             const t = (val) => {
                 if (!val) return '';
@@ -129,7 +130,7 @@
 
             onMounted(load);
 
-            return { schema, formData, loading, loadError, submitError, success, submitting, labels, t, fieldId, options, hasSubmitField, submitForm };
+            return { schema, formData, loading, loadError, submitError, success, submitting, labels, showTitle, t, fieldId, options, hasSubmitField, submitForm };
         },
     }).mount('#{{ $uid }}');
 })();

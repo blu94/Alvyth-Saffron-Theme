@@ -6,6 +6,8 @@ use App\Repositories\Product\ProductInterface;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 use Theme\Backend\Support\Motion;
+use Theme\Backend\Support\SectionSetting;
+use Theme\Backend\Support\ThemeSettings;
 
 /**
  * One curated row of dishes — "Most Popular", "New This Week", "Chef's Picks".
@@ -27,6 +29,16 @@ class DishGrid
     public function render(?array $data, string $locale, string $themeViewPath): string
     {
         $data = $data ?? [];
+
+        // The section's Status control — Disabled renders nothing (audit A9).
+        if (($data['status'] ?? 'active') === 'disabled') {
+            return '';
+        }
+
+        // Theme-wide dish-card defaults (Restaurant tab). A curated row keeps its own
+        // layout and column count — those are the row's shape, not the menu's — but the
+        // card toggles resolve section → theme like the menu's do (audit A8).
+        $settings = ThemeSettings::all();
 
         $heading    = $this->translate($data['heading'] ?? '', $locale);
         $subheading = $this->translate($data['subheading'] ?? '', $locale);
@@ -86,11 +98,14 @@ class DishGrid
             'source'       => $source,
             'cardSettings' => [
                 'layout'           => $layout,
-                'show_price'       => $data['show_price'] ?? true,
-                'show_tags'        => $data['show_tags'] ?? true,
-                'show_description' => $data['show_description'] ?? false,
+                'show_price'       => SectionSetting::bool($data['show_price'] ?? null, $settings['dish_show_price'] ?? null, true),
+                'show_tags'        => SectionSetting::bool($data['show_tags'] ?? null, $settings['dish_show_tags'] ?? null, true),
+                // A curated row is a teaser, so its built-in fallback is no description —
+                // but the theme's switch, when set, still wins over that fallback.
+                'show_description' => SectionSetting::bool($data['show_description'] ?? null, $settings['dish_show_description'] ?? null, false),
                 'show_add_button'  => $data['show_add_button'] ?? true,
                 'add_button_label' => $data['add_button_label'] ?? 'Add',
+                'sold_out_label'   => $settings['sold_out_label'] ?? '',
             ],
             'motionAttrs'  => Motion::sectionAttributes($data),
             'data'         => $data,

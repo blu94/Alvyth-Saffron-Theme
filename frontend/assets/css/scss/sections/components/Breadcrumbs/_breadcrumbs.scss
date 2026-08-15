@@ -1,0 +1,76 @@
+@use "../../../base/colors" as *;
+@use "../../../base/variables" as *;
+
+// The Home › Categories › Dish trail. A quiet strip: small caps-free type in the muted
+// tone, separated by a chevron drawn in CSS so the markup stays a plain ordered list
+// (which is also what assistive tech and the BreadcrumbList markup expect).
+
+.saffron-breadcrumbs {
+  padding-block: 0.85rem 0;
+}
+
+.saffron-breadcrumbs__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+  color: $color-muted;
+}
+
+.saffron-breadcrumbs__item {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px; // a comfortable tap target on a phone
+  max-width: 100%;
+
+  // Chevron between crumbs, never before the first.
+  & + &::before {
+    content: "";
+    display: inline-block;
+    width: 0.4em;
+    height: 0.4em;
+    margin-inline: 0.55rem;
+    border-right: 1.5px solid $color-muted;
+    border-bottom: 1.5px solid $color-muted;
+    transform: rotate(-45deg);
+    opacity: 0.7;
+    flex: 0 0 auto;
+  }
+
+  &[aria-current="page"] {
+    color: $color-secondary;
+    font-weight: 500;
+    // The last crumb is the page title — long dish names should not push the trail
+    // onto three lines on a phone.
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.saffron-breadcrumbs__link {
+  // The link, not just its text, is the target: fill the item's height so a thumb has
+  // the whole 32px (40px on a touch screen) rather than the 20px line box.
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.16s ease;
+
+  @media (pointer: coarse) {
+    min-height: 40px;
+    min-width: 40px;
+    justify-content: center;
+  }
+
+  &:hover {
+    color: $color-primary;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+}

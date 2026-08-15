@@ -76,6 +76,11 @@
     </script>
     @endif
 
+    {{-- Restaurant / opening hours on every page, plus the dish as a Product on a dish page.
+         Built from the settings and menu already maintained; the SEO tab's own JSON-LD above
+         is the operator's and stays untouched. --}}
+    <x-theme.component name="StructuredData" :data="['settings' => $settings ?? [], 'page' => $page ?? null]" />
+
     @if(!empty($appSettings['favicon']))
         <link rel="icon" href="{{ Str::startsWith($appSettings['favicon'], ['/', 'http']) ? $appSettings['favicon'] : '/storage/' . $appSettings['favicon'] }}">
     @endif

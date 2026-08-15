@@ -406,6 +406,72 @@
   }
 }
 
+// ─── Locale switcher ──────────────────────────────────────────────────────────
+// A nav-style dropdown item living in the icon cluster: the item classes give it the
+// full-height hover surface and the open/close states, and only the trigger and the
+// panel's alignment are its own. It has no min-width to keep the cluster tight on a phone.
+.saffron-header__locale {
+  gap: 0;
+}
+
+.saffron-header__locale-btn {
+  width: auto;
+  height: 40px;
+  padding-inline: 0.65rem 0.5rem;
+  gap: 0.3rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: $color-primary;
+
+  svg {
+    transition: transform 0.16s ease;
+  }
+}
+
+.saffron-header__item--has-dropdown:hover,
+.saffron-header__item--has-dropdown:focus-within,
+.saffron-header__item--has-dropdown.is-open {
+  > .saffron-header__locale-btn svg { transform: rotate(180deg); }
+}
+
+// End-aligned panel variant: the base panel is centred under its item, which for an
+// item at the right edge of the header puts half of it off-screen on a phone.
+.saffron-header__dropdown--end {
+  left: auto;
+  right: 0;
+  min-width: 170px;
+  transform: translateY(-6px);
+}
+
+.saffron-header__item--has-dropdown {
+  &:hover,
+  &:focus-within,
+  &.is-open {
+    > .saffron-header__dropdown--end { transform: translateY(0); }
+  }
+}
+
+.saffron-header__locale-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+
+  &[aria-current="true"] {
+    color: $color-primary;
+    background-color: rgba($hex-accent, 0.08);
+  }
+}
+
+.saffron-header__locale-link-code {
+  min-width: 2em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: $color-muted;
+}
+
 .saffron-header__cart-count {
   position: absolute;
   top: -2px;
@@ -667,6 +733,48 @@
 }
 
 .saffron-form__submit { width: 100%; }
+
+// Inline variant (Newsletter section): the fields share one row and the labels are kept
+// for assistive tech but not drawn — the placeholder carries the field's title. Stacks
+// again on a phone, where a row of email + button leaves the button two characters wide.
+.saffron-form--inline {
+  .saffron-form__body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .saffron-form__field {
+    flex: 1 1 220px;
+    min-width: 0;
+
+    + .saffron-form__field { margin-top: 0; }
+
+    // The submit's wrapper hugs its button; the inputs' wrappers share the rest.
+    &:has(.saffron-form__submit) { flex: 0 0 auto; }
+  }
+
+  .saffron-form__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  // Sits beside a 40px input; match it, which is also the finger-sized minimum.
+  .saffron-form__submit { width: auto; min-height: 40px; }
+
+  .saffron-form__state {
+    flex-basis: 100%;
+    margin-top: 0;
+  }
+}
 
 .saffron-form__state {
   font-size: 0.875rem;
