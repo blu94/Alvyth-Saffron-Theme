@@ -349,14 +349,19 @@ h1, h2, h3, h4, h5, h6 {
 
 .saffron-header__nav {
   display: none;
-  align-items: center;
+  align-items: stretch;
   gap: 1.4rem;
   margin-inline-start: 1rem;
+  min-height: 68px;
 }
 @media (min-width: 992px) {
   .saffron-header__nav {
     display: flex;
   }
+}
+.saffron-header__nav > .saffron-header__link {
+  display: inline-flex;
+  align-items: center;
 }
 
 .saffron-header__nav--center {
@@ -382,6 +387,8 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
+  align-self: stretch;
+  min-height: 68px;
 }
 
 .saffron-header__caret {
@@ -400,7 +407,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .saffron-header__dropdown {
   position: absolute;
-  top: calc(100% + 0.65rem);
+  top: 100%;
   left: 50%;
   min-width: 190px;
   padding: 0.5rem 0;
@@ -461,13 +468,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .saffron-header__dropdown-link--sub {
   padding-left: 1.6rem;
-}
-
-.saffron-mobile-nav__link--grandchild {
-  padding-left: 2.2rem;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--color-muted);
 }
 
 .saffron-header__item--has-dropdown:hover > .saffron-header__caret, .saffron-header__item--has-dropdown:focus-within > .saffron-header__caret, .saffron-header__item--has-dropdown.is-open > .saffron-header__caret {
@@ -685,6 +685,9 @@ h1, h2, h3, h4, h5, h6 {
 .saffron-mobile-nav {
   border-top: 1px solid var(--header-border);
   padding: 0.75rem 0 1rem;
+  max-height: calc(100dvh - 68px - 2.5rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 @media (min-width: 992px) {
   .saffron-mobile-nav {
@@ -710,6 +713,13 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.9375rem;
   font-weight: 400;
   color: var(--color-secondary);
+}
+
+.saffron-mobile-nav__link--grandchild {
+  padding-left: 2.2rem;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--color-muted);
 }
 
 .saffron-footer {

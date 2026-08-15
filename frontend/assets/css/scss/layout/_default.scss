@@ -66,12 +66,20 @@
 
 .saffron-header__nav {
   display: none;
-  align-items: center;
+  align-items: stretch;
   gap: 1.4rem;
   margin-inline-start: 1rem;
+  // Full header height so dropdown items can stretch to the bottom edge (see
+  // .saffron-header__item) — the inner row is 68px min, and this matches it.
+  min-height: 68px;
 
   @include lg {
     display: flex;
+  }
+
+  > .saffron-header__link {
+    display: inline-flex;
+    align-items: center;
   }
 }
 
@@ -107,6 +115,15 @@
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
+
+  // The item, not just its text, must reach the header's bottom edge — the panel opens
+  // from that edge, and any pixel of dead space between the two is a gap the pointer
+  // crosses while leaving the item, which drops :hover and closes the panel before it
+  // can be reached. A hover bridge on the PANEL cannot fix this: it is invisible and
+  // pointer-events:none until the item is hovered, so it is never there to catch the
+  // pointer. Ella sidesteps it by making nav items full header height; same here.
+  align-self: stretch;
+  min-height: 68px;
 }
 
 .saffron-header__caret {
@@ -124,7 +141,10 @@
 
 .saffron-header__dropdown {
   position: absolute;
-  top: calc(100% + 0.65rem);
+  // Flush with the item's bottom edge — a visual offset here is a hover gap. Set the
+  // breathing room with the transparent top border-box below instead, which the
+  // pointer can stand on. Measured: 0.65rem of offset left a 4px dead zone.
+  top: 100%;
   left: 50%;
   min-width: 190px;
   padding: 0.5rem 0;
@@ -190,13 +210,6 @@
 
 .saffron-header__dropdown-link--sub {
   padding-left: 1.6rem;
-}
-
-.saffron-mobile-nav__link--grandchild {
-  padding-left: 2.2rem;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: $color-muted;
 }
 
 .saffron-header__item--has-dropdown {
@@ -423,6 +436,13 @@
   border-top: 1px solid $header-border;
   padding: 0.75rem 0 1rem;
 
+  // The header is sticky, so the drawer inside it never scrolls with the page: a menu
+  // taller than the viewport simply ran off the bottom with no way to reach it. Cap it
+  // at what remains of the screen below the header bar and let it scroll on its own.
+  max-height: calc(100dvh - 68px - 2.5rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
   @include lg {
     display: none;
   }
@@ -447,6 +467,16 @@
   font-size: 0.9375rem;
   font-weight: 400;
   color: $color-secondary;
+}
+
+// Declared AFTER the base and --child rules on purpose: same specificity, so source
+// order decides, and this rule sat above the base one and lost — grandchildren rendered
+// at top-level size.
+.saffron-mobile-nav__link--grandchild {
+  padding-left: 2.2rem;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: $color-muted;
 }
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
