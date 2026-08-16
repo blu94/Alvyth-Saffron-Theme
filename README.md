@@ -224,6 +224,16 @@ out. Controlled from **Restaurant → Scheduled Ordering** (the switch, and how 
 both consumed by the block's driver). The block renders nothing when scheduling is off, when
 no whole-shop hours are authored, or while the cart is empty.
 
+**Where it sits, and why it moves.** The block seats itself inside the order summary, directly
+above **Proceed to Checkout** — a control that changes the order has to be met before the button
+that places it. It cannot be *rendered* there: the summary card is core's Cart section, and a
+theme may only precede or follow that whole section (the same limit that puts the checkout plugin
+slot where it is, audit A15). So the server renders it **above** the cart — already ahead of the
+button — and the component moves itself next to `[data-co-place]` once that button is in the DOM.
+If core ever drops that hook the block simply stays where the server put it, which is still
+before the button. It first shipped *below* the cart, roughly 200px past the checkout button,
+where a customer who did not scroll would never have known scheduling existed.
+
 The chosen value is an ordinary `[data-checkout-field]` named `scheduled_at`, so core's Cart
 section carries it to checkout with the plugin fields, and core persists the validated bag to
 `order.meta.checkout_fields` (spec §14 item 2 — the core half of this feature). The Kitchen

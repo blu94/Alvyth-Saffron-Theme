@@ -1535,6 +1535,21 @@ h1, h2, h3, h4, h5, h6 {
   display: none;
 }
 
+.saffron-schedule--inline {
+  max-width: none;
+  margin-block: 1.5rem 1rem;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  padding-top: 1.25rem;
+  border-radius: 0;
+  background-color: transparent;
+}
+.saffron-schedule--inline .saffron-schedule__title {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
 .saffron-schedule__title {
   margin-bottom: 1rem;
   font-size: 1.125rem;

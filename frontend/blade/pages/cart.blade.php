@@ -13,6 +13,16 @@
      directly under the cart, in the same container, styled as part of it (audit A15).
      When core's section gains the slot, drop this one or plugins render twice. --}}
 <div class="saffron-cart">
+    {{-- ASAP or a scheduled slot, from the shop's own hours. Rendered BEFORE the cart, never
+         after: a control that changes the order must be met before the button that places it,
+         and the summary card holding that button is core's Cart section, which a theme can
+         only precede or follow. The component seats itself directly above Proceed to Checkout
+         once that button exists; this position is the floor it falls back to, and it is still
+         ahead of the button. --}}
+    <div class="saffron-container">
+        <x-theme.component name="OrderSchedule" />
+    </div>
+
     @if(isset($page) && $page->rows && $page->rows->count() > 0)
         @include('components.builder.engine', ['rows' => $page->rows])
     @else
@@ -34,14 +44,6 @@
             </div>
         </div>
     @endif
-
-    {{-- ASAP or a scheduled slot from the shop's own hours. Below the summary for the same
-         reason the plugin slot is: the summary markup belongs to core's Cart section, which
-         renders no region a theme can reach into. The chosen value is an ordinary
-         [data-checkout-field], collected by that section's own checkout POST. --}}
-    <div class="saffron-container">
-        <x-theme.component name="OrderSchedule" />
-    </div>
 
     <div class="saffron-container saffron-cart__plugins">
         <x-plugin-slot name="checkout" :data="['screen' => 'cart']" />

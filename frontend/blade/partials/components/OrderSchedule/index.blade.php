@@ -51,6 +51,42 @@
 
     const payload = @json($payload);
 
+    // ── Placement ────────────────────────────────────────────────────────────────
+    // This block asks the customer a question about the order, so it has to be met
+    // BEFORE the button that places it. The button lives in core's Cart section
+    // summary card, and a theme can only render before or after that whole section —
+    // so the block ships above the cart (its floor, already ahead of the button) and
+    // then moves itself directly above the button once the button is in the DOM.
+    //
+    // Shipped below the cart first, which put the picker ~200px past Proceed to
+    // Checkout: a customer who did not scroll ordered ASAP never knowing scheduling
+    // existed. Moving the mounted element is safe — Vue binds to the nodes, not to
+    // their position — and if core's markup ever drops `data-co-place` the block
+    // simply stays where the server put it, which is still before the button.
+    const seat = () => {
+        const button = document.querySelector('[data-co-place]');
+
+        if (!button || !button.parentNode || button.previousElementSibling === root) {
+            return !!button;
+        }
+
+        button.parentNode.insertBefore(root, button);
+        const card = root.querySelector('.saffron-schedule');
+        if (card) card.classList.add('saffron-schedule--inline');
+
+        return true;
+    };
+
+    // The script runs where the component is printed, which is above the cart section,
+    // so the target does not exist yet on the first pass. Core also re-renders the
+    // summary as the cart validates, so the seat is re-checked for a few seconds.
+    if (!seat()) {
+        let tries = 0;
+        const timer = setInterval(() => {
+            if (seat() || ++tries > 40) clearInterval(timer);
+        }, 100);
+    }
+
     createApp({
         setup() {
             const days   = payload.days;

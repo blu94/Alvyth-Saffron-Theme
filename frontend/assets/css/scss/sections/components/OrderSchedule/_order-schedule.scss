@@ -22,6 +22,25 @@
   }
 }
 
+// Seated inside core's order-summary card, directly above Proceed to Checkout. The card
+// already supplies the surround, so the block drops its own frame and reads as one more
+// row of the summary rather than a second card floating inside the first.
+.saffron-schedule--inline {
+  max-width: none;
+  margin-block: 1.5rem 1rem;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid $color-line;
+  padding-top: 1.25rem;
+  border-radius: 0;
+  background-color: transparent;
+
+  .saffron-schedule__title {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+  }
+}
+
 .saffron-schedule__title {
   margin-bottom: 1rem;
   font-size: 1.125rem;
