@@ -20,7 +20,7 @@ change or an unanswered product decision — both are itemised in
 | 2 | Dish sheet: variants + free modifier groups; options to the cart | **done** |
 | 3 | Modifier admin (groups, answers, dish pivot) | **done** — paid add-ons blocked on §17.3 |
 | 4 | One ordering mode end to end, fee, minimum order | not started |
-| 5 | Kitchen queue + dish availability screens | **done** — see the note on the queue below |
+| 5 | Kitchen queue + dish availability screens | **done** — see the note on the queue below; Kitchen State is also on each order's own edit screen |
 | 6–8 | Core §14 items 1–6 | not started (core) |
 | 9 | Notifications, order tracker, receipts, reorder | not started |
 | 10 | RBAC, `.agent/docs/restaurant.md` | docs **done**; `kitchen` resource outstanding |
@@ -34,8 +34,14 @@ effect, speed, stagger and delay under *Styling → Animation*; the theme's **An
 tab holds the master switch and the defaults a section inherits. See "Animation" below.
 **Admin modules:** `modifier-groups`, `service-windows` (weekly hours *and* dated holidays in
 one list, plus the Kitchen Queue page).
-**Extends:** `products` — a Modifiers tab on the dish's own form, via core's module extension
-seam (`admin/extends/products.json` + `backend/Handlers/ProductModifierGroups.php`).
+**Extends:** `products` — a Modifiers tab on the dish's own form — and `orders` — a Kitchen
+tab that moves an order through New / Preparing / Ready / Out for delivery / Delivered from
+its own edit screen, the same write the Kitchen Queue's Advance card makes. Both via core's
+module extension seam (`admin/extends/{products,orders}.json` +
+`backend/Handlers/{ProductModifierGroups,OrderKitchenState}.php`); the Kitchen tab needed
+`OrderController` to call that seam, which core now does. Ready and Out for delivery are one
+status pair, so the tab is the only place on the order that tells them apart; an untouched tab
+leaves the sidebar's Order Status / Fulfillment Status exactly as saved.
 **Tables:** `modifier_groups`, `modifiers`, `dish_modifier_group`, `service_windows`.
 
 Two screens were retired rather than kept. **Dish Availability** toggled `Product.status`,
@@ -153,6 +159,13 @@ mode picker is blocked on core (ISSUES O2–O4) and there is no review surface (
 back with the features rather than sitting live in admin promising behaviour that does not
 exist.
 
+**Colours.** `General → Colours` writes each colour as a `--color-{key}` custom property
+through `partials/layout/dynamic-styles.blade.php`. The accent's hover shade,
+`--color-accent-dark`, is not a setting — it is derived from the accent
+(`color-mix(in srgb, var(--color-accent), #000 15%)`) whenever an accent is saved, so a shop
+that changes its accent gets matching hovers, prices and focus rings instead of the compiled
+saffron (audit A18).
+
 ## Search engines
 
 `General → Search Engines → Structured Data` (on by default) prints schema.org JSON-LD built
@@ -178,6 +191,29 @@ than one locale is active in Settings → Localization. It is Ella's `header_sho
 with Ella's URL rule (strip the current locale segment, prefix the chosen one unless it is the
 default, keep the query string) drawn as a Saffron dropdown — the same hover / focus / caret
 machinery as a nav dropdown, end-aligned so it stays on-screen on a phone.
+
+`Header → Search Placeholder` (translatable, shown while Show Search is on) is the grey prompt
+inside the search panel's box; empty means "Search the menu". The panel always offers a way
+out: **Browse the whole menu** — a link under the section shortcuts before anything is typed,
+and a button when a search finds nothing — pointing at the shop's own Categories page, the
+same record the breadcrumb trail resolves, so a renamed or translated slug still works. A
+shop with no Categories page gets no link rather than a link to a 404.
+
+## Blog
+
+The blog index paginates with core's shared pager (the plain Previous / Page N of M / Next
+that `collection_grid`, `product_grid` and `blog_grid` print), dressed by the theme — never
+Laravel's default paginator view, whose Tailwind chevrons render at page width in a theme that
+ships no Tailwind. A single post shows its featured image, date and author, the lead paragraph,
+any legacy content blocks (`html` / `text` / `image` in the post's `data`, as Ella renders
+them, so a post migrated from an Ella shop keeps its body), and Previous / Next story links.
+There is deliberately no sidebar and no comments — a restaurant's stories do not need them.
+
+## Print
+
+`@media print` hides the announcement bar, header, footer, search panel, go-to-top button and
+every button, so a printed order confirmation or order detail is the content alone. It is one
+rule set in the layout rather than a per-page block, because the chrome is the same everywhere.
 
 ## Newsletter
 

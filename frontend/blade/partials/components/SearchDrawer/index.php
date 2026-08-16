@@ -37,11 +37,12 @@ class SearchDrawer
         $settings = $data['settings'] ?? [];
 
         return View::make($themeViewPath, [
-            'locale'      => $locale,
-            'placeholder' => $this->translate($settings['header_search_placeholder'] ?? null, $locale)
+            'locale'       => $locale,
+            'placeholder'  => $this->translate($settings['header_search_placeholder'] ?? null, $locale)
                 ?: __('Search the menu'),
-            'sections'    => $this->sections($locale),
-            'labels'      => [
+            'sections'     => $this->sections($locale),
+            'browseAllUrl' => $this->browseAllUrl(),
+            'labels'       => [
                 // Every string the Vue app can show. Held here rather than in the script so a
                 // Malay menu does not surface English error text — the mistake this theme
                 // already made once in the dish sheet.
@@ -78,6 +79,25 @@ class SearchDrawer
             ->filter(fn ($row) => $row['title'] !== '')
             ->values()
             ->all();
+    }
+
+    /**
+     * Where "Browse the whole menu" goes when a search finds nothing, or nothing has been typed.
+     *
+     * The shop's own CATEGORIES page — the same record the breadcrumb trail resolves — rather
+     * than a hard-coded `/collections`, because page slugs are translatable and an operator may
+     * have renamed it. Null when the shop has no such page, in which case the panel simply
+     * shows no way out rather than a link to a 404; the label was being built for this button
+     * for the whole life of the drawer and never rendered (audit A20).
+     */
+    protected function browseAllUrl(): ?string
+    {
+        $listing = \App\Models\Page::query()
+            ->where('type', 'CATEGORIES')
+            ->where('status', 'active')
+            ->first();
+
+        return $listing ? url($listing->store_url) : null;
     }
 
     protected function translate(mixed $value, string $locale): string

@@ -39,6 +39,15 @@
                 {{ $cssVar }}: {{ $value }};
             @endif
         @endforeach
+
+        {{-- The accent's hover shade. `--color-accent-dark` is compiled into theme.css and
+             carries every hover, focus and "price" tint, but no setting names it — so an
+             operator who changed the Accent Colour kept saffron on every hover (audit A18).
+             Derived from the accent rather than asked for as a second colour, so the two
+             cannot drift apart. --}}
+        @if(is_string($settings['accent'] ?? null) && trim($settings['accent']) !== '')
+            --color-accent-dark: color-mix(in srgb, var(--color-accent), #000 15%);
+        @endif
     }
 
     @stack('dynamic_styles')

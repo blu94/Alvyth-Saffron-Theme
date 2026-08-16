@@ -121,6 +121,31 @@
   color: $color-muted;
 }
 
+// The way out of a dead search. As a button under "nothing matches", and as a quiet link
+// under the section chips before anything is typed — a panel that covers the menu must
+// always offer somewhere to go (audit A20). Tap target kept at 40px on touch, per the sweep.
+.saffron-search__browse {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  margin-top: 1rem;
+
+  &--link {
+    margin-top: 1.25rem;
+    padding: 0.4rem 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $color-accent-dark;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+
+    &:hover,
+    &:focus-visible {
+      color: $color-black;
+    }
+  }
+}
+
 .saffron-search__result {
   display: flex;
   align-items: center;

@@ -32,6 +32,10 @@ Each row is one question, with these columns:
 
 Two filters sit above the list: **Status**, and **Selection** (single or multiple).
 
+Each row has three actions: the **eye** opens a read-only view of the group — handy for
+checking a question without any risk of changing it — the **pencil** edits it, and the
+**bin** deletes it after asking.
+
 ## Writing a group
 
 ### The Question

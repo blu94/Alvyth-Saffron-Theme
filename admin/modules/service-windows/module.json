@@ -15,9 +15,6 @@
   "create": {
     "$ref": "create.json"
   },
-  "view": {
-    "$ref": "view.json"
-  },
   "kitchen": {
     "$ref": "kitchen.json"
   },

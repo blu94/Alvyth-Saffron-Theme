@@ -25,9 +25,12 @@
                     {{ $labels['results'] }} <span class="saffron-search__count">@{{ results.length }}</span>
                 </p>
 
-                <p class="saffron-search__empty" v-else-if="!loading">
-                    {{ $labels['noResults'] }} <strong>@{{ query }}</strong>
-                </p>
+                <div class="saffron-search__empty" v-else-if="!loading">
+                    <p class="mb-0">{{ $labels['noResults'] }} <strong>@{{ query }}</strong></p>
+                    @if($browseAllUrl)
+                        <a href="{{ $browseAllUrl }}" class="saffron-btn saffron-btn--outline saffron-search__browse">{{ $labels['browseAll'] }}</a>
+                    @endif
+                </div>
 
                 <p class="saffron-search__empty" v-else>{{ $labels['searching'] }}</p>
 
@@ -46,14 +49,19 @@
                 </a>
             </div>
 
-            @if(!empty($sections))
+            @if(!empty($sections) || $browseAllUrl)
                 <div v-if="query.length < 2">
-                    <p class="saffron-search__label">{{ __('Browse the menu') }}</p>
-                    <div class="saffron-search__chips">
-                        @foreach($sections as $section)
-                            <a href="{{ $section['url'] }}" class="saffron-search__chip">{{ $section['title'] }}</a>
-                        @endforeach
-                    </div>
+                    @if(!empty($sections))
+                        <p class="saffron-search__label">{{ __('Browse the menu') }}</p>
+                        <div class="saffron-search__chips">
+                            @foreach($sections as $section)
+                                <a href="{{ $section['url'] }}" class="saffron-search__chip">{{ $section['title'] }}</a>
+                            @endforeach
+                        </div>
+                    @endif
+                    @if($browseAllUrl)
+                        <a href="{{ $browseAllUrl }}" class="saffron-search__browse saffron-search__browse--link">{{ $labels['browseAll'] }}</a>
+                    @endif
                 </div>
             @endif
         </div>

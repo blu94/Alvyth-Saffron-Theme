@@ -383,6 +383,19 @@
         {
           "ui": {
             "type": "field",
+            "cols": 6,
+            "show_if": "header_show_search,true"
+          },
+          "key": "header_search_placeholder",
+          "type": "text",
+          "label": "Search Placeholder",
+          "placeholder": "e.g. Search the menu",
+          "hint": "The grey prompt inside the search box before anything is typed",
+          "translatable": true
+        },
+        {
+          "ui": {
+            "type": "field",
             "cols": 6
           },
           "key": "header_show_cart",

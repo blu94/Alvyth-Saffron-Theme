@@ -35,8 +35,12 @@
                 @endforeach
             </div>
 
+            {{-- Core's shared pager, not `$posts->links()`: Laravel's default paginator view is
+                 Tailwind markup whose chevron SVGs take their size from Tailwind classes this
+                 theme does not ship, so it rendered a chevron the width of the page (audit A14).
+                 The same partial `collection_grid`, `product_grid` and `blog_grid` use. --}}
             <div class="mt-4">
-                {{ $posts->links() }}
+                @include('components.builder.sections.partials.pager', ['paginator' => $posts])
             </div>
         @endif
     @endif

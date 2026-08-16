@@ -53,6 +53,9 @@ ever one thing.
 Weekly rows sort in week order first, then the dated overrides by date. The **Entry Type**
 filter shows one kind at a time; **Day**, **Mode** and **Status** narrow further.
 
+Each row has three actions: the **eye** opens a read-only view of the entry, the **pencil**
+edits it, and the **bin** deletes it after asking.
+
 ## Kitchen Queue
 
 Every open order — confirmed or being prepared — oldest first:
@@ -69,6 +72,29 @@ Every open order — confirmed or being prepared — oldest first:
 - **Advance An Order**: pick the order, pick the state it has reached (Preparing, Ready, Out
   For Delivery, Delivered), then **Move Order**. The order's status changes everywhere at
   once — the queue, Sales, and the customer's order history.
+
+### Moving one order from its own page
+
+You do not have to be on the queue to move an order. Open it under **Sales → Orders**, and
+the **Kitchen** tab shows where it is — New, Preparing, Ready, Out for delivery or
+Delivered. Pick the state it has reached and **Save Changes**. That does exactly what Move
+Order does on the queue: the order's **Order Status** and **Fulfillment Status** in the
+sidebar change to match, and the queue shows it in the new column the next time it loads.
+
+Worth knowing:
+
+- **Ready and Out for delivery look the same on the sidebar** — both are Processing /
+  Partial. The Kitchen tab is the only place the two differ, which is why it exists.
+- **Leaving the tab alone leaves the sidebar alone.** If you only change Order Status or
+  Fulfillment Status yourself — putting an order on hold, cancelling it — the Kitchen tab does
+  not overwrite what you chose. Only picking a *different* kitchen state moves the order.
+- **A cancelled order cannot be moved.** Saving a cancelled order with a new kitchen state
+  is refused, and nothing on the order changes.
+- **A new online order shows no kitchen state yet.** Orders arrive as Pending; the tab is
+  blank until you pick one. Choosing **New** confirms the order and puts it on the queue —
+  the way to send a phone order to the kitchen from its own page.
+- **The queue's Advance An Order card is still there.** It is the counter's control during
+  service; the tab is for when you already have the order open.
 
 ## Things worth knowing
 

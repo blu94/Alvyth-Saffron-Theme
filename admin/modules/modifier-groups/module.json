@@ -15,9 +15,6 @@
   "create": {
     "$ref": "create.json"
   },
-  "view": {
-    "$ref": "view.json"
-  },
   "navigation": [
     { "title": "List", "icon": "tabler-circle", "to": "module-type" },
     { "title": "Add Group", "icon": "tabler-circle", "to": "module-type-create" }

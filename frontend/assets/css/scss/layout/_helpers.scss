@@ -28,6 +28,44 @@
   margin: 0;
 }
 
+// Core's shared pager (`components.builder.sections.partials.pager`) — the blog index and
+// any core listing section rendered inside this theme print it. Core ships it unstyled on
+// purpose so it degrades in any theme; these are the Saffron clothes for it. Links keep a
+// 40px tap target, the size the responsive sweep holds every control to.
+.cms-pager {
+  margin-top: 2rem;
+  font-size: 0.9rem;
+}
+
+.cms-pager__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0.4rem 1rem;
+  border: 1px solid $color-line;
+  border-radius: 999px;
+  color: $color-black;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: $color-accent;
+    color: $color-accent-dark;
+  }
+
+  &--disabled {
+    border-color: transparent;
+    color: $color-muted;
+    cursor: default;
+  }
+}
+
+.cms-pager__status {
+  color: $color-muted;
+}
+
 // Skeleton shimmer for anything waiting on a fetch.
 .saffron-skeleton {
   background: linear-gradient(90deg, $hex-sand-100 25%, $hex-sand-50 37%, $hex-sand-100 63%);

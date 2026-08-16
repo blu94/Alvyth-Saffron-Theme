@@ -1,0 +1,39 @@
+// ─── Print ────────────────────────────────────────────────────────────────────
+// A printed order confirmation or order detail used to carry the announcement bar, the
+// header, the footer, the search panel and the go-to-top button (audit B9). Chrome goes,
+// the page keeps its content at full width, and links print as text rather than as
+// underlined colour nobody can click on paper. Every page shares one rule set rather than
+// a per-template block, because the chrome is the layout's and is the same everywhere.
+@media print {
+  .saffron-announcement,
+  .saffron-header,
+  .saffron-footer,
+  .saffron-search,
+  #saffron-go-to-top,
+  .saffron-status__actions,
+  .saffron-post__nav,
+  .cms-pager {
+    display: none !important;
+  }
+
+  .saffron-body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .content-for-layout,
+  .saffron-container {
+    max-width: none !important;
+    padding-inline: 0 !important;
+  }
+
+  a,
+  a:visited {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+
+  .saffron-btn {
+    display: none !important;
+  }
+}

@@ -46,3 +46,16 @@
   width: 100%;
   margin-top: 2.5rem;
 }
+
+// The cart page's checkout plugin slot. Core's Cart section owns the summary and renders
+// no slot, so the theme's copy sits under the cart in the same container; it is spaced as
+// the summary's last block rather than a stray region (audit A15).
+.saffron-cart__plugins {
+  padding-bottom: 2rem;
+
+  // Only when a plugin actually rendered something: the slot component wraps its output,
+  // and a slot nobody opted into leaves the container with no element children.
+  &:not(:has(> *)) {
+    display: none;
+  }
+}

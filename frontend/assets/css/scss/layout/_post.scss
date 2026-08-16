@@ -1,0 +1,88 @@
+@use "../base/colors" as *;
+@use "../base/variables" as *;
+@use "../mixins/breakpoints" as *;
+
+// ─── Single post (pages/blog.blade.php, pages/post.blade.php) ─────────────────
+// The furniture a post needs and a builder-row page already has: hero image, date and
+// author, a readable measure for the body, and Previous / Next at the foot. Ported from
+// Ella's post template (audit A16, B7) at the size a restaurant story wants — no sidebar,
+// no comments.
+.saffron-post {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.saffron-post__head {
+  margin-bottom: 1.5rem;
+}
+
+.saffron-post__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $color-muted;
+}
+
+.saffron-post__meta-sep {
+  color: $color-line;
+}
+
+.saffron-post__hero {
+  margin: 0 0 1.75rem;
+  border-radius: $card-radius;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background-color: $hex-sand-100;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.saffron-post__lede {
+  max-width: none;
+  margin-bottom: 1.75rem;
+}
+
+.saffron-post__body {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: $color-black;
+
+  a {
+    color: $color-accent-dark;
+  }
+}
+
+.saffron-post__block {
+  margin-bottom: 1.25rem;
+}
+
+.saffron-post__image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: $card-radius;
+}
+
+.saffron-post__nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid $color-line;
+
+  // The two buttons stack under a phone's width; the outline button already meets the
+  // 40px tap target the responsive sweep holds every control to.
+  @include sm-down {
+    flex-direction: column;
+  }
+}
