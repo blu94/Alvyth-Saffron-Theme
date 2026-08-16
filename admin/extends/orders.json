@@ -1,0 +1,50 @@
+{
+  "extends": "orders",
+  "owns": ["kitchen_state", "kitchen_state_was"],
+  "handler": "Theme\\Backend\\Handlers\\OrderKitchenState",
+  "tabs": [
+    {
+      "name": "Kitchen",
+      "ui": {
+        "type": "tab",
+        "icon": "tabler-tools-kitchen-3"
+      },
+      "elements": [
+        {
+          "ui": {
+            "type": "section",
+            "cols": 12,
+            "icon": "tabler-tools-kitchen-3"
+          },
+          "name": "Where This Order Is In The Kitchen",
+          "subtitle": "The same states the Kitchen Queue moves an order through. Pick the one it has reached and save.",
+          "elements": [
+            {
+              "ui": { "type": "field", "cols": 12 },
+              "key": "kitchen_state",
+              "type": "select",
+              "label": "Kitchen State",
+              "placeholder": "Not in the kitchen yet",
+              "hint": "Changing this also updates Order Status and Fulfillment Status to match. Ready and Out for delivery share the same statuses — this is the only place they differ.",
+              "options": {
+                "items": [
+                  { "title": "New",              "value": "new" },
+                  { "title": "Preparing",        "value": "preparing" },
+                  { "title": "Ready",            "value": "ready" },
+                  { "title": "Out for delivery", "value": "out" },
+                  { "title": "Delivered",        "value": "delivered" }
+                ]
+              },
+              "rules": ["nullable", "in:new,preparing,ready,out,delivered"]
+            },
+            {
+              "ui": { "type": "hidden" },
+              "key": "kitchen_state_was",
+              "rules": ["nullable"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

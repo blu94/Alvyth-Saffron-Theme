@@ -7,6 +7,7 @@ use App\Models\Product;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Theme\Backend\Models\ServiceWindow;
 
 /**
@@ -301,7 +302,7 @@ class ServiceWindowRepository
         foreach ($orders as $order) {
             $key = $this->kitchenStateFor($order);
 
-            if (!isset($columns[$key])) {
+            if ($key === null || !isset($columns[$key])) {
                 continue;
             }
 
@@ -445,8 +446,14 @@ class ServiceWindowRepository
      *
      * The stored value wins because it carries the distinction the status axes cannot —
      * "ready at the counter" and "with the rider" are the same pair.
+     *
+     * Public because the order's own edit screen shows this too (`OrderKitchenState`), and
+     * that screen sees every order, not only the queue's confirmed/processing ones. So the
+     * fallback covers `completed` (Delivered) and answers `null` for an order the kitchen has
+     * no state for — pending, on hold, cancelled — rather than calling an unpaid order
+     * "Preparing". The queue never asks about those, so it reads exactly as before.
      */
-    protected function kitchenStateFor(Order $order): string
+    public function kitchenStateFor(Order $order): ?string
     {
         $stored = $order->meta['kitchen_state'] ?? null;
 
@@ -454,20 +461,50 @@ class ServiceWindowRepository
             return $stored;
         }
 
-        if ($order->status === Order::STATUS_CONFIRMED) {
-            return 'new';
-        }
-
-        return $order->fulfillment_status === Order::FULFILLMENT_PARTIAL ? 'ready' : 'preparing';
+        return match ($order->status) {
+            Order::STATUS_CONFIRMED  => 'new',
+            Order::STATUS_PROCESSING => $order->fulfillment_status === Order::FULFILLMENT_PARTIAL ? 'ready' : 'preparing',
+            Order::STATUS_COMPLETED  => 'delivered',
+            default                  => null,
+        };
     }
 
     /**
-     * Advance one order to the next kitchen state.
+     * Move one order to a kitchen state — the one write both the queue's Advance card and the
+     * order form's Kitchen tab perform, so the two screens cannot drift on what "Ready" means.
      *
-     * Writes the status pair AND `meta.kitchen_state` in one transaction. Note the guard core
+     * Writes the status pair AND `meta.kitchen_state` on the given model. Note the guard core
      * enforces: `Order::contradictsCompletion()` rejects a `completed` order whose fulfillment
      * is still `unfulfilled` with a 422, so the queue must move fulfillment along rather than
      * jumping straight to completed — which is exactly what the state table above does.
+     *
+     * The caller owns the transaction: the queue opens its own with the row locked, and the
+     * order form's handler already runs inside `OrderController`'s. A cancelled order refuses
+     * with a `ValidationException`, which that controller answers as a 422.
+     */
+    public function moveKitchenOrder(Order $order, string $target): void
+    {
+        if (!isset(self::KITCHEN_STATES[$target])) {
+            throw ValidationException::withMessages(['kitchen_state' => "Unknown kitchen state: {$target}"]);
+        }
+
+        if ($order->status === Order::STATUS_CANCELLED) {
+            throw ValidationException::withMessages(['kitchen_state' => 'That order was cancelled.']);
+        }
+
+        $state = self::KITCHEN_STATES[$target];
+
+        $order->fill([
+            'status'             => $state['status'],
+            'fulfillment_status' => $state['fulfillment_status'],
+            'meta'               => array_merge($order->meta ?? [], ['kitchen_state' => $target]),
+        ])->save();
+    }
+
+    /**
+     * Advance one order to the next kitchen state, from the queue's Advance An Order card.
+     *
+     * One transaction with the order row locked; the write itself is {@see moveKitchenOrder()}.
      */
     protected function advanceKitchenOrder(array $data): array
     {
@@ -491,15 +528,11 @@ class ServiceWindowRepository
                 return ['message' => 'That order no longer exists.', 'ok' => false];
             }
 
-            if ($order->status === Order::STATUS_CANCELLED) {
-                return ['message' => 'That order was cancelled.', 'ok' => false];
+            try {
+                $this->moveKitchenOrder($order, $target);
+            } catch (ValidationException $e) {
+                return ['message' => $e->getMessage(), 'ok' => false];
             }
-
-            $order->fill([
-                'status'             => $state['status'],
-                'fulfillment_status' => $state['fulfillment_status'],
-                'meta'               => array_merge($order->meta ?? [], ['kitchen_state' => $target]),
-            ])->save();
 
             return [
                 'message' => "Order {$order->order_number} moved to {$state['label']}.",
