@@ -141,7 +141,9 @@ class ServiceWindowRepository
     {
         $options = [];
 
-        foreach ($columns as $column) {
+        // A schema asks for a column with `params: {"columns[]": "…"}`; a single value can
+        // arrive as a bare string, and iterating a string is a TypeError, not an empty list.
+        foreach ((array) $columns as $column) {
             $options[$column] = match ($column) {
                 'status', 'mode' => ServiceWindow::query()
                     ->whereNotNull($column)
@@ -172,11 +174,11 @@ class ServiceWindowRepository
                     ->limit(200)
                     ->get(['id', 'order_number', 'grand_total', 'created_at'])
                     ->map(fn ($o) => [
-                        'label' => trim(sprintf(
-                            '%s — %s min ago',
+                        'label' => sprintf(
+                            '%s — waiting %s',
                             $o->order_number,
-                            optional($o->created_at)->diffInMinutes(now()) ?? 0
-                        )),
+                            $this->waitLabel((int) (optional($o->created_at)->diffInMinutes(now()) ?? 0))
+                        ),
                         'value' => (string) $o->id,
                     ])
                     ->values()
@@ -307,7 +309,8 @@ class ServiceWindowRepository
                 'id'           => $order->id,
                 'order_number' => $order->order_number,
                 'placed_at'    => optional($order->created_at)->toDateTimeString(),
-                'waiting_mins' => optional($order->created_at)->diffInMinutes(now()) ?? 0,
+                // Carbon 3 returns a float here; the label and the chart both want whole minutes.
+                'waiting_mins' => (int) (optional($order->created_at)->diffInMinutes(now()) ?? 0),
                 'customer'     => $order->customer?->name ?? 'Guest',
                 'mode'         => $order->meta['ordering_mode'] ?? ($order->shipping_address_id ? 'delivery' : 'pickup'),
                 'scheduled_at' => $order->meta['scheduled_at'] ?? null,
@@ -343,43 +346,98 @@ class ServiceWindowRepository
             $flat['count_' . $key] = (string) count($column['orders']);
         }
 
-        $oldest = collect($columns)
+        $byWait = collect($columns)
             ->flatMap(fn ($c) => $c['orders'])
             ->sortByDesc('waiting_mins')
-            ->first();
+            ->values();
+
+        $oldest = $byWait->first();
 
         $flat['oldest'] = $oldest
-            ? sprintf('%s — waiting %d min (%s)', $oldest['order_number'], $oldest['waiting_mins'], $oldest['state'])
+            ? sprintf('%s — %s (%s)', $oldest['order_number'], $this->waitLabel($oldest['waiting_mins']), self::KITCHEN_STATES[$oldest['state']]['label'])
             : 'Nothing waiting.';
 
         // One readable ticket per order, options spelled out, because reading the options is
         // the entire point of the queue.
-        $flat['queue_summary'] = collect($columns)
-            ->flatMap(fn ($c) => $c['orders'])
-            ->sortByDesc('waiting_mins')
+        $flat['queue_summary'] = $byWait
             ->take(30)
-            ->map(function ($o) {
-                $lines = collect($o['items'])->map(function ($item) {
-                    $opts = collect($item['options'])
-                        ->map(fn ($opt) => trim(($opt['label'] ? $opt['label'] . ': ' : '') . $opt['value']))
-                        ->implode(' · ');
-
-                    return '   ' . $item['qty'] . '× ' . $item['title'] . ($opts !== '' ? ' [' . $opts . ']' : '');
-                })->implode("\n");
-
-                return sprintf(
-                    "%s · %s · %s · %d min\n%s%s",
-                    $o['order_number'],
-                    strtoupper((string) $o['mode']),
-                    $o['state'],
-                    $o['waiting_mins'],
-                    $lines,
-                    $o['note'] ? "\n   Note: " . $o['note'] : ''
-                );
-            })
+            ->map(fn ($o) => $this->ticket($o, true))
             ->implode("\n\n") ?: 'The queue is empty.';
 
+        // The same tickets, one block of text per kitchen state — the spec's board of
+        // columns, drawn with the `display` type (which preserves line breaks) because the
+        // schema engine has no card-list widget. Each column is oldest first, like the board.
+        foreach ($columns as $key => $column) {
+            $flat['queue_' . $key] = collect($column['orders'])
+                ->sortByDesc('waiting_mins')
+                ->take(20)
+                ->map(fn ($o) => $this->ticket($o, false))
+                ->implode("\n\n") ?: 'Nothing here.';
+        }
+
+        // Two charts for the schema engine's `chart` field: the four counts as a donut, and
+        // the longest-waiting orders as a horizontal bar so the counter sees at a glance who
+        // has waited longest, not just that someone has. `{labels, series}` is the contract
+        // BuilderFieldChart reads.
+        $flat['orders_by_state'] = [
+            'labels' => collect($columns)->pluck('label')->values()->all(),
+            'series' => collect($columns)->map(fn ($c) => count($c['orders']))->values()->all(),
+        ];
+
+        $longest = $byWait->take(8);
+
+        $flat['waiting_chart'] = [
+            'labels' => $longest->pluck('order_number')->values()->all(),
+            'series' => [[
+                'name' => 'Waiting (min)',
+                'data' => $longest->pluck('waiting_mins')->map(fn ($m) => (int) $m)->values()->all(),
+            ]],
+        ];
+
         return $flat;
+    }
+
+    /**
+     * One kitchen ticket as text: header line, then each item with its options in brackets,
+     * then the customer's note. `$withState` prints the state on the header, which the
+     * per-state columns leave out because the column already says it.
+     */
+    protected function ticket(array $o, bool $withState): string
+    {
+        $lines = collect($o['items'])->map(function ($item) {
+            $opts = collect($item['options'])
+                ->map(fn ($opt) => trim(($opt['label'] ? $opt['label'] . ': ' : '') . $opt['value']))
+                ->implode(' · ');
+
+            return '   ' . $item['qty'] . '× ' . $item['title'] . ($opts !== '' ? ' [' . $opts . ']' : '');
+        })->implode("\n");
+
+        $header = [$o['order_number'], strtoupper((string) $o['mode'])];
+
+        if ($withState) {
+            $header[] = self::KITCHEN_STATES[$o['state']]['label'] ?? $o['state'];
+        }
+
+        $header[] = $this->waitLabel($o['waiting_mins']);
+
+        return implode(' · ', $header) . "\n" . $lines . ($o['note'] ? "\n   Note: " . $o['note'] : '');
+    }
+
+    /**
+     * "26546 min" is a number nobody can read at a glance; "18 d 10 h" is. Minutes under an
+     * hour stay minutes — that is the resolution a kitchen works in.
+     */
+    protected function waitLabel(int $minutes): string
+    {
+        if ($minutes < 60) {
+            return $minutes . ' min';
+        }
+
+        if ($minutes < 1440) {
+            return intdiv($minutes, 60) . ' h ' . ($minutes % 60) . ' min';
+        }
+
+        return intdiv($minutes, 1440) . ' d ' . intdiv($minutes % 1440, 60) . ' h';
     }
 
     /**

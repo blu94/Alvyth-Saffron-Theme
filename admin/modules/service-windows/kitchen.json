@@ -1,137 +1,308 @@
-{
-  "ui": {
-    "type": "section",
-    "icon": "tabler-tools-kitchen-3",
-    "class": "pa-5"
-  },
-  "name": "Kitchen Queue",
-  "subtitle": "Every open order, oldest first, with its options spelled out. Reload to refresh.",
-  "elements": [
-    {
-      "ui": { "type": "row", "dense": false },
-      "elements": [
-        {
-          "ui": { "type": "column", "cols": 12, "md": 3 },
-          "elements": [
-            {
-              "ui": { "type": "field" },
-              "type": "display",
-              "key": "count_new",
-              "label": "New"
-            }
-          ]
-        },
-        {
-          "ui": { "type": "column", "cols": 12, "md": 3 },
-          "elements": [
-            {
-              "ui": { "type": "field" },
-              "type": "display",
-              "key": "count_preparing",
-              "label": "Preparing"
-            }
-          ]
-        },
-        {
-          "ui": { "type": "column", "cols": 12, "md": 3 },
-          "elements": [
-            {
-              "ui": { "type": "field" },
-              "type": "display",
-              "key": "count_ready",
-              "label": "Ready"
-            }
-          ]
-        },
-        {
-          "ui": { "type": "column", "cols": 12, "md": 3 },
-          "elements": [
-            {
-              "ui": { "type": "field" },
-              "type": "display",
-              "key": "count_out",
-              "label": "Out For Delivery"
-            }
-          ]
-        }
-      ]
+[
+  {
+    "ui": {
+      "type": "section",
+      "icon": "tabler-tools-kitchen-3",
+      "cols": 12
     },
-    {
-      "ui": { "type": "divider", "class": "my-4" }
-    },
-    {
-      "ui": { "type": "field" },
-      "type": "display",
-      "key": "oldest",
-      "label": "Longest Waiting"
-    },
-    {
-      "ui": { "type": "field", "cols": 12, "readonly": true },
-      "key": "queue_summary",
-      "type": "textarea",
-      "label": "The Queue",
-      "hint": "One block per order: number, mode, state, minutes waiting, then each line with its options in brackets."
-    },
-    {
-      "ui": { "type": "section", "class": "bg-surface-variant pa-5 rounded-lg mt-2" },
-      "name": "Advance An Order",
-      "subtitle": "Pick the order and the state it has reached. Saving writes both status axes and meta.kitchen_state in one transaction.",
-      "elements": [
-        {
-          "ui": { "type": "row", "dense": true },
-          "elements": [
-            {
-              "ui": { "type": "field", "cols": 12, "md": 7 },
-              "key": "order_id",
-              "type": "select",
-              "label": "Order",
-              "placeholder": "Choose an open order",
-              "options": {
-                "url": "/admin/module/service-windows/options",
-                "master": "open_order"
-              }
-            },
-            {
-              "ui": { "type": "field", "cols": 12, "md": 5 },
-              "key": "to_state",
-              "type": "select",
-              "label": "Move To",
-              "placeholder": "Choose the new state",
-              "options": {
-                "url": "/admin/module/service-windows/options",
-                "master": "kitchen_state"
-              }
-            }
-          ]
-        },
-        {
-          "ui": { "type": "button", "class": "mt-4", "color": "primary" },
-          "type": "button",
-          "action": "save",
-          "label": "Move Order",
-          "icon": "tabler-arrow-right",
+    "name": "Kitchen Queue",
+    "subtitle": "Every open order, oldest first, with its options spelled out. Reload to refresh.",
+    "elements": [
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "icon": "tabler-bell-ringing",
           "color": "primary"
-        }
-      ]
-    },
-    {
-      "ui": { "type": "section", "class": "pa-5 rounded-lg mt-2" },
-      "name": "About This Screen",
-      "elements": [
-        {
-          "ui": { "type": "field", "cols": 12, "class": "text-medium-emphasis" },
-          "type": "display",
-          "key": "screen_notice",
-          "label": "Why it is a list and not a board",
-          "default": "The spec describes this as five columns of draggable cards. The admin's schema engine has no board or card-list field type, and a theme may not ship its own admin Vue components, so the queue is rendered from the field types that exist. The data behind it is already shaped as columns — adding a board display type to the schema engine is the only thing standing between this screen and the intended one. See ISSUES-SAFFRON-THEME.md O15."
         },
-        {
-          "ui": { "type": "field", "cols": 12, "class": "text-medium-emphasis" },
-          "type": "display",
-          "key": "generated_at",
-          "label": "Data As Of"
+        "type": "display",
+        "key": "count_new",
+        "label": "New"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "icon": "tabler-flame",
+          "color": "warning"
+        },
+        "type": "display",
+        "key": "count_preparing",
+        "label": "Preparing"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "icon": "tabler-bell-check",
+          "color": "success"
+        },
+        "type": "display",
+        "key": "count_ready",
+        "label": "Ready"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "icon": "tabler-moped",
+          "color": "info"
+        },
+        "type": "display",
+        "key": "count_out",
+        "label": "Out For Delivery"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "icon": "tabler-receipt",
+          "color": "secondary"
+        },
+        "type": "display",
+        "key": "total_open",
+        "label": "Open Orders"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 6
+          },
+          "icon": "tabler-hourglass-high",
+          "color": "error",
+          "valueClass": "text-h6 font-weight-medium"
+        },
+        "type": "display",
+        "key": "oldest",
+        "label": "Longest Waiting"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "icon": "tabler-clock",
+          "color": "secondary",
+          "valueClass": "text-body-1 font-weight-medium"
+        },
+        "type": "display",
+        "key": "generated_at",
+        "label": "Data As Of"
+      }
+    ]
+  },
+  {
+    "ui": {
+      "type": "section",
+      "class": "h-100",
+      "icon": "tabler-chart-donut",
+      "cols": {
+        "cols": 12,
+        "md": 5
+      }
+    },
+    "name": "Orders by state",
+    "subtitle": "Where tonight's open orders are right now.",
+    "elements": [
+      {
+        "ui": {
+          "type": "field",
+          "cols": 12
+        },
+        "type": "chart",
+        "chart": "donut",
+        "label": "Orders",
+        "key": "orders_by_state",
+        "unit": "order",
+        "total": "Open",
+        "height": 300,
+        "empty": "No open orders."
+      }
+    ]
+  },
+  {
+    "ui": {
+      "type": "section",
+      "class": "h-100",
+      "icon": "tabler-hourglass",
+      "cols": {
+        "cols": 12,
+        "md": 7
+      }
+    },
+    "name": "Waiting longest",
+    "subtitle": "Minutes since each order was placed — the top of this list is who to serve next.",
+    "elements": [
+      {
+        "ui": {
+          "type": "field",
+          "cols": 12
+        },
+        "type": "chart",
+        "chart": "bar",
+        "horizontal": true,
+        "label": "Waiting (min)",
+        "key": "waiting_chart",
+        "unit": "min",
+        "height": 300,
+        "empty": "Nothing waiting."
+      }
+    ]
+  },
+  {
+    "ui": {
+      "type": "section",
+      "icon": "tabler-layout-columns",
+      "cols": 12
+    },
+    "name": "The Queue",
+    "subtitle": "One ticket per order, oldest first in each column: number, mode, waiting time, then every line with its options in brackets and the customer's note.",
+    "elements": [
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "valueClass": "text-body-2"
+        },
+        "type": "display",
+        "key": "queue_new",
+        "label": "New"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "valueClass": "text-body-2"
+        },
+        "type": "display",
+        "key": "queue_preparing",
+        "label": "Preparing"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "valueClass": "text-body-2"
+        },
+        "type": "display",
+        "key": "queue_ready",
+        "label": "Ready"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "valueClass": "text-body-2"
+        },
+        "type": "display",
+        "key": "queue_out",
+        "label": "Out For Delivery"
+      }
+    ]
+  },
+  {
+    "ui": {
+      "type": "section",
+      "icon": "tabler-arrow-right-circle",
+      "cols": 12
+    },
+    "name": "Advance An Order",
+    "subtitle": "Pick the order and the state it has reached, then Move Order. The order's status changes everywhere at once — the queue, Sales, and the customer's order history.",
+    "elements": [
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "md": 5
+          }
+        },
+        "key": "order_id",
+        "type": "select",
+        "label": "Order",
+        "placeholder": "Choose an open order",
+        "options": {
+          "url": "/admin/modules/service-windows/options",
+          "master": "open_order",
+          "params": { "columns[]": "open_order" }
         }
-      ]
-    }
-  ]
-}
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "md": 4
+          }
+        },
+        "key": "to_state",
+        "type": "select",
+        "label": "Move To",
+        "placeholder": "Choose the new state",
+        "options": {
+          "url": "/admin/modules/service-windows/options",
+          "master": "kitchen_state",
+          "params": { "columns[]": "kitchen_state" }
+        }
+      },
+      {
+        "ui": {
+          "type": "button",
+          "cols": {
+            "cols": 12,
+            "md": 3
+          },
+          "class": "align-self-end",
+          "color": "primary"
+        },
+        "type": "button",
+        "action": "save",
+        "label": "Move Order",
+        "icon": "tabler-arrow-right",
+        "color": "primary"
+      }
+    ]
+  }
+]

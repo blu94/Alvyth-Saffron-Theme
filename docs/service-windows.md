@@ -57,13 +57,18 @@ filter shows one kind at a time; **Day**, **Mode** and **Status** narrow further
 
 Every open order — confirmed or being prepared — oldest first:
 
-- **Count tiles**: New, Preparing, Ready, Out For Delivery, and the single longest-waiting
-  order.
-- **The queue**: one block per order — number, mode, state, minutes waiting, then every line
-  spelled out: `2× Charcoal Chicken [Size: Large · Extras: Cheese, Bacon]`, plus the
-  customer's note. Spelling the options out is the whole point of the screen.
-- **Advance An Order**: pick an order and the state it has reached, then save. Refresh by
-  reloading the page.
+- **At a glance**: tiles for New, Preparing, Ready and Out For Delivery, the number of open
+  orders, the single longest-waiting order (as `ORD-000320 — 1 h 20 min (Preparing)`), and
+  the time the figures were read. Reload the page to refresh them.
+- **Orders by state** and **Waiting longest**: a donut of the four counts, and a bar per order
+  showing how many minutes it has waited — the top bar is who to serve next.
+- **The Queue**: four columns, one per state, oldest first in each. One ticket per order —
+  number, mode, waiting time, then every line spelled out:
+  `2× Charcoal Chicken [Size: Large · Extras: Cheese, Bacon]`, plus the customer's note.
+  Spelling the options out is the whole point of the screen.
+- **Advance An Order**: pick the order, pick the state it has reached (Preparing, Ready, Out
+  For Delivery, Delivered), then **Move Order**. The order's status changes everywhere at
+  once — the queue, Sales, and the customer's order history.
 
 ## Things worth knowing
 

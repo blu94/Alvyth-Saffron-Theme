@@ -38,7 +38,7 @@
                 "placeholder": "Select Status",
                 "type": "select",
                 "options": {
-                    "url": "/admin/module/modifier-groups/options",
+                    "url": "/admin/modules/modifier-groups/options",
                     "master": "status"
                 }
             },

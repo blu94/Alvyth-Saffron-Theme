@@ -90,7 +90,9 @@ class ModifierGroupRepository
         $columns = array_intersect($columns, $valid);
         $options = [];
 
-        foreach ($columns as $column) {
+        // A schema asks for a column with `params: {"columns[]": "…"}`; a single value can
+        // arrive as a bare string, and iterating a string is a TypeError, not an empty list.
+        foreach ((array) $columns as $column) {
             $options[$column] = ModifierGroup::query()
                 ->whereNotNull($column)
                 ->distinct()

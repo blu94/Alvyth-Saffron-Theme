@@ -233,10 +233,11 @@ Verified against core, not assumed. Each is a limit on what this theme can promi
   Product and its variant with no concept of a surcharge, so a non-zero delta is shown to the
   customer and then not collected. Keep every answer at `0.00` until paid add-ons are decided;
   the dish sheet prints a debug warning on any dish that has one.
-- **The kitchen queue is a list, not a board.** The admin schema engine has no board or
-  card-list field type and a theme may not ship admin Vue, so the queue renders from the field
-  types that exist. The repository already returns the data shaped as columns, so a board
-  renderer can be dropped in without touching it.
+- **The kitchen queue is tiles, charts and text columns, not a board of draggable cards.**
+  The admin schema engine has no board or card-list field type and a theme may not ship admin
+  Vue, so the queue renders from the field types that exist — the same stat tiles and charts the
+  Loyalty overview uses, plus one text column per kitchen state. The repository already returns
+  the data shaped as columns, so a board renderer can be dropped in without touching it.
 - **The preview is `preview.png`, not `preview.webp`.** No WebP encoder exists on the container
   or the host — GD is built without it, and there is no `imagick`, `cwebp`, `magick` or
   `ffmpeg`. `create-theme.md` step 6 permits either format. WebP would need the browser-canvas

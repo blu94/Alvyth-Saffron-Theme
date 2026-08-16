@@ -38,8 +38,9 @@
                 "placeholder": "Weekly hours and holidays",
                 "type": "select",
                 "options": {
-                    "url": "/admin/module/service-windows/options",
-                    "master": "kind"
+                    "url": "/admin/modules/service-windows/options",
+                    "master": "kind",
+                    "params": { "columns[]": "kind" }
                 }
             },
             {
@@ -49,8 +50,9 @@
                 "placeholder": "Any day",
                 "type": "select",
                 "options": {
-                    "url": "/admin/module/service-windows/options",
-                    "master": "day_of_week"
+                    "url": "/admin/modules/service-windows/options",
+                    "master": "day_of_week",
+                    "params": { "columns[]": "day_of_week" }
                 }
             },
             {
@@ -74,7 +76,7 @@
                 "placeholder": "Select Status",
                 "type": "select",
                 "options": {
-                    "url": "/admin/module/service-windows/options",
+                    "url": "/admin/modules/service-windows/options",
                     "master": "status"
                 }
             }
