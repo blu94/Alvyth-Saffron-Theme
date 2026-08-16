@@ -49,35 +49,35 @@
             "items": [
               {
                 "title": "Monday",
-                "value": "1"
+                "value": 1
               },
               {
                 "title": "Tuesday",
-                "value": "2"
+                "value": 2
               },
               {
                 "title": "Wednesday",
-                "value": "3"
+                "value": 3
               },
               {
                 "title": "Thursday",
-                "value": "4"
+                "value": 4
               },
               {
                 "title": "Friday",
-                "value": "5"
+                "value": 5
               },
               {
                 "title": "Saturday",
-                "value": "6"
+                "value": 6
               },
               {
                 "title": "Sunday",
-                "value": "0"
+                "value": 0
               }
             ]
           },
-          "default": "1",
+          "default": 1,
           "rules": [
             "required_if:kind,recurring"
           ]
@@ -203,27 +203,6 @@
           ]
         }
       ]
-    },
-    {
-      "ui": {
-        "type": "section",
-        "cols": 12,
-        "icon": "tabler-alert-triangle"
-      },
-      "name": "What This Does And Does Not Do",
-      "elements": [
-        {
-          "ui": {
-            "type": "field",
-            "cols": 12,
-            "class": "text-medium-emphasis"
-          },
-          "type": "display",
-          "key": "enforcement_notice",
-          "label": "Enforcement",
-          "default": "These windows are read by the storefront's Store Status banner and Outlet Info hours. They do NOT refuse an order placed outside them — nothing in core checks service hours at checkout, so a direct request can still place an order at 3 a.m. Refusing one is a core change (RESTAURANT-THEME-SPEC.md §14 item 6)."
-        }
-      ]
     }
   ],
   "sidebar": {
@@ -234,6 +213,18 @@
           "dense": true
         },
         "elements": [
+          {
+            "ui": {
+              "type": "field",
+              "cols": 12,
+              "labelClass": "text-subtitle-1 font-weight-bold",
+              "valueClass": "text-body-2 text-medium-emphasis"
+            },
+            "type": "display",
+            "key": "enforcement_notice",
+            "label": "What This Does And Does Not Do",
+            "default": "These windows are read by the storefront's Store Status banner and Outlet Info hours. They do NOT refuse an order placed outside them — nothing in core checks service hours at checkout, so a direct request can still place an order at 3 a.m. Refusing one is a core change (RESTAURANT-THEME-SPEC.md §14 item 6)."
+          },
           {
             "ui": {
               "type": "field"
