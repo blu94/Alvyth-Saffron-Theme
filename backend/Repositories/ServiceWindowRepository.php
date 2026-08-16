@@ -313,8 +313,12 @@ class ServiceWindowRepository
                 // Carbon 3 returns a float here; the label and the chart both want whole minutes.
                 'waiting_mins' => (int) (optional($order->created_at)->diffInMinutes(now()) ?? 0),
                 'customer'     => $order->customer?->name ?? 'Guest',
-                'mode'         => $order->meta['ordering_mode'] ?? ($order->shipping_address_id ? 'delivery' : 'pickup'),
-                'scheduled_at' => $order->meta['scheduled_at'] ?? null,
+                // `checkout_fields` is where core persists the cart page's
+                // [data-checkout-field] values (spec §14 item 2); the bare keys are kept as
+                // a fallback for orders written before that landed. An empty string is the
+                // picker's own spelling of ASAP, so it collapses to null here.
+                'mode'         => $order->meta['checkout_fields']['ordering_mode'] ?? $order->meta['ordering_mode'] ?? ($order->shipping_address_id ? 'delivery' : 'pickup'),
+                'scheduled_at' => ($order->meta['checkout_fields']['scheduled_at'] ?? $order->meta['scheduled_at'] ?? null) ?: null,
                 'note'         => $order->notes,
                 'total'        => $order->grand_total,
                 'payment'      => $order->payment_status,
@@ -420,8 +424,28 @@ class ServiceWindowRepository
         }
 
         $header[] = $this->waitLabel($o['waiting_mins']);
+        $header[] = $this->scheduleLabel($o['scheduled_at'] ?? null);
 
         return implode(' · ', $header) . "\n" . $lines . ($o['note'] ? "\n   Note: " . $o['note'] : '');
+    }
+
+    /**
+     * "for 20 Aug 18:30" when the customer picked a slot, "ASAP" otherwise (spec §8.2 —
+     * the ticket detail B8 flagged as missing). The stored value is a checkout field, so a
+     * hand-crafted request can put any string there; a snapshot must render years later, so
+     * an unparseable value is shown truncated rather than thrown on.
+     */
+    protected function scheduleLabel(?string $scheduledAt): string
+    {
+        if (! $scheduledAt) {
+            return 'ASAP';
+        }
+
+        try {
+            return 'for ' . Carbon::parse($scheduledAt)->format('j M H:i');
+        } catch (\Throwable $e) {
+            return 'for ' . Str::limit($scheduledAt, 24);
+        }
     }
 
     /**

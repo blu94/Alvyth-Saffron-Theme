@@ -215,6 +215,23 @@ There is deliberately no sidebar and no comments — a restaurant's stories do n
 every button, so a printed order confirmation or order detail is the content alone. It is one
 rule set in the layout rather than a per-page block, because the chrome is the same everywhere.
 
+## Scheduled ordering
+
+The cart page carries a **When do you want it** block: *As soon as possible*, or a day and a
+30-minute slot picked from the shop's own Service Hours — a dated closure removes its day, a
+dated override replaces that day's hours, and today only offers times at least half an hour
+out. Controlled from **Restaurant → Scheduled Ordering** (the switch, and how many days ahead;
+both consumed by the block's driver). The block renders nothing when scheduling is off, when
+no whole-shop hours are authored, or while the cart is empty.
+
+The chosen value is an ordinary `[data-checkout-field]` named `scheduled_at`, so core's Cart
+section carries it to checkout with the plugin fields, and core persists the validated bag to
+`order.meta.checkout_fields` (spec §14 item 2 — the core half of this feature). The Kitchen
+Queue reads it back: every ticket now ends `ASAP` or `for 17 Aug 11:00`.
+
+**Shown, not enforced.** The picker offers only in-hours times, but the server does not yet
+refuse a hand-crafted request naming 3 a.m. — that is service-window enforcement, register O5.
+
 ## Newsletter
 
 The **Newsletter Signup** section is a heading, a subheading and a line of small print around a
@@ -254,8 +271,10 @@ Verified against core, not assumed. Each is a limit on what this theme can promi
   **delivery-only** or **pickup-only** correctly. There is deliberately no mode picker and no
   ordering-mode settings yet — both arrive with the core change.
 - **Nothing decrements or validates stock.** A sold-out dish keeps selling. Spec §14 item 1.
-- **`plugin_fields` are read but not persisted** — a scheduled time, table number or
-  "no cutlery" is lost after pricing. Spec §14 item 2.
+- **Checkout fields persist, but nothing enforces them.** Core now stores the validated
+  `plugin_fields` bag on `order.meta.checkout_fields` (spec §14 item 2), which is what makes
+  the scheduled-ordering block real — but a slot is not validated against the target day's
+  window server-side (O5), and ordering mode and table number await their pickers (O2).
 - **There is no `MENU` page type**, and a theme cannot add one — page types live in core's
   `storage/app/defaults/schema/pages/`. So there is deliberately **no `pages/menu.blade.php`**;
   `ThemeController` would never resolve it. The menu is a `MENU_SECTIONS_SECTION` block

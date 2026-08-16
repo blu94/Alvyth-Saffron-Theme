@@ -28,8 +28,12 @@ return new class extends Migration
             // 0 = Sunday … 6 = Saturday. Several rows per day express split service.
             $table->unsignedTinyInteger('day_of_week');
 
-            $table->time('opens_at');
-            $table->time('closes_at');
+            // Nullable because a `kind = exception` row that closes the day carries no hours
+            // — the repository clears them on save so "Closed" can never also advertise an
+            // opening. NOT NULL here once made that clear fail: saving a public holiday from
+            // the admin threw 1364 on any strict-mode MySQL.
+            $table->time('opens_at')->nullable();
+            $table->time('closes_at')->nullable();
 
             $table->enum('mode', ['delivery', 'pickup', 'both'])->default('both');
 

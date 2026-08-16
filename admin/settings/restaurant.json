@@ -162,6 +162,41 @@
           "default": "We're closed right now — browse the menu and we'll take your order when we reopen."
         }
       ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-calendar-time"
+      },
+      "name": "Scheduled Ordering",
+      "subtitle": "Let a customer pick when they want their order instead of as soon as possible. The times offered come from your Service Hours, so a closed day never appears.",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "scheduling_enabled",
+          "type": "switch",
+          "label": "Offer A Time Picker At Checkout",
+          "hint": "Off means every order is as soon as possible. The chosen time is shown to the kitchen; it does not yet stop an order placed outside your hours",
+          "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "scheduling_days_ahead",
+          "type": "number",
+          "label": "How Many Days Ahead",
+          "placeholder": "e.g. 3",
+          "hint": "Today counts as the first day. Between 1 and 7",
+          "rules": ["nullable", "integer", "min:1", "max:7"],
+          "default": 3
+        }
+      ]
     }
   ]
 }

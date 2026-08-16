@@ -1,0 +1,107 @@
+@use "../../../base/colors" as *;
+@use "../../../base/variables" as *;
+@use "../../../mixins/breakpoints" as *;
+
+// ─── When do you want it (cart page) ─────────────────────────────────────────
+// A quiet card under the cart: ASAP or a slot from the shop's own hours. Radios are
+// drawn as pill buttons because two fat targets beat two 14px circles on a phone;
+// the real inputs stay in the DOM for keyboard and screen-reader users.
+.saffron-schedule {
+  max-width: 480px;
+  margin-inline: auto;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border: 1px solid $color-line;
+  border-radius: $card-radius;
+  background-color: $color-card-surface;
+
+  // Unrendered until Vue mounts — and forever, for the no-JS visitor, whose checkout
+  // cannot carry the field anyway. Vue strips v-cloak on compile; v-show takes over.
+  &[v-cloak] {
+    display: none;
+  }
+}
+
+.saffron-schedule__title {
+  margin-bottom: 1rem;
+  font-size: 1.125rem;
+}
+
+.saffron-schedule__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.saffron-schedule__mode {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0.4rem 1rem;
+  border: 1px solid $color-line;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+
+  // Visually a pill, functionally still a radio: hidden with a clip pattern rather
+  // than display:none so focus lands on it and :focus-visible can ring the pill.
+  input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  &:has(input:focus-visible) {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+
+  &.is-active {
+    border-color: $color-accent;
+    background-color: color-mix(in srgb, var(--color-accent), #fff 82%);
+  }
+}
+
+.saffron-schedule__slots {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+
+  @include sm-down {
+    flex-direction: column;
+  }
+}
+
+.saffron-schedule__field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.saffron-schedule__label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $color-muted;
+}
+
+.saffron-schedule__select {
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid $color-line;
+  border-radius: calc(#{$card-radius} / 2);
+  background-color: $color-white;
+  font: inherit;
+  color: $color-black;
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 1px;
+  }
+}

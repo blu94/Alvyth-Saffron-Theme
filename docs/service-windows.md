@@ -66,7 +66,8 @@ Every open order — confirmed or being prepared — oldest first:
 - **Orders by state** and **Waiting longest**: a donut of the four counts, and a bar per order
   showing how many minutes it has waited — the top bar is who to serve next.
 - **The Queue**: four columns, one per state, oldest first in each. One ticket per order —
-  number, mode, waiting time, then every line spelled out:
+  number, mode, waiting time, **when it is wanted** (`ASAP`, or `for 17 Aug 11:00` when the
+  customer picked a time at checkout), then every line spelled out:
   `2× Charcoal Chicken [Size: Large · Extras: Cheese, Bacon]`, plus the customer's note.
   Spelling the options out is the whole point of the screen.
 - **Advance An Order**: pick the order, pick the state it has reached (Preparing, Ready, Out
@@ -101,6 +102,10 @@ Worth knowing:
 - **Hours are shown, not enforced.** The storefront's Store Status banner and Outlet Info
   read these entries, and the menu greys out when you are closed — but nothing yet *refuses*
   an order placed out of hours by someone with a direct link. The form says so on screen.
+- **These hours also feed the checkout time picker.** With Restaurant → Scheduled Ordering
+  switched on, the cart offers "As soon as possible" or a time slot — and the slots come
+  from this list: a holiday removes its day, custom hours replace that day's times. Keep
+  the hours honest here and the picker stays honest on its own.
 - **Statuses**: an **Inactive** entry is ignored everywhere, which is how you park a seasonal
   schedule without deleting it.
 - **Sold-out dishes are not managed here.** That is the **Stock** field on the dish itself —

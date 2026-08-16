@@ -35,6 +35,14 @@
         </div>
     @endif
 
+    {{-- ASAP or a scheduled slot from the shop's own hours. Below the summary for the same
+         reason the plugin slot is: the summary markup belongs to core's Cart section, which
+         renders no region a theme can reach into. The chosen value is an ordinary
+         [data-checkout-field], collected by that section's own checkout POST. --}}
+    <div class="saffron-container">
+        <x-theme.component name="OrderSchedule" />
+    </div>
+
     <div class="saffron-container saffron-cart__plugins">
         <x-plugin-slot name="checkout" :data="['screen' => 'cart']" />
     </div>

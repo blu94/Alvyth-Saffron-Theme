@@ -39,8 +39,16 @@ return new class extends Migration
 
         // An exception has no weekday, so the column that was the point of the old table
         // has to give. Laravel 13 changes this natively; no doctrine/dbal needed.
+        //
+        // The times give with it: a `closed` exception carries no hours (the repository
+        // clears them on save), and the old table allowed that — this one refused it with a
+        // 1364 on strict-mode MySQL, so a public holiday could not be saved at all. Found by
+        // OrderScheduleSlotsTest seeding a closure; the create migration is fixed for fresh
+        // installs and this is the same change for the ones that already migrated.
         Schema::table('service_windows', function (Blueprint $table) {
             $table->unsignedTinyInteger('day_of_week')->nullable()->change();
+            $table->time('opens_at')->nullable()->change();
+            $table->time('closes_at')->nullable()->change();
         });
 
         if (! Schema::hasTable('service_exceptions')) {
@@ -110,9 +118,12 @@ return new class extends Migration
             $table->dropColumn(['kind', 'date', 'exception_type', 'reason']);
         });
 
-        // Every surviving row is recurring again, so the column can be required once more.
+        // Every surviving row is recurring again — and a recurring row always carries its
+        // hours — so all three columns can be required once more.
         Schema::table('service_windows', function (Blueprint $table) {
             $table->unsignedTinyInteger('day_of_week')->nullable(false)->change();
+            $table->time('opens_at')->nullable(false)->change();
+            $table->time('closes_at')->nullable(false)->change();
         });
     }
 };
