@@ -11,7 +11,7 @@ It also carries the **Kitchen Queue**, the screen the counter works from during 
 
 Open **Service Hours** in the sidebar. It has three links:
 
-- **Kitchen Queue** — today's open orders, oldest first.
+- **Kitchen Queue** — today's open orders, oldest first, plus what is booked ahead.
 - **Hours & Holidays** — the list of every entry, weekly hours first, then dated overrides.
 - **Add Entry** — write a new entry of either kind.
 
@@ -58,11 +58,13 @@ edits it, and the **bin** deletes it after asking.
 
 ## Kitchen Queue
 
-Every open order — confirmed or being prepared — oldest first:
+Every open order for today — confirmed or being prepared — oldest first. Orders wanted on a
+later date are listed separately under **Booked Ahead**:
 
 - **At a glance**: tiles for New, Preparing, Ready and Out For Delivery, the number of open
-  orders, the single longest-waiting order (as `ORD-000320 — 1 h 20 min (Preparing)`), and
-  the time the figures were read. Reload the page to refresh them.
+  orders, how many are booked ahead, the single longest-waiting order (as
+  `ORD-000320 — 1 h 20 min (Preparing)`), and the time the figures were read. The screen
+  refreshes itself every ten seconds — leave it open on the counter and it stays current.
 - **Orders by state** and **Waiting longest**: a donut of the four counts, and a bar per order
   showing how many minutes it has waited — the top bar is who to serve next.
 - **The Queue**: four columns, one per state, oldest first in each. One ticket per order —
@@ -70,9 +72,51 @@ Every open order — confirmed or being prepared — oldest first:
   customer picked a time at checkout), then every line spelled out:
   `2× Charcoal Chicken [Size: Large · Extras: Cheese, Bacon]`, plus the customer's note.
   Spelling the options out is the whole point of the screen.
-- **Advance An Order**: pick the order, pick the state it has reached (Preparing, Ready, Out
-  For Delivery, Delivered), then **Move Order**. The order's status changes everywhere at
+- **Booked Ahead**: orders wanted on a **later date**, grouped by the day they are for, each
+  line showing the time and the order number. They are deliberately kept **out** of the four
+  columns above until that day arrives — the queue sorts by how long a ticket has waited, so a
+  party booked for November would otherwise sit at the top of New for months, ahead of today's
+  lunch. The **Booked Ahead** tile counts them, and the **Open Orders** tile does not: twelve
+  open orders should mean twelve things to cook now.
+- **Advance An Order**: pick the order, pick the state it has reached (New, Preparing, Ready,
+  Out For Delivery, Delivered), then **Move Order**. The order's status changes everywhere at
   once — the queue, Sales, and the customer's order history.
+
+### Being told a new order has arrived
+
+A screen that refreshes silently is no use in a busy kitchen: nobody carrying plates is
+watching a tablet. So when a new order joins the queue, the page raises a message on screen
+and sounds a chime.
+
+**Turning it on and off for this device** — the button at the top right of the Kitchen Queue.
+It says one of three things:
+
+| It says | It means |
+|---|---|
+| **Sound on** | You will hear a chime for each new order |
+| **Sound off** | The on-screen message still appears; the room stays quiet |
+| **Tap to enable sound** | Your browser will not play a sound until somebody has touched the page. Tap the button — or anything else on the screen — and it starts working. You will hear the chime once, so you know it is working |
+
+That choice is **per device**, not per account: the counter tablet can have sound on while the
+same login on the office laptop has it off. It is remembered on that device, including after a
+reload.
+
+**Turning it on and off for the whole shop** — **Themes → Ovynt Saffron Theme → Restaurant →
+Kitchen Alerts**:
+
+| Setting | What it does |
+|---|---|
+| **Announce New Orders** | Off, the queue still refreshes but never speaks up |
+| **How Insistent** | How many times the chime sounds for one arrival — **Silent**, **once**, **twice** (the default) or **three times**. Silent still shows the message on screen, which suits a counter in a quiet dining room |
+
+Three things it deliberately stays quiet for:
+
+- **Moving an order along.** Sending a ticket to Preparing empties a slot in New, and that is
+  not a new order.
+- **Orders booked for a later date.** They wait under Booked Ahead and announce themselves on
+  the morning they join the queue, which is when there is something to cook.
+- **Opening the screen.** However many orders are already waiting, arriving at the page is
+  silent — the chime means *something just came in*.
 
 ### Moving one order from its own page
 
@@ -99,13 +143,25 @@ Worth knowing:
 
 ## Things worth knowing
 
-- **Hours are shown, not enforced.** The storefront's Store Status banner and Outlet Info
-  read these entries, and the menu greys out when you are closed — but nothing yet *refuses*
-  an order placed out of hours by someone with a direct link. The form says so on screen.
+- **These hours are enforced at checkout.** An order placed while you are closed is refused,
+  and so is a scheduled time you are not open for — including by someone with a direct link
+  who never saw your cart page. Two rules, and they are judged differently: *as soon as
+  possible* is judged on **right now**, a scheduled slot on **the hours of the day it is
+  for**. So a customer can order Sunday lunch on a Saturday night, which is the point of
+  offering times at all.
+- **What the customer is told is what you wrote.** A holiday answers with its own **Reason**;
+  an order placed while you are simply closed answers with **Restaurant → Closed Shop
+  Message**. Both are worth writing as something a customer can act on ("We reopen Tuesday at
+  11") rather than a bare "closed".
 - **These hours also feed the checkout time picker.** With Restaurant → Scheduled Ordering
   switched on, the cart offers "As soon as possible" or a time slot — and the slots come
-  from this list: a holiday removes its day, custom hours replace that day's times. Keep
-  the hours honest here and the picker stays honest on its own.
+  from this list: a holiday removes its day, custom hours replace that day's times. While you
+  are closed the cart drops "As soon as possible" entirely and opens on your next available
+  slot. Keep the hours honest here and the picker, the banner and the refusal all stay honest
+  together — they read the same entries.
+- **A time slightly off the half-hour is still accepted.** The picker offers 11:00 and 11:30;
+  a request for 11:07 is inside your hours and is taken. The grid is there to make choosing
+  easy, not to narrow what your kitchen will cook.
 - **Statuses**: an **Inactive** entry is ignored everywhere, which is how you park a seasonal
   schedule without deleting it.
 - **Sold-out dishes are not managed here.** That is the **Stock** field on the dish itself —

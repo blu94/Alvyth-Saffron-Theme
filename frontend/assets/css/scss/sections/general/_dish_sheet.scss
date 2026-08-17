@@ -8,11 +8,25 @@
 
 .saffron-dish-sheet__media {
   position: relative;
-  aspect-ratio: 4 / 3;
+  // 4/3 with `object-fit: cover` cropped every portrait photograph top and bottom — on the one
+  // page where a customer decides whether to order the thing in the picture. A dish page is
+  // not a grid that needs uniform tiles; it shows one photo and should show all of it. The box
+  // keeps a floor so a very wide image does not collapse to a strip, and a ceiling so a very
+  // tall one does not push the ordering form off the screen.
+  min-block-size: 18rem;
+  max-block-size: 34rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-color: $hex-sand-100;
   border-radius: $card-radius;
   overflow: hidden;
+}
 
+// The sticky unit is the photo **and** its thumbnails. It used to be the photo alone, which
+// was fine until the strip existed — then the pinned image stayed while the thumbnails
+// scrolled up into it and the two overlapped. Sticking the pair keeps them together.
+.saffron-dish-sheet__gallery {
   @include lg {
     position: sticky;
     top: 6rem;
@@ -20,14 +34,373 @@
 }
 
 .saffron-dish-sheet__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-inline-size: 100%;
+  max-block-size: 34rem;
+  // `contain`, not `cover`: nothing is cut off.
+  object-fit: contain;
+
+  // Hover magnifier, ported from Ella's `product-magnifier-img`. The image scales and its
+  // origin follows the pointer, so the part under the cursor is the part that grows — one
+  // transform on the photo already on the page, no lens element and no second image to load.
+  transition: transform 0.3s ease;
+
+  &.is-zooming {
+    transform: scale(2.5);
+    transform-origin: var(--magnifier-x, 50%) var(--magnifier-y, 50%);
+  }
+
+  // A magnified photo that keeps animating for someone who asked the system not to.
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+// The photo is the lightbox trigger, so it is a real button — a click handler on an <img>
+// is unreachable by keyboard and invisible to a screen reader.
+// `:not(:disabled)` is not decoration — it is what makes the cursor apply.
+//
+// Bootstrap ships `button:not(:disabled) { cursor: pointer }`, specificity (0,1,1). A plain
+// `.saffron-dish-sheet__zoom` is (0,1,0) and loses to it wherever it sits in the cascade, so
+// the magnifier cursor was written, compiled, deployed — and silently outranked. Matching the
+// shape takes this to (0,2,0) and wins. Measured with `getComputedStyle`, which reported
+// `pointer` while the stylesheet plainly said `zoom-in`.
+.saffron-dish-sheet__zoom:not(:disabled) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 100%;
+  block-size: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+// The rating line under the dish name. A link, because it jumps to the reviews.
+.saffron-dish-sheet__rating {
+  display: flex;
+  align-items: center;
+  // Never wraps: it is four short things on one line, and letting it wrap is what made it
+  // stack a word per row when it briefly lived inside the title's flex row.
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  gap: 0.5rem;
+  margin-block: 0.5rem 0;
+  color: $color-muted;
+  font-size: 0.9375rem;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible { color: $color-black; }
+}
+
+.saffron-dish-sheet__rating-stars {
+  display: inline-flex;
+  gap: 0.05rem;
+  color: $color-accent;
+}
+
+.saffron-dish-sheet__rating-count::before {
+  content: "·";
+  margin-inline-end: 0.5rem;
+}
+
+.saffron-dish-sheet__rating-stars + .saffron-dish-sheet__rating-count::before {
+  content: none;
+}
+
+.saffron-dish-sheet__thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-start: 0.75rem;
+}
+
+.saffron-dish-sheet__thumb {
+  inline-size: 4.5rem;
+  block-size: 4.5rem;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: calc(#{$card-radius} - 6px);
+  background-color: $hex-sand-100;
+  cursor: pointer;
+  transition: border-color 0.15s ease, opacity 0.15s ease;
+  opacity: 0.72;
+
+  img {
+    inline-size: 100%;
+    block-size: 100%;
+    // Cropping is right *here* — a thumbnail strip wants uniform squares, and the whole
+    // photograph is one tap away.
+    object-fit: cover;
+  }
+
+  &:hover,
+  &:focus-visible { opacity: 1; }
+
+  // The theme's emphasis colour, the same one the pager and the listing filters use.
+  &.is-active {
+    border-color: $color-accent;
+    opacity: 1;
+  }
+}
+
+// ─── Lightbox (register E2) ───────────────────────────────────────────────────
+.saffron-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1090;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 5vw, 3rem);
+  background: rgba(0, 0, 0, 0.86);
+}
+
+.saffron-lightbox__img {
+  max-inline-size: 100%;
+  max-block-size: 100%;
+  object-fit: contain;
+  border-radius: calc(#{$card-radius} - 6px);
+}
+
+.saffron-lightbox__close,
+.saffron-lightbox__nav {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // 44px: this is a touch control over a full-screen image, where a mis-tap closes the wrong
+  // thing or advances the photo.
+  inline-size: 44px;
+  block-size: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: $color-white;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible { background: rgba(255, 255, 255, 0.28); }
+}
+
+.saffron-lightbox__close {
+  inset-block-start: clamp(0.75rem, 3vw, 1.5rem);
+  inset-inline-end: clamp(0.75rem, 3vw, 1.5rem);
+}
+
+.saffron-lightbox__nav--prev { inset-inline-start: clamp(0.5rem, 3vw, 1.5rem); }
+.saffron-lightbox__nav--next { inset-inline-end: clamp(0.5rem, 3vw, 1.5rem); }
+
+.saffron-lightbox__count {
+  position: absolute;
+  inset-block-end: clamp(0.75rem, 3vw, 1.5rem);
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.875rem;
+}
+
+// The name and the save control share a row. `align-items: start` rather than centre so a
+// title that wraps to two lines keeps the heart level with its first line instead of
+// drifting to the middle of the block.
+.saffron-dish-sheet__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
 }
 
 .saffron-dish-sheet__title {
   font-size: clamp(1.75rem, 4vw, 2.5rem);
   margin-bottom: 0.5rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+// 2.5rem square clears the 40px touch target; the icon inside stays 20px, so the size is
+// hit area rather than visual weight next to the dish name.
+.saffron-dish-sheet__save {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-block-start: 0.35rem;
+  padding: 0;
+  color: $color-muted;
+  background-color: transparent;
+  border: 1px solid $color-line;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    color: $color-accent;
+    border-color: $color-accent;
+    transform: scale(1.06);
+  }
+
+  &.is-saved {
+    color: $color-accent;
+    border-color: $color-accent;
+  }
+}
+
+// ─── Share ────────────────────────────────────────────────────────────────────
+// The button is the same 2.5rem circle as the save control beside it. The panel is a grid of
+// network buttons, five to a row and scrolling past the fifth row — the same shape Ella's
+// share popup uses, so the two themes read as one product to an operator who runs both.
+.saffron-share {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.saffron-share__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-block-start: 0.35rem;
+  padding: 0;
+  color: $color-muted;
+  background-color: transparent;
+  border: 1px solid $color-line;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    color: $color-accent;
+    border-color: $color-accent;
+    transform: scale(1.06);
+  }
+}
+
+.saffron-share__panel {
+  position: absolute;
+  z-index: 5;
+  inset-block-start: calc(100% + 0.4rem);
+  inset-inline-end: 0;
+  width: max-content;
+  padding: 0.5rem;
+  background-color: $color-card-surface;
+  border: 1px solid $color-line;
+  border-radius: $card-radius;
+  box-shadow: $card-shadow-hover;
+
+  &[v-cloak] {
+    display: none;
+  }
+}
+
+// Five columns and a capped height, because a shop with every network switched on offers 29
+// buttons and an uncapped panel would run off the bottom of a phone.
+.saffron-share__grid {
+  display: grid;
+  grid-template-columns: repeat(5, 2rem);
+  gap: 0.5rem;
+  max-height: 15rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: $hex-sand-100;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: $color-line;
+    border-radius: 3px;
+  }
+}
+
+.saffron-share__net {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: $color-muted;
+  background-color: transparent;
+  border: 1px solid $color-line;
+  border-radius: 50%;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-2px);
+  }
+
+  // Each network wears its own colour on hover, which is how a customer picks WhatsApp out of
+  // a grid of otherwise identical outlines. The palette matches Ella's to the hex.
+  &--facebook:hover    { background-color: #1877f2; border-color: #1877f2; color: $color-white; }
+  &--twitter:hover     { background-color: #000000; border-color: #000000; color: $color-white; }
+  &--linkedin:hover    { background-color: #0a66c2; border-color: #0a66c2; color: $color-white; }
+  &--whatsapp:hover    { background-color: #25d366; border-color: #25d366; color: $color-white; }
+  &--pinterest:hover   { background-color: #e60023; border-color: #e60023; color: $color-white; }
+  &--telegram:hover    { background-color: #229ed9; border-color: #229ed9; color: $color-white; }
+  &--reddit:hover      { background-color: #ff4500; border-color: #ff4500; color: $color-white; }
+  &--email:hover       { background-color: #ea4335; border-color: #ea4335; color: $color-white; }
+  &--tumblr:hover      { background-color: #35465c; border-color: #35465c; color: $color-white; }
+  &--vk:hover          { background-color: #4c75a3; border-color: #4c75a3; color: $color-white; }
+  &--xing:hover        { background-color: #026466; border-color: #026466; color: $color-white; }
+  &--line:hover        { background-color: #00b900; border-color: #00b900; color: $color-white; }
+  &--viber:hover       { background-color: #665cac; border-color: #665cac; color: $color-white; }
+  &--skype:hover       { background-color: #00aff0; border-color: #00aff0; color: $color-white; }
+  &--weibo:hover       { background-color: #e6162d; border-color: #e6162d; color: $color-white; }
+  &--hackernews:hover  { background-color: #ff6600; border-color: #ff6600; color: $color-white; }
+  &--pocket:hover      { background-color: #ee4056; border-color: #ee4056; color: $color-white; }
+  &--flipboard:hover   { background-color: #e12828; border-color: #e12828; color: $color-white; }
+  &--instapaper:hover  { background-color: #000000; border-color: #000000; color: $color-white; }
+  &--evernote:hover    { background-color: #00a82d; border-color: #00a82d; color: $color-white; }
+  &--trello:hover      { background-color: #0079bf; border-color: #0079bf; color: $color-white; }
+  &--mix:hover         { background-color: #ff8226; border-color: #ff8226; color: $color-white; }
+  &--digg:hover        { background-color: #000000; border-color: #000000; color: $color-white; }
+  &--blogger:hover     { background-color: #ff5722; border-color: #ff5722; color: $color-white; }
+  &--sms:hover         { background-color: #09c942; border-color: #09c942; color: $color-white; }
+  &--threads:hover     { background-color: #000000; border-color: #000000; color: $color-white; }
+  &--tiktok:hover      { background-color: #000000; border-color: #000000; color: $color-white; }
+  &--xiaohongshu:hover { background-color: #ff2442; border-color: #ff2442; color: $color-white; }
+
+  // Copy is not a network, so it takes the theme's own accent rather than a brand colour.
+  &--copy:hover,
+  &--copy:focus-visible,
+  &--copy.is-copied {
+    background-color: $color-accent;
+    border-color: $color-accent;
+    color: $color-white;
+  }
+}
+
+.saffron-share__toast {
+  position: absolute;
+  inset-block-end: calc(100% + 6px);
+  inset-inline-end: 0;
+  padding: 0.15rem 0.45rem;
+  background-color: $color-primary;
+  color: $color-white;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 4px;
+  pointer-events: none;
+
+  &[v-cloak] {
+    display: none;
+  }
 }
 
 .saffron-dish-sheet__desc {
@@ -35,6 +408,52 @@
   line-height: 1.6;
   color: $color-muted;
   margin-bottom: 1.5rem;
+}
+
+// The dish's courses and labels (register E4). Each row is one wrapping line of chips after
+// its own label, so a dish carrying eight tags grows downward instead of pushing the ordering
+// form sideways.
+.saffron-dish-sheet__meta {
+  margin-bottom: 1.5rem;
+}
+
+.saffron-dish-sheet__meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.saffron-dish-sheet__meta-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $color-secondary;
+  // The chips are uppercase; the label should not shout alongside them.
+  margin-inline-end: 0.15rem;
+}
+
+// A chip that navigates. Kept at the full `.saffron-badge` scale rather than the dish card's
+// reduced one — the sheet has a whole column to sit in — and given a 40px target on coarse
+// pointers, because a 22px uppercase pill is not something a thumb can hit.
+.saffron-badge--link {
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: $color-accent;
+    color: $color-accent-dark;
+  }
+
+  @media (pointer: coarse) {
+    min-height: 40px;
+    padding-inline: 0.75rem;
+  }
 }
 
 .saffron-dish-sheet__soldout {

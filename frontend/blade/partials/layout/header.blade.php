@@ -92,6 +92,10 @@
 
     $showSearch = $settings['header_show_search'] ?? true;
     $showCart   = $settings['header_show_cart'] ?? true;
+    // The Restaurant tab's Saved Dishes switch — one switch for the whole feature, so the
+    // header link disappears with the hearts rather than pointing at a page that can no
+    // longer be added to.
+    $showWishlist = filter_var($settings['wishlist_enabled'] ?? true, FILTER_VALIDATE_BOOLEAN);
 
     // Locale switcher — Ella's header_show_locale_switcher, same URL rule: strip the
     // current locale segment, prefix the chosen one unless it is the default, keep the
@@ -280,6 +284,16 @@
                     </svg>
                 </a>
 
+                @if($showWishlist)
+                    <a href="{{ url('/wishlist') }}" class="saffron-header__icon-btn" aria-label="{{ __('Saved dishes') }}">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.8"
+                             fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        <span v-if="savedCount > 0" v-cloak class="saffron-header__cart-count">@{{ savedCount }}</span>
+                    </a>
+                @endif
+
                 @if($showCart)
                     <a href="{{ url('/cart') }}" class="saffron-header__icon-btn" aria-label="{{ __('Cart') }}">
                         <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.8"
@@ -360,24 +374,37 @@
                 return window.OvyntStore.cartList.reduce((total, item) => total + (item.quantity || 0), 0);
             });
 
+            const savedCount = computed(() => {
+                if (!window.OvyntStore) return 0;
+                return window.OvyntStore.wishList.length;
+            });
+
             // A second tab adding a dish must be reflected here, so mirror localStorage
             // writes back into the reactive arrays in place rather than reassigning them.
+            // Both lists are synced by the same handler: saving a dish in one tab and
+            // opening Saved Dishes in another was otherwise a stale count.
+            const syncedLists = {
+                ovynt_cart:     () => window.OvyntStore.cartList,
+                ovynt_wishlist: () => window.OvyntStore.wishList,
+            };
+
             const onStorage = (e) => {
-                if (e.key !== 'ovynt_cart' || !window.OvyntStore) return;
+                if (!window.OvyntStore || !syncedLists[e.key]) return;
                 try {
                     const next = JSON.parse(e.newValue || '[]');
                     if (Array.isArray(next)) {
-                        window.OvyntStore.cartList.splice(0, window.OvyntStore.cartList.length, ...next);
+                        const list = syncedLists[e.key]();
+                        list.splice(0, list.length, ...next);
                     }
                 } catch (err) {
-                    console.error('Failed to sync cart across tabs', err);
+                    console.error('Failed to sync ' + e.key + ' across tabs', err);
                 }
             };
 
             onMounted(() => window.addEventListener('storage', onStorage));
             onUnmounted(() => window.removeEventListener('storage', onStorage));
 
-            return { mobileOpen, cartCount };
+            return { mobileOpen, cartCount, savedCount };
         },
     }).mount('#saffron-header');
 

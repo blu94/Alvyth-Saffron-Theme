@@ -75,8 +75,99 @@
   inset-inline-start: 0.6rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: 0.25rem;
   max-width: calc(100% - 1.2rem);
+}
+
+// These sit **on top of the photograph**, so they are sized to be read without hiding what
+// they label. At the shared badge's 11px and 0.04em tracking, "Sold out for today" wrapped to
+// two lines and the tag chips stacked underneath it — on a dish with no photograph the row
+// covered the thumbnail outright, which is how it was reported. The scale is scoped here
+// rather than changed on `.saffron-badge`, because the same chip on the dish sheet has a full
+// column to sit in and should stay legible at arm's length.
+.saffron-dish-card__badges .saffron-badge {
+  // `inline-block`, and this is the whole reason a clipped label showed no ellipsis.
+  // `.saffron-badge` is `inline-flex`, and `text-overflow` does not apply to a flex container —
+  // its text lives in an anonymous flex item the property never reaches. So `overflow: hidden`
+  // sliced "DUMMY DEVELOPMENT" mid-letter and the ellipsis silently did nothing. Nothing inside
+  // a card badge needs flex; there is no icon, only a word.
+  display: inline-block;
+  // Padding is per-side rather than inherited: shrinking the type without reopening the box
+  // left the words pressed against the pill's edge, and a two-line tag inside a tight chip
+  // looked broken rather than small. 0.25/0.6 is the smallest that still reads as a label.
+  padding: 0.25rem 0.6rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+  // One line, always — for the state *and* the tags. A chip that wraps its own text reads as
+  // a broken box.
+  white-space: nowrap;
+  // …and one that is simply too long for a two-column phone card gets an ellipsis rather than
+  // being sliced mid-word. The row above caps its own width to keep clear of the save control,
+  // so without this a long tag was cut to "DUMMY TUTORIA" with nothing to say it was cut.
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// The save control occupies the top-inline-end corner, so the badge row has to stop short
+// of it. Without this a dish carrying a long tag ("Sold out for today" plus a wordy label)
+// runs its first badge line underneath the heart.
+//
+// 3.1rem, and the figure is measured rather than eyeballed: on a 203px card the heart's left
+// edge sits at 152px and the row starts at 10px, so 134px is genuinely free. The old 3.6rem
+// reserved 57.6px for a 40px control and left the row 123px — which truncated ordinary tags
+// like "Dummy Ecommerce" (131px) for the sake of 11px of air nobody could see. This leaves an
+// 8px gap to the heart and hands the rest back to the label.
+.saffron-dish-card--savable .saffron-dish-card__badges {
+  max-width: calc(100% - 1.2rem - 3.1rem);
+}
+
+// ─── Save (saved dishes) ──────────────────────────────────────────────────────
+// Sits above the media anchor, opposite the badges. 2.5rem square so it clears the
+// 40px touch target on a phone without a separate coarse-pointer rule; the icon
+// inside stays small, so the extra size is hit area rather than weight.
+.saffron-dish-card__save {
+  position: absolute;
+  z-index: 2;
+  inset-block-start: 0.6rem;
+  inset-inline-end: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  color: $color-muted;
+  background-color: rgba(255, 255, 255, 0.92);
+  border: 1px solid $color-line;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    color: $color-accent;
+    border-color: $color-accent;
+    transform: scale(1.06);
+  }
+
+  &.is-saved {
+    color: $color-accent;
+    border-color: $color-accent;
+  }
+}
+
+// A sold-out card is greyed by the wrapper's opacity, but saving one is the point —
+// "tell me when it is back" — so the control stays at full strength.
+.saffron-dish-card--unavailable .saffron-dish-card__save {
+  opacity: 1;
+}
+
+// In list layout the media is a 108px thumbnail on the inline-start edge, so the
+// control lands over the body instead. Keep the title clear of it.
+.saffron-dish-card--list .saffron-dish-card__title {
+  padding-inline-end: 2.75rem;
 }
 
 // ─── Body ─────────────────────────────────────────────────────────────────────

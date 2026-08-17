@@ -111,6 +111,98 @@
           "label": "Sticky Section Navigation",
           "hint": "Pin the menu-section jump links while the customer scrolls",
           "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "wishlist_enabled",
+          "type": "switch",
+          "label": "Saved Dishes",
+          "hint": "One switch for the whole feature: the heart on every dish card and dish sheet, the header link, and the Saved Dishes page. Saved dishes live in the customer's own browser, so they do not follow them to another device",
+          "default": true
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-moped"
+      },
+      "name": "Ordering Modes",
+      "subtitle": "Whether customers have their order delivered, collect it themselves, or choose. The choice decides whether an address is asked for and whether a delivery fee is charged.",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "ordering_modes",
+          "type": "select",
+          "label": "What You Offer",
+          "hint": "Offering both puts a Delivery / Pickup choice on the cart. Offering one skips the choice entirely and every order is that mode",
+          "options": {
+            "items": [
+              { "title": "Delivery and pickup", "value": "both" },
+              { "title": "Delivery only", "value": "delivery" },
+              { "title": "Pickup only", "value": "pickup" }
+            ]
+          },
+          "default": "both"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "pickup_ready_label",
+          "type": "text",
+          "label": "Pickup Ready Wording",
+          "placeholder": "e.g. Ready to collect in about 20 min",
+          "hint": "Shown to a customer who chooses pickup, in place of the delivery address form",
+          "translatable": true,
+          "default": "Ready to collect in about 20 minutes"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "minimum_delivery",
+          "type": "number",
+          "label": "Minimum Order — Delivery",
+          "placeholder": "e.g. 20",
+          "hint": "Refused below this, before the delivery fee is added — which is how customers read a minimum. Leave empty for no minimum",
+          "rules": ["nullable", "numeric", "min:0"],
+          "default": null
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "minimum_pickup",
+          "type": "number",
+          "label": "Minimum Order — Pickup",
+          "placeholder": "e.g. 0",
+          "hint": "Usually empty: a customer collecting costs you no delivery, so most shops set no minimum for it",
+          "rules": ["nullable", "numeric", "min:0"],
+          "default": null
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "pickup_address",
+          "type": "textarea",
+          "label": "Collection Address",
+          "placeholder": "e.g. 125 Jalan Melaka Raya 3, 75000 Melaka",
+          "hint": "Where the customer comes to collect. Shown on the cart the moment they choose pickup — leave it empty and the shop's footer address is used instead",
+          "translatable": true,
+          "default": ""
         }
       ]
     },
@@ -157,7 +249,7 @@
           "type": "textarea",
           "label": "Closed Shop Message",
           "placeholder": "e.g. We're closed right now — browse the menu and order when we open at 11am.",
-          "hint": "Presentation only until service-window enforcement lands in core",
+          "hint": "Shown on the storefront while you are closed, and returned to anyone who tries to order then. Say when you reopen — a holiday's own Reason wins for its date",
           "translatable": true,
           "default": "We're closed right now — browse the menu and we'll take your order when we reopen."
         }
@@ -180,7 +272,7 @@
           "key": "scheduling_enabled",
           "type": "switch",
           "label": "Offer A Time Picker At Checkout",
-          "hint": "Off means every order is as soon as possible. The chosen time is shown to the kitchen; it does not yet stop an order placed outside your hours",
+          "hint": "Off means every order is as soon as possible — and is then refused whenever you are closed, since there is no slot to choose instead. On, the chosen time is shown to the kitchen and checked against that day's hours",
           "default": true
         },
         {
@@ -191,10 +283,62 @@
           "key": "scheduling_days_ahead",
           "type": "number",
           "label": "How Many Days Ahead",
-          "placeholder": "e.g. 3",
-          "hint": "Today counts as the first day. Between 1 and 7",
-          "rules": ["nullable", "integer", "min:1", "max:7"],
-          "default": 3
+          "placeholder": "e.g. 30",
+          "hint": "Today counts as the first day. Anything from 1 to 365 — 90 is three months, 180 is six, 365 is a year. The next seven days are one-tap buttons; past that the customer picks a date from a calendar, up to this limit. Set it to what your kitchen can actually plan for: an order taken for six months out is priced from today's menu and paid for today, and it waits under Booked Ahead on the Kitchen Queue until its week comes round",
+          "rules": ["nullable", "integer", "min:1", "max:365"],
+          "default": 30
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-bell-ringing"
+      },
+      "name": "Kitchen Alerts",
+      "subtitle": "Whether the Kitchen Queue speaks up when an order arrives. The screen refreshes itself either way — this decides whether anybody in the room finds out without looking at it.",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "reviews_enabled",
+          "type": "switch",
+          "label": "Show Customer Reviews On A Dish",
+          "hint": "A star rating, the reviews left so far, and a form to add one. New reviews are held until you approve them under Comments & Reviews — a customer whose order contains the dish is published straight away and shown as a verified buyer",
+          "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "kitchen_alert_enabled",
+          "type": "switch",
+          "label": "Announce New Orders",
+          "hint": "On, a new order raises a message on the Kitchen Queue and sounds a chime. Off, the screen still refreshes but says nothing — right for a shop that watches the tablet, wrong for a busy pass",
+          "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "kitchen_alert_repeat",
+          "type": "select",
+          "label": "How Insistent",
+          "hint": "How many times the chime sounds for one arrival. Two is right for most kitchens; three for a loud pass. Silent still shows the on-screen message, for a counter in a quiet dining room",
+          "options": {
+            "items": [
+              { "title": "Silent — show it on screen only", "value": 0 },
+              { "title": "Chime once", "value": 1 },
+              { "title": "Chime twice", "value": 2 },
+              { "title": "Chime three times", "value": 3 }
+            ]
+          },
+          "default": 2
         }
       ]
     }

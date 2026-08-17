@@ -14,10 +14,13 @@
 @use "layout/blank";
 @use "layout/page-status";
 @use "layout/post";
+@use "layout/wishlist";
+@use "layout/collection";
 @use "layout/motion";
 
 @use "sections/components/components";
 @use "sections/general/index";
+@use "sections/commerce/index" as commerce;
 
 // Last, so its `display: none` on the chrome outranks every component rule above.
 @use "layout/print";

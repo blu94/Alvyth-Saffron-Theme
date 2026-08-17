@@ -21,8 +21,12 @@
     color: #000 !important;
   }
 
+  // `.cms-section-wrapper` carries the theme's measure on the dish page (see
+  // `layout/_helpers.scss`); on paper it releases it with the rest, so printing a dish is
+  // unchanged by that rule.
   .content-for-layout,
-  .saffron-container {
+  .saffron-container,
+  .cms-section-wrapper {
     max-width: none !important;
     padding-inline: 0 !important;
   }

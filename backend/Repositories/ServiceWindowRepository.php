@@ -2,13 +2,17 @@
 
 namespace Theme\Backend\Repositories;
 
+use App\Contracts\Notification\Notifier;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\Notification\NotificationTypeRegistry;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Theme\Backend\Models\ServiceWindow;
+use Theme\Backend\Support\ThemeSettings;
 
 /**
  * Resolved by `GenericModuleController` for the `service-windows` module.
@@ -274,11 +278,15 @@ class ServiceWindowRepository
     }
 
     /**
-     * The queue, as five columns of cards.
+     * The queue, as four columns of tickets plus the forward book.
      *
-     * Refreshed by polling, not websockets: there is no Node in production, no
+     * Four, not the spec's five: Delivered leaves the queue rather than occupying a column.
+     * Refreshed by polling, not websockets — there is no Node in production, no
      * `config/broadcasting.php` at all, and `.env.example` ships `BROADCAST_CONNECTION=log`.
-     * A ten-second poll is the honest mechanism here.
+     * `poll_seconds` is what core's module page reads to re-fetch this payload on an interval,
+     * and `alert` (see `kitchenAlert()`) is what makes an arrival heard rather than merely
+     * drawn. Both are declarative: this repository states what it wants and core does it,
+     * because a theme may not ship admin Vue.
      */
     protected function kitchenData(): array
     {
@@ -299,10 +307,28 @@ class ServiceWindowRepository
             $columns[$key] = ['key' => $key, 'label' => $state['label'], 'orders' => []];
         }
 
+        // Orders wanted on a later date, kept out of the live columns entirely.
+        //
+        // The queue is what the counter works from *now*: it sorts by how long each ticket has
+        // waited, and a party booked for November would sit at the top of New for three months,
+        // ageing, ahead of the lunch that actually needs cooking. Scheduling reaches ninety days
+        // out, so this is not a corner case — it is the ordinary consequence of offering dates.
+        // They are listed separately, by the day they are for, which is the only order a
+        // forward book reads in.
+        $upcoming = [];
+
         foreach ($orders as $order) {
             $key = $this->kitchenStateFor($order);
 
             if ($key === null || !isset($columns[$key])) {
+                continue;
+            }
+
+            $wantedOn = $this->scheduledDate($order);
+
+            if ($wantedOn !== null && $wantedOn > Carbon::now($this->timezone())->toDateString()) {
+                $upcoming[$wantedOn][] = $order;
+
                 continue;
             }
 
@@ -317,7 +343,16 @@ class ServiceWindowRepository
                 // [data-checkout-field] values (spec §14 item 2); the bare keys are kept as
                 // a fallback for orders written before that landed. An empty string is the
                 // picker's own spelling of ASAP, so it collapses to null here.
-                'mode'         => $order->meta['checkout_fields']['ordering_mode'] ?? $order->meta['ordering_mode'] ?? ($order->shipping_address_id ? 'delivery' : 'pickup'),
+                // The order's own fulfilment type, which core records from the cart's mode
+                // picker (register O4). Read, not inferred: the fallback below guessed from
+                // whether an address happened to be attached, which is right for most
+                // restaurant orders and wrong for a digital line that needs no address — and
+                // guessing is exactly what the column was added to stop. The old meta keys and
+                // the guess are kept for orders written before the column existed.
+                'mode'         => $order->fulfillment_type
+                    ?? $order->meta['checkout_fields']['ordering_mode']
+                    ?? $order->meta['ordering_mode']
+                    ?? ($order->shipping_address_id ? 'delivery' : 'pickup'),
                 'scheduled_at' => ($order->meta['checkout_fields']['scheduled_at'] ?? $order->meta['scheduled_at'] ?? null) ?: null,
                 'note'         => $order->notes,
                 'total'        => $order->grand_total,
@@ -340,9 +375,16 @@ class ServiceWindowRepository
         // The schema engine's `display` field renders a string; it has no board or card-list
         // type, so the admin page reads these while `columns` stays available for whatever
         // renders the queue properly later. See ISSUES-SAFFRON-THEME.md O15.
+        ksort($upcoming);
+
         $flat = [
             'columns'      => array_values($columns),
-            'total_open'   => (string) $orders->count(),
+            // The live queue's own count, which is what the tile beside it means. Orders held
+            // for a later date are deliberately not in it: a counter reading "12 open" needs
+            // that to be twelve things to cook, not nine plus a wedding in October.
+            'total_open'   => (string) collect($columns)->sum(fn ($c) => count($c['orders'])),
+            'upcoming_count' => (string) collect($upcoming)->sum(fn ($o) => count($o)),
+            'upcoming'     => $this->upcomingSummary($upcoming),
             'generated_at' => now()->toDateTimeString(),
             'poll_seconds' => 10,
         ];
@@ -399,7 +441,79 @@ class ServiceWindowRepository
             ]],
         ];
 
-        return $flat;
+        // The queue as a real board, for core's `board` field type (register O15). The text
+        // columns above stay: they are what a shop on an older core still renders, and they
+        // cost nothing. `columns` was already this shape — only the renderer was missing.
+        $flat['board'] = [
+            'columns' => collect($columns)->map(fn ($column) => [
+                'key'   => $column['key'],
+                'label' => $column['label'],
+                'cards' => collect($column['orders'])
+                    ->sortByDesc('waiting_mins')
+                    ->take(20)
+                    ->map(fn ($o) => [
+                        'id'    => $o['id'],
+                        'title' => $o['order_number'],
+                        'badge' => $this->waitLabel($o['waiting_mins']),
+                        'meta'  => array_values(array_filter([
+                            strtoupper((string) $o['mode']),
+                            $this->scheduleLabel($o['scheduled_at']),
+                        ])),
+                        'lines' => collect($o['items'])->map(fn ($item) => [
+                            'title'   => $item['title'],
+                            'qty'     => $item['qty'],
+                            'options' => $item['options'],
+                        ])->values()->all(),
+                        'note'  => $o['note'] ? __('Note') . ': ' . $o['note'] : null,
+                    ])
+                    ->values()
+                    ->all(),
+            ])->values()->all(),
+        ];
+
+        return $flat + $this->kitchenAlert($byWait, (int) $flat['count_new']);
+    }
+
+    /**
+     * The signal core listens to, and the words it says.
+     *
+     * Core's page-alert seam (`App\…` side: `usePageAlert`) watches one number in this payload
+     * and announces it going up. Which number matters more than it looks:
+     *
+     * - **Not `count_new`.** A counter who moves one order to Preparing in the same ten seconds
+     *   another arrives leaves that count exactly where it was, and the arrival passes in
+     *   silence — the one moment the kitchen most needs telling.
+     * - **The highest order id in the live columns.** It rises when something newer joins the
+     *   queue and cannot be moved by advancing a ticket. It *can* fall, when the newest order is
+     *   delivered and leaves; a fall never announces, and the next arrival outranks the lower
+     *   mark anyway, so nothing is lost.
+     *
+     * Orders booked for a later date are excluded, for the same reason `total_open` excludes
+     * them: the kitchen bell means "cook this now", and a wedding in October is not that. It
+     * rings on the morning the booking joins the queue, which is when it becomes today's work.
+     *
+     * The wording is rebuilt on every poll, so the message carries the live figure rather than
+     * core inventing one — core cannot phrase a queue it does not know it is looking at.
+     */
+    protected function kitchenAlert(Collection $live, int $newCount): array
+    {
+        if (! ThemeSettings::bool('kitchen_alert_enabled', true)) {
+            return [];
+        }
+
+        return [
+            'newest_order_id' => (int) ($live->max('id') ?? 0),
+            'alert' => [
+                'watch'  => 'newest_order_id',
+                'label'  => 'New order',
+                'text'   => $newCount === 1
+                    ? '1 order waiting in New.'
+                    : sprintf('%d orders waiting in New.', $newCount),
+                // 0 is a real choice for a quiet dining room: the message still appears on
+                // screen, the room stays silent.
+                'repeat' => min(10, max(0, (int) ThemeSettings::get('kitchen_alert_repeat', 2))),
+            ],
+        ];
     }
 
     /**
@@ -445,6 +559,92 @@ class ServiceWindowRepository
             return 'for ' . Carbon::parse($scheduledAt)->format('j M H:i');
         } catch (\Throwable $e) {
             return 'for ' . Str::limit($scheduledAt, 24);
+        }
+    }
+
+    /**
+     * The date an order is wanted on, or null when it is as soon as possible.
+     *
+     * The stored value is a checkout field — client-supplied, and a snapshot that must still
+     * parse years later — so an unreadable one is treated as ASAP rather than thrown on. That
+     * errs towards the live queue, which is the safe direction: an order shown to the kitchen
+     * today is noticed, one filed under a date nobody reads is not.
+     */
+    protected function scheduledDate(Order $order): ?string
+    {
+        $raw = ($order->meta['checkout_fields']['scheduled_at'] ?? $order->meta['scheduled_at'] ?? null) ?: null;
+
+        if (! is_string($raw) || $raw === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($raw)->toDateString();
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * The forward book as text, one block per date: how many orders, and each one's time.
+     *
+     * Rendered through a `display` field like the rest of this screen, because the schema
+     * engine has no list widget (register O15). Deliberately terse — this is a planning aid,
+     * not a ticket; the tickets appear in the queue on the day, when the counter can act on
+     * them.
+     *
+     * @param  array<string, array<int, Order>>  $upcoming
+     */
+    protected function upcomingSummary(array $upcoming): string
+    {
+        if ($upcoming === []) {
+            return 'Nothing booked ahead.';
+        }
+
+        $blocks = [];
+
+        foreach ($upcoming as $date => $orders) {
+            $when = Carbon::parse($date);
+
+            $lines = collect($orders)
+                ->map(function (Order $order) {
+                    $at = $this->scheduledTime($order);
+
+                    return sprintf(
+                        '   %s · %s%s',
+                        $at ?: '—',
+                        $order->order_number,
+                        $order->customer?->name ? ' · ' . $order->customer->name : ''
+                    );
+                })
+                ->sort()
+                ->implode("\n");
+
+            $blocks[] = sprintf(
+                "%s — %d %s\n%s",
+                $when->format('D j M'),
+                count($orders),
+                count($orders) === 1 ? 'order' : 'orders',
+                $lines
+            );
+        }
+
+        return implode("\n\n", $blocks);
+    }
+
+    /** The wall-clock time an order is wanted at, for the forward book's lines. */
+    protected function scheduledTime(Order $order): ?string
+    {
+        $raw = ($order->meta['checkout_fields']['scheduled_at'] ?? $order->meta['scheduled_at'] ?? null) ?: null;
+
+        if (! is_string($raw) || $raw === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($raw)->format('H:i');
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 
@@ -523,6 +723,49 @@ class ServiceWindowRepository
             'fulfillment_status' => $state['fulfillment_status'],
             'meta'               => array_merge($order->meta ?? [], ['kitchen_state' => $target]),
         ])->save();
+
+        $this->notifyKitchenState($order, $target, $state['label']);
+    }
+
+    /**
+     * Tell the customer their food is ready.
+     *
+     * **Called from here rather than from an event listener**, and that is the theme seam
+     * working as designed: a theme has no service provider, so it cannot subscribe to
+     * `App\Events\*` the way a plugin can. It does not need to — this is the single write
+     * both the Kitchen Queue's Advance card and the order form's Kitchen tab go through, so
+     * calling `Notifier` here catches every kitchen move there is.
+     *
+     * Only `ready` and `out`. `new` and `preparing` are the kitchen talking to itself, and
+     * `delivered` reaches the customer through core's own fulfilment notification — sending a
+     * second one would be this theme saying the same thing twice.
+     *
+     * A guest order has no account to address, so there is nobody to notify. The core
+     * lifecycle email still reaches them, and an in-app feed needs an account to be a feed of.
+     *
+     * `Notifier` never throws and answers `0` on anything it cannot do — which matters here,
+     * because this runs inside the caller's transaction and a failed notification must not
+     * cost the kitchen its state change.
+     */
+    protected function notifyKitchenState(Order $order, string $target, string $label): void
+    {
+        if (! in_array($target, ['ready', 'out'], true) || ! $order->user_id) {
+            return;
+        }
+
+        // `themeKey()`, not a hardcoded `theme:saffron.…`. The deployed slug comes from the
+        // manifest *title*, so this theme installs as `ovynt-saffron-theme` while its manifest
+        // says `saffron` — a written-out prefix is a key the registry never issued, and the
+        // notification silently goes nowhere.
+        app(Notifier::class)->toUser(
+            $order->user_id,
+            app(NotificationTypeRegistry::class)->themeKey('order_ready'),
+            [
+                'order_number' => $order->order_number,
+                'state_label'  => $target === 'out' ? 'on its way' : strtolower($label),
+            ],
+            $order,
+        );
     }
 
     /**
@@ -569,100 +812,243 @@ class ServiceWindowRepository
     // ── Storefront helpers ──────────────────────────────────────────────────────
 
     /**
-     * Whether the shop is open at a given moment, and when it next opens.
+     * The shop's own timezone — the wall clock every window in this table is authored in.
      *
-     * Read by the StoreStatus section. Everything is computed in the SHOP's timezone: a 09:00
-     * window means 09:00 there, DST or not, so the comparison is done on local wall-clock and
-     * only the display is converted. Presentation only — see §14 item 6.
+     * One accessor rather than `config('app.timezone')` repeated in each reader, so the day a
+     * shop timezone becomes its own setting there is a single place to change. A 09:00 window
+     * means 09:00 *there*, DST or not: comparisons happen on local wall-clock and only the
+     * display is converted.
      */
-    public function openState(?string $timezone = null, ?Carbon $at = null): array
+    public function timezone(): string
     {
-        $tz  = $timezone ?: config('app.timezone', 'UTC');
-        $now = ($at ? $at->copy() : Carbon::now())->setTimezone($tz);
+        return (string) config('app.timezone', 'UTC');
+    }
 
-        // Exceptions and windows now share a table, so this is one query narrowed by `kind`
-        // rather than a lookup in a second model. The precedence is unchanged: a dated
-        // override wins for its date, and the weekly windows are only consulted when there
-        // is none.
+    /**
+     * How many days ahead a customer may schedule — today counts as the first.
+     *
+     * **One clamp, read by both halves of the promise.** The cart's picker offers this many
+     * days and the checkout guard refuses anything past it, and they were computing it
+     * separately: change the default in one and the shop offers a slot the server then turns
+     * away, which is the single worst way this feature can fail.
+     *
+     * The ceiling and the fallback mirror `admin/settings/restaurant.json`'s own `max:365` rule
+     * and its default — they have to, because a clamp tighter than the field silently ignores
+     * what the operator typed: set 30 days, get 14, with nothing on screen to say why.
+     */
+    public function schedulingHorizon(): int
+    {
+        return min(365, max(1, (int) ThemeSettings::get('scheduling_days_ahead', 30)));
+    }
+
+    /** Weekly windows belonging to the shop rather than to one menu section. */
+    protected function shopWindows()
+    {
+        return ServiceWindow::recurring()->where('status', 'active')->whereNull('scope_id');
+    }
+
+    /** Has the operator authored any whole-shop hours at all? */
+    public function hasHours(): bool
+    {
+        return $this->shopWindows()->exists();
+    }
+
+    /**
+     * What the shop's hours say about one date: the orderable spans, and why there are none.
+     *
+     * **The single answer three readers share** — the Store Status banner, the cart's time
+     * picker, and the checkout guard that now refuses an out-of-hours order. The first two had
+     * separate implementations and disagreed: the banner counted a *section*-scoped window
+     * ("Breakfast") as the shop being open, while the picker never did, so a shop could
+     * advertise Open and offer no slot. A third copy inside the guard would have been worse
+     * than a duplicate — a refusal that disagrees with what the page displayed tells the
+     * customer they may order and then refuses them.
+     *
+     * Precedence is what the operator's own screen presents: a dated entry wins its date
+     * outright, and the weekly windows are consulted only when there is none. Section-scoped
+     * rows are not the shop's hours and never appear here.
+     *
+     * `source: unconfigured` means no whole-shop hours are authored at all, which is
+     * deliberately **not** the same as closed. A shop that never filled the screen in must not
+     * have every order refused, so every caller reads it as "no opinion".
+     *
+     * @return array{spans: array<int,array{opens:string,closes:string,mode:string}>, source: string, reason: ?string}
+     */
+    public function hoursForDate(Carbon $date): array
+    {
+        // Exceptions and windows share a table, so this is one query narrowed by `kind`
+        // rather than a lookup in a second model.
         $exception = ServiceWindow::exceptions()
             ->where('status', 'active')
-            ->whereDate('date', $now->toDateString())
+            ->whereDate('date', $date->toDateString())
             ->first();
 
         if ($exception) {
             $reason = $exception->getTranslation('reason', app()->getLocale(), false)
                 ?: $exception->getTranslation('reason', 'en', false);
 
-            if ($exception->closesTheDay()) {
-                return ['open' => false, 'reason' => $reason ?: null, 'next_open' => null, 'source' => 'exception'];
-            }
-
             return [
-                'open'      => $exception->covers($now->format('H:i')),
-                'reason'    => $reason ?: null,
-                'next_open' => $exception->covers($now->format('H:i')) ? null : substr((string) $exception->opens_at, 0, 5),
-                'source'    => 'exception',
+                // `closesTheDay()` also covers an override missing either time, so half a
+                // window never becomes an opening.
+                'spans'  => $exception->closesTheDay() ? [] : [[
+                    'opens'  => substr((string) $exception->opens_at, 0, 5),
+                    'closes' => substr((string) $exception->closes_at, 0, 5),
+                    'mode'   => (string) ($exception->mode ?: 'both'),
+                ]],
+                'source' => 'exception',
+                'reason' => $reason ?: null,
             ];
         }
 
-        $today = ServiceWindow::recurring()->where('status', 'active')
-            ->where('day_of_week', (int) $now->dayOfWeek)
+        $spans = $this->shopWindows()
+            ->where('day_of_week', (int) $date->dayOfWeek)
             ->orderBy('opens_at')
+            ->get()
+            ->map(fn (ServiceWindow $window) => [
+                'opens'  => substr((string) $window->opens_at, 0, 5),
+                'closes' => substr((string) $window->closes_at, 0, 5),
+                'mode'   => (string) ($window->mode ?: 'both'),
+            ])
+            ->all();
+
+        if ($spans === [] && ! $this->hasHours()) {
+            return ['spans' => [], 'source' => 'unconfigured', 'reason' => null];
+        }
+
+        return ['spans' => $spans, 'source' => 'window', 'reason' => null];
+    }
+
+    /**
+     * The weekly hours as seven lists of spans, keyed 0 = Sunday.
+     *
+     * For the cart's date picker, which lets a customer name any date inside the horizon —
+     * a party in September, a catering order in November. Asking {@see hoursForDate()} per
+     * date would be two queries a day and ninety of them on one page load, and a theme cannot
+     * register an endpoint to ask later, so the pattern is handed to the browser once and the
+     * chosen date is resolved there.
+     *
+     * **The browser's answer is a courtesy; the guard's is the one that counts.** The same
+     * precedence is applied on both sides — a dated entry wins its date, weekly hours fill the
+     * rest — and `ServiceWindowGuard` re-derives it through `hoursForDate()` at checkout. A
+     * drift shows up as a refusal, never as an order the kitchen cannot cook.
+     *
+     * @return array<int, array<int, array{opens:string, closes:string}>>
+     */
+    public function weeklyPattern(): array
+    {
+        $pattern = array_fill(0, 7, []);
+
+        foreach ($this->shopWindows()->orderBy('opens_at')->get() as $window) {
+            $pattern[(int) $window->day_of_week][] = [
+                'opens'  => substr((string) $window->opens_at, 0, 5),
+                'closes' => substr((string) $window->closes_at, 0, 5),
+            ];
+        }
+
+        return $pattern;
+    }
+
+    /**
+     * Dated overrides falling inside a range, keyed by date, in the shape the pattern uses.
+     *
+     * A closed day carries no spans, which is exactly how the browser should read it — the
+     * same collapse `closesTheDay()` performs, so a holiday missing one of its times cannot
+     * become half an opening on the client either.
+     *
+     * @return array<string, array{spans: array<int, array{opens:string, closes:string}>, reason: ?string}>
+     */
+    public function exceptionsBetween(Carbon $from, Carbon $to): array
+    {
+        $rows = ServiceWindow::exceptions()
+            ->where('status', 'active')
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
             ->get();
 
-        // No windows authored at all means the shop has not configured hours. Report open —
-        // refusing every order because a table is empty would be worse than the alternative,
-        // and nothing here is an enforcement point anyway.
-        if ($today->isEmpty() && ServiceWindow::recurring()->where('status', 'active')->doesntExist()) {
+        $out = [];
+
+        foreach ($rows as $row) {
+            $reason = $row->getTranslation('reason', app()->getLocale(), false)
+                ?: $row->getTranslation('reason', 'en', false);
+
+            $out[Carbon::parse($row->date)->toDateString()] = [
+                'spans'  => $row->closesTheDay() ? [] : [[
+                    'opens'  => substr((string) $row->opens_at, 0, 5),
+                    'closes' => substr((string) $row->closes_at, 0, 5),
+                ]],
+                'reason' => $reason ?: null,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Whether the shop is open at a given moment, and when it next opens.
+     *
+     * Read by the StoreStatus banner and by the checkout guard's "is the shop open right now"
+     * refusal, both through {@see hoursForDate()} so the banner and the refusal cannot say
+     * different things.
+     */
+    public function openState(?string $timezone = null, ?Carbon $at = null): array
+    {
+        $tz  = $timezone ?: $this->timezone();
+        $now = ($at ? $at->copy() : Carbon::now())->setTimezone($tz);
+
+        $today = $this->hoursForDate($now);
+
+        // The shop has not configured hours. Report open — refusing every order because a
+        // screen was never filled in would be worse than the alternative.
+        if ($today['source'] === 'unconfigured') {
             return ['open' => true, 'reason' => null, 'next_open' => null, 'source' => 'unconfigured'];
         }
 
         $localTime = $now->format('H:i');
+        $reason    = $today['reason'];
 
-        foreach ($today as $window) {
-            if ($window->covers($localTime)) {
+        foreach ($today['spans'] as $span) {
+            if ($localTime >= $span['opens'] && $localTime < $span['closes']) {
                 return [
-                    'open'       => true,
-                    'reason'     => null,
-                    'closes_at'  => substr((string) $window->closes_at, 0, 5),
-                    'mode'       => $window->mode,
-                    'source'     => 'window',
+                    'open'      => true,
+                    'reason'    => null,
+                    'closes_at' => $span['closes'],
+                    'mode'      => $span['mode'],
+                    'source'    => $today['source'],
                 ];
             }
         }
 
-        $laterToday = $today->first(fn ($w) => substr((string) $w->opens_at, 0, 5) > $localTime);
-
-        if ($laterToday) {
-            return [
-                'open'      => false,
-                'reason'    => null,
-                'next_open' => substr((string) $laterToday->opens_at, 0, 5),
-                'next_day'  => null,
-                'source'    => 'window',
-            ];
-        }
-
-        // Walk forward at most seven days to find the next opening.
-        for ($i = 1; $i <= 7; $i++) {
-            $day  = $now->copy()->addDays($i);
-            $next = ServiceWindow::recurring()->where('status', 'active')
-                ->where('day_of_week', (int) $day->dayOfWeek)
-                ->orderBy('opens_at')
-                ->first();
-
-            if ($next) {
+        // Still to come today. Ordered by `opens_at`, so the first one past now is the next.
+        foreach ($today['spans'] as $span) {
+            if ($span['opens'] > $localTime) {
                 return [
                     'open'      => false,
-                    'reason'    => null,
-                    'next_open' => substr((string) $next->opens_at, 0, 5),
-                    'next_day'  => $day->format('l'),
-                    'source'    => 'window',
+                    'reason'    => $reason,
+                    'next_open' => $span['opens'],
+                    'next_day'  => null,
+                    'source'    => $today['source'],
                 ];
             }
         }
 
-        return ['open' => false, 'reason' => null, 'next_open' => null, 'source' => 'window'];
+        // Walk forward at most seven days to find the next opening. A dated closure is
+        // included in the walk, so a holiday reports the day after it rather than the hours it
+        // cancelled — the banner used to answer "closed" with no reopening time at all.
+        for ($i = 1; $i <= 7; $i++) {
+            $day   = $now->copy()->addDays($i);
+            $hours = $this->hoursForDate($day);
+
+            if ($hours['spans'] !== []) {
+                return [
+                    'open'      => false,
+                    'reason'    => $reason,
+                    'next_open' => $hours['spans'][0]['opens'],
+                    'next_day'  => $day->format('l'),
+                    'source'    => $today['source'],
+                ];
+            }
+        }
+
+        return ['open' => false, 'reason' => $reason, 'next_open' => null, 'source' => $today['source']];
     }
 
     /**

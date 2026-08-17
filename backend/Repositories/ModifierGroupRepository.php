@@ -2,8 +2,10 @@
 
 namespace Theme\Backend\Repositories;
 
+use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Theme\Backend\Models\Modifier;
 use Theme\Backend\Models\ModifierGroup;
 
@@ -22,6 +24,13 @@ use Theme\Backend\Models\ModifierGroup;
  * group's position on the dish, and the dish's position in the group. Saving either screen
  * would have silently reordered the other's. The dish owns the attachment; this screen
  * authors the reusable question. `dishes()` remains for the attachment count on the list.
+ *
+ * **Attaching in bulk is back, on the other side of that line.** Fifty dishes meant fifty
+ * product forms, so this module also serves an **Attach To Dishes** page — but it appends a
+ * question one past whatever that dish's last question sits at, exactly where the dish's own
+ * Modifiers tab would have drawn a new last row, and it never touches a dish that already asks
+ * it. So there is still one writer of what `orders` *means*: the dish. See
+ * {@see self::applyAttachment()}.
  */
 class ModifierGroupRepository
 {
@@ -42,7 +51,12 @@ class ModifierGroupRepository
 
     public function find($id)
     {
-        return ModifierGroup::with(['modifiers', 'dishes'])->find($id);
+        $group = ModifierGroup::with(['modifiers', 'dishes'])->find($id);
+
+        // `dishes_summary` is the form's read-only reach list. Appended here rather than on the
+        // model's `$appends` because the index serialises every row and would resolve the
+        // relation once per row for a figure `withCount` already supplies.
+        return $group?->append('dishes_summary');
     }
 
     public function create(array $data)
@@ -86,23 +100,317 @@ class ModifierGroupRepository
 
     public function getOptions(array $columns = [])
     {
-        $valid   = ['status', 'selection'];
-        $columns = array_intersect($columns, $valid);
         $options = [];
 
         // A schema asks for a column with `params: {"columns[]": "…"}`; a single value can
         // arrive as a bare string, and iterating a string is a TypeError, not an empty list.
         foreach ((array) $columns as $column) {
-            $options[$column] = ModifierGroup::query()
-                ->whereNotNull($column)
-                ->distinct()
-                ->pluck($column)
-                ->map(fn ($value) => ['label' => Str::headline((string) $value), 'value' => $value])
-                ->values()
-                ->all();
+            $options[$column] = match ($column) {
+                'status', 'selection' => ModifierGroup::query()
+                    ->whereNotNull($column)
+                    ->distinct()
+                    ->pluck($column)
+                    ->map(fn ($value) => ['label' => Str::headline((string) $value), 'value' => $value])
+                    ->values()
+                    ->all(),
+
+                // Every question, for the Attach To Dishes picker. Not a distinct column
+                // lookup like the two above — it is the list of records themselves, the same
+                // shape the Kitchen Queue's `open_order` uses.
+                'group' => ModifierGroup::query()
+                    ->orderBy('orders')
+                    ->orderBy('id')
+                    ->get()
+                    ->map(fn (ModifierGroup $group) => [
+                        'label' => sprintf(
+                            '%s (%s)',
+                            $group->getTranslation('title', app()->getLocale(), false)
+                                ?: $group->getTranslation('title', 'en', false)
+                                ?: $group->slug,
+                            $group->selection === 'single' ? 'single' : 'multiple'
+                        ),
+                        'value' => (string) $group->id,
+                    ])
+                    ->values()
+                    ->all(),
+
+                default => [],
+            };
         }
 
         return $options;
+    }
+
+    // ── Custom admin pages ──────────────────────────────────────────────────────
+
+    public function pageData(string $slug)
+    {
+        return match ($slug) {
+            'attach' => $this->attachPageData(),
+            default  => [],
+        };
+    }
+
+    public function savePageData(string $slug, array $data)
+    {
+        return match ($slug) {
+            'attach' => $this->applyAttachment($data),
+            default  => ['message' => 'No save handler defined for this page.'],
+        };
+    }
+
+    /**
+     * The Attach To Dishes screen as it first loads: the form's defaults, plus the reach.
+     */
+    protected function attachPageData(): array
+    {
+        return $this->attachSummary() + [
+            'apply_mode'        => 'attach',
+            'required_override' => '',
+            'last_result'       => 'Nothing applied yet.',
+        ];
+    }
+
+    /**
+     * The read-only half of the Attach screen — which questions reach how many dishes, and
+     * which dishes ask nothing at all.
+     *
+     * Returned again after every apply, and deliberately WITHOUT the form's own keys: the page
+     * component merges a message-less response into its model, so returning `apply_mode` here
+     * would flip the operator's Detach choice back to Attach the moment they used it.
+     *
+     * @return array<string, mixed>
+     */
+    protected function attachSummary(): array
+    {
+        $groups = ModifierGroup::query()
+            ->withCount('dishes')
+            ->orderBy('orders')
+            ->orderBy('id')
+            ->get();
+
+        // Active parent dishes with no question attached. Variants are excluded because a
+        // group is attached to the parent and every variant inherits it — listing a variant
+        // here would report a gap that cannot be filled.
+        $unasked = Product::query()
+            ->where('status', 'active')
+            ->whereNull('productable_id')
+            ->whereNotIn('id', function ($query) {
+                $query->select('product_id')->from('dish_modifier_group');
+            })
+            ->orderBy('id')
+            ->get(['id', 'title', 'sku']);
+
+        return [
+            'total_groups'   => (string) $groups->count(),
+            'unasked_count'  => (string) $unasked->count(),
+            'groups_summary' => $groups
+                ->map(fn (ModifierGroup $group) => sprintf(
+                    '%s — %s',
+                    $group->getTranslation('title', app()->getLocale(), false)
+                        ?: $group->getTranslation('title', 'en', false)
+                        ?: $group->slug,
+                    $group->dishes_count === 1 ? '1 dish' : $group->dishes_count . ' dishes'
+                ))
+                ->values()
+                ->all(),
+            'unasked_dishes' => $this->capped(
+                $unasked->map(fn (Product $dish) => $this->dishTitle($dish))->values()->all()
+            ),
+        ];
+    }
+
+    /**
+     * Attach or detach one question across many dishes in a single action.
+     *
+     * **The dish keeps owning `orders`.** A new attachment is appended one past whatever that
+     * dish's last question sits at, which is exactly where the dish's own Modifiers tab would
+     * have drawn a new last row — so the two screens cannot disagree about the order the dish
+     * sheet asks its questions in. Nothing here renumbers a dish's existing rows, and a dish
+     * that already asks the question is left **untouched**: its `required_override` is a
+     * per-dish decision somebody made on that dish's form, and a bulk tool that quietly
+     * overwrote it would be the second writer this shape exists to avoid.
+     *
+     * Detaching leaves gaps in `orders` (2, 4, 5). They are invisible: the tab reads by
+     * `orders` then id, and the next save of that dish renumbers from zero.
+     *
+     * Bad input throws rather than returning a message. `GenericModuleController::savePageData`
+     * turns a message into a **green** toast whatever it says, so "Pick a question first"
+     * would read as a success; a throw rolls the transaction back and shows it in red.
+     *
+     * @return array<string, mixed>
+     */
+    protected function applyAttachment(array $data): array
+    {
+        $groupId  = (int) ($data['group_id'] ?? 0);
+        $mode     = ($data['apply_mode'] ?? 'attach') === 'detach' ? 'detach' : 'attach';
+        $override = $data['required_override'] ?? '';
+
+        $requested = array_values(array_unique(array_filter(
+            array_map('intval', (array) ($data['dish_ids'] ?? [])),
+            fn (int $id) => $id > 0
+        )));
+
+        if ($groupId <= 0) {
+            throw new RuntimeException('Pick a question first.');
+        }
+
+        if ($requested === []) {
+            throw new RuntimeException('Pick at least one dish.');
+        }
+
+        $group = ModifierGroup::find($groupId);
+
+        if (! $group) {
+            throw new RuntimeException('That question no longer exists.');
+        }
+
+        // Re-resolved server-side rather than trusted: the picker only ever offers parent
+        // dishes, but this endpoint takes whatever is posted to it.
+        $dishIds = Product::query()
+            ->whereIn('id', $requested)
+            ->whereNull('productable_id')
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $ignored = count($requested) - count($dishIds);
+
+        if ($dishIds === []) {
+            throw new RuntimeException('None of those are dishes a question can be attached to.');
+        }
+
+        $title = $group->getTranslation('title', app()->getLocale(), false)
+            ?: $group->getTranslation('title', 'en', false)
+            ?: $group->slug;
+
+        $result = DB::transaction(fn () => $mode === 'detach'
+            ? $this->detachFromDishes($group, $dishIds, $title)
+            : $this->attachToDishes($group, $dishIds, $override, $title));
+
+        if ($ignored > 0) {
+            $result .= sprintf(
+                ' %d of the ids sent were not attachable dishes — a variant, or one since deleted — and were ignored.',
+                $ignored
+            );
+        }
+
+        return $this->attachSummary() + ['last_result' => $result];
+    }
+
+    /**
+     * @param  array<int, int>  $dishIds
+     */
+    protected function attachToDishes(ModifierGroup $group, array $dishIds, mixed $override, string $title): string
+    {
+        $already = DB::table('dish_modifier_group')
+            ->where('modifier_group_id', $group->id)
+            ->whereIn('product_id', $dishIds)
+            ->pluck('product_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $fresh = array_values(array_diff($dishIds, $already));
+
+        if ($fresh !== []) {
+            // Where each of those dishes currently ends. A dish with no questions is absent
+            // from the result and starts at 0; a dish whose rows carry a null `orders` reads
+            // as 0 here and the new row lands after it, which is also where it sorts.
+            $tail = [];
+
+            foreach (
+                DB::table('dish_modifier_group')
+                    ->selectRaw('product_id, MAX(orders) as max_orders')
+                    ->whereIn('product_id', $fresh)
+                    ->groupBy('product_id')
+                    ->get() as $row
+            ) {
+                $tail[(int) $row->product_id] = (int) $row->max_orders;
+            }
+
+            $required = ($override === '' || $override === null) ? null : (bool) $override;
+
+            $payload = [];
+
+            foreach ($fresh as $dishId) {
+                $payload[$dishId] = [
+                    'orders'            => array_key_exists($dishId, $tail) ? $tail[$dishId] + 1 : 0,
+                    'required_override' => $required,
+                ];
+            }
+
+            $group->dishes()->attach($payload);
+        }
+
+        $sentence = sprintf(
+            'Attached "%s" to %s.',
+            $title,
+            count($fresh) === 1 ? '1 dish' : count($fresh) . ' dishes'
+        );
+
+        if ($already !== []) {
+            // Written as two whole sentences rather than one with swappable fragments. The
+            // fragment version produced "1 dish already asked it and was left exactly as it
+            // were" — the verb was pluralised in one place and not the other, which is the
+            // failure mode any sentence assembled from parts eventually has.
+            $sentence .= count($already) === 1
+                ? ' 1 dish already asked it and was left exactly as it was.'
+                : sprintf(' %d dishes already asked it and were left exactly as they were.', count($already));
+        }
+
+        return $sentence;
+    }
+
+    /**
+     * @param  array<int, int>  $dishIds
+     */
+    protected function detachFromDishes(ModifierGroup $group, array $dishIds, string $title): string
+    {
+        $removed = $group->dishes()->detach($dishIds);
+        $missing = count($dishIds) - $removed;
+
+        $sentence = sprintf(
+            'Removed "%s" from %s.',
+            $title,
+            $removed === 1 ? '1 dish' : $removed . ' dishes'
+        );
+
+        if ($missing > 0) {
+            $sentence .= sprintf(' %s did not ask it.', $missing === 1 ? '1 dish' : $missing . ' dishes');
+        }
+
+        return $sentence;
+    }
+
+    /**
+     * A dish's name in the admin's locale, falling back to English and then to its SKU.
+     */
+    protected function dishTitle(Product $dish): string
+    {
+        return (string) ($dish->getTranslation('title', app()->getLocale(), false)
+            ?: $dish->getTranslation('title', 'en', false)
+            ?: $dish->sku
+            ?: ('Dish #' . $dish->id));
+    }
+
+    /**
+     * A chip list that stops before it becomes a wall, with the remainder named.
+     *
+     * @param  array<int, string>  $values
+     * @return array<int, string>
+     */
+    protected function capped(array $values): array
+    {
+        if (count($values) <= ModifierGroup::SUMMARY_LIMIT) {
+            return $values;
+        }
+
+        $extra = count($values) - ModifierGroup::SUMMARY_LIMIT;
+
+        return array_merge(
+            array_slice($values, 0, ModifierGroup::SUMMARY_LIMIT),
+            [sprintf('… and %d more', $extra)]
+        );
     }
 
     // ── internals ───────────────────────────────────────────────────────────────

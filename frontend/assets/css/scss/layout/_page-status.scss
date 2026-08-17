@@ -47,15 +47,7 @@
   margin-top: 2.5rem;
 }
 
-// The cart page's checkout plugin slot. Core's Cart section owns the summary and renders
-// no slot, so the theme's copy sits under the cart in the same container; it is spaced as
-// the summary's last block rather than a stray region (audit A15).
-.saffron-cart__plugins {
-  padding-bottom: 2rem;
-
-  // Only when a plugin actually rendered something: the slot component wraps its output,
-  // and a slot nobody opted into leaves the container with no element children.
-  &:not(:has(> *)) {
-    display: none;
-  }
-}
+// `.saffron-cart__plugins` lived here: the theme's own copy of the `checkout` slot, placed
+// under the cart because core's Cart section rendered no slot. Core renders it in the
+// summary now, so both the markup and this rule are gone rather than left to style an
+// element nothing emits (audit A15, closed 2026-08-16).

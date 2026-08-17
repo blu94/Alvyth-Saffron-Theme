@@ -10,12 +10,14 @@ use Theme\Backend\Support\ThemeSettings;
 /**
  * Open / closed / opens-at banner.
  *
- * Reads the theme's own `service_windows` and `service_exceptions`, computed in the SHOP's
- * timezone so a 09:00 opening is 09:00 there whatever the season.
+ * Reads the theme's own `service_windows`, computed in the SHOP's timezone so a 09:00 opening
+ * is 09:00 there whatever the season.
  *
- * > This is PRESENTATION, NOT ENFORCEMENT. Nothing stops a direct POST to
- * > /storefront/checkout outside these hours. Refusing an out-of-hours order is
- * > RESTAURANT-THEME-SPEC.md §14 item 6, and it has to live in core.
+ * Presentation — but no longer presentation *only*. `openState()` is now also what
+ * `Theme\Backend\Guards\ServiceWindowGuard` asks before checkout accepts an ASAP order, so this
+ * banner and that refusal cannot disagree: both resolve through
+ * `ServiceWindowRepository::hoursForDate()`. Saying "Open" while the server turns the customer
+ * away would be worse than either alone.
  */
 class StoreStatus
 {

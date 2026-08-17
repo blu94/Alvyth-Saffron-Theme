@@ -139,12 +139,29 @@
               "options": {
                 "items": [
                   { "title": "Active", "value": "active" },
-                  { "title": "Draft", "value": "draft" }
+                  { "title": "Inactive", "value": "inactive" }
                 ]
               },
               "default": "active"
             }
           ]
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-tools-kitchen-2"
+      },
+      "name": "Dishes That Ask This Question",
+      "subtitle": "Read-only, and it fills in once the question is attached to something. A dish decides which questions it asks, on its own Modifiers tab — or attach one question to many dishes at once from Modifier Groups → Attach To Dishes.",
+      "elements": [
+        {
+          "ui": { "type": "field", "cols": 12 },
+          "key": "dishes_summary",
+          "type": "display",
+          "label": "Attached To"
         }
       ]
     }
@@ -163,7 +180,7 @@
             "options": {
               "items": [
                 { "title": "Active", "value": "active" },
-                { "title": "Draft", "value": "draft" }
+                { "title": "Inactive", "value": "inactive" }
               ]
             }
           },

@@ -46,6 +46,19 @@
   font-size: 1.125rem;
 }
 
+// Shown instead of the ASAP / Choose-a-time pills while the shop is shut: there is nothing
+// to be as soon as possible about, so the block states why and goes straight to the slots.
+// Same danger tint as the Store Status banner, deliberately — one shop state, one colour.
+.saffron-schedule__closed {
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid rgba($hex-danger, 0.22);
+  border-radius: calc(#{$card-radius} / 2);
+  background-color: rgba($hex-danger, 0.06);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 .saffron-schedule__modes {
   display: flex;
   flex-wrap: wrap;
@@ -85,21 +98,81 @@
   }
 }
 
+// Stacked, not side by side: the day row holds one chip per offerable day — up to a
+// fortnight of them — so it takes the full width and the time select sits beneath it.
 .saffron-schedule__slots {
   display: flex;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.9rem;
   margin-top: 1rem;
-
-  @include sm-down {
-    flex-direction: column;
-  }
 }
 
 .saffron-schedule__field {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.4rem;
+}
+
+// One chip per day, and every one of them on screen. This scrolled sideways first, with
+// the scrollbar hidden — so in a 480px summary column the sixth day sat past the right
+// edge with nothing to say it existed, reachable only by shift+scroll. A wrapped grid
+// needs no gesture and no affordance: the days a shop offers are simply all there, which
+// is the entire reason chips beat the dropdown they replaced.
+.saffron-schedule__days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.saffron-schedule__day {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  flex: 1 1 auto;
+  min-width: 4.75rem;
+  min-height: 44px;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid $color-line;
+  border-radius: calc(#{$card-radius} / 2);
+  background-color: $color-white;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+
+  // Real radio, visually removed — the chip is the control, but focus and screen
+  // readers still land on an input, as the mode pills above already do.
+  input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  &:has(input:focus-visible) {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+
+  &.is-active {
+    border-color: $color-accent;
+    background-color: color-mix(in srgb, var(--color-accent), #fff 82%);
+  }
+}
+
+.saffron-schedule__day-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+// The earliest slot that day. A day late in service may only open at 20:30, and saying so
+// on the chip saves picking it, reading the Time list, and going back — the same reason a
+// flight search prints the departure time on the day tab rather than behind it.
+.saffron-schedule__day-from {
+  font-size: 0.7rem;
+  color: $color-muted;
+  white-space: nowrap;
 }
 
 .saffron-schedule__label {
@@ -122,5 +195,174 @@
   &:focus-visible {
     outline: 2px solid $color-accent;
     outline-offset: 1px;
+  }
+}
+
+// The chip that opens the date field. Dashed, so it reads as "something else" rather than
+// as one more day — the days are facts, this is a door.
+.saffron-schedule__day--other {
+  border-style: dashed;
+
+  .saffron-schedule__day-label {
+    white-space: nowrap;
+  }
+}
+
+.saffron-schedule__date {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+// Why a date carries no times: the shop is shut that day, or the day is today and service
+// has ended. Said here rather than left as an empty Time list, which reads as broken.
+.saffron-schedule__note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: $color-danger;
+}
+
+// The reassuring counterpart to `__note`: the chosen date is open, and these are its hours.
+// Said in the shop's own colour, because "we can do that day" and "we cannot" must never be
+// distinguishable only by reading the sentence.
+.saffron-schedule__ok {
+  margin: 0;
+  font-size: 0.8rem;
+  color: $color-success;
+}
+
+// ─── Month grid ───────────────────────────────────────────────────────────────
+// The theme's own calendar. `<input type="date">` opened browser chrome that matched
+// nothing on the page and, worse, could not distinguish a day the shop is shut from a
+// day it is open — min and max are the only things it honours. Everything here is drawn
+// from tokens, so it follows the shop's accent the moment the operator changes it.
+.saffron-cal {
+  border: 1px solid $color-line;
+  border-radius: calc(#{$card-radius} / 2);
+  background-color: $color-white;
+  padding: 0.75rem;
+}
+
+.saffron-cal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.saffron-cal__month {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.saffron-cal__nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid $color-line;
+  border-radius: 999px;
+  background: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: $color-black;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: $color-accent;
+    color: $color-accent-dark;
+  }
+
+  // Disabled rather than hidden at the ends of the range: a control that vanishes makes
+  // the header jump, and the customer cannot tell whether they have reached the limit.
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+}
+
+.saffron-cal__dows,
+.saffron-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.saffron-cal__dows {
+  margin-bottom: 0.25rem;
+
+  span {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: $color-muted;
+  }
+}
+
+.saffron-cal__day {
+  aspect-ratio: 1;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: calc(#{$card-radius} / 3);
+  background: none;
+  font-size: 0.85rem;
+  color: $color-black;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+
+  // `:not(.is-selected)` is load-bearing, not tidiness. `:hover:not(:disabled)` carries more
+  // specificity than `.is-selected`, so hovering the chosen day repainted it pale sand while
+  // its text stayed light — the date the customer had just picked became the one they could
+  // not read. Hover now declines to touch the selection at all.
+  &:hover:not(:disabled):not(.is-selected) {
+    background-color: $hex-sand-100;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 1px;
+  }
+
+  // A day outside the bookable range is simply not there. A day inside it that the shop
+  // is shut for IS there, struck through — the customer learns the shop is closed then
+  // rather than wondering why a date will not take.
+  &.is-outside {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &.is-closed {
+    color: $color-muted;
+    text-decoration: line-through;
+    cursor: not-allowed;
+  }
+
+  &.is-today:not(.is-selected) {
+    border-color: $color-accent;
+    font-weight: 700;
+  }
+
+  // Ink on accent, which is what `.saffron-btn--accent` already pairs and the only legible
+  // choice: white on this saffron is about 2:1, well under the 4.5:1 a small figure needs,
+  // while the ink is about 8:1. Stated for both plain and hover so the selection cannot be
+  // washed out by the cursor resting on it.
+  &.is-selected,
+  &.is-selected:hover {
+    background-color: $color-accent;
+    border-color: $color-accent-dark;
+    color: $color-black;
+    font-weight: 700;
   }
 }

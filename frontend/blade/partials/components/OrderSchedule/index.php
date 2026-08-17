@@ -4,7 +4,7 @@ namespace Theme\Components;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\View;
-use Theme\Backend\Models\ServiceWindow;
+use Theme\Backend\Repositories\ServiceWindowRepository;
 use Theme\Backend\Support\ThemeSettings;
 
 /**
@@ -17,9 +17,13 @@ use Theme\Backend\Support\ThemeSettings;
  * `plugin_fields`, and checkout persists the validated bag to `order.meta.checkout_fields`
  * (spec §14 item 2, register O3) — which is where the Kitchen Queue reads it back.
  *
- * > This is PRESENTATION, NOT ENFORCEMENT. The picker only offers in-hours times, but the
- * > server does not yet refuse a hand-crafted request naming 3 a.m. (register O5). The
- * > Restaurant tab's hint says so to the operator.
+ * **While the shop is closed, ASAP is not offered at all.** There is nothing to be as soon as
+ * possible about: the kitchen is shut, and the choice a customer can actually make is a future
+ * slot. Every reader here — this picker, the Store Status banner, and the checkout guard —
+ * takes its hours from `ServiceWindowRepository::hoursForDate()`, so what the page offers and
+ * what the server accepts are the same answer. The server half is real now
+ * (`Theme\Backend\Guards\ServiceWindowGuard`, spec §14 item 6, register O5): a hand-crafted
+ * request naming 3 a.m. is refused rather than quietly cooked into an order nobody sees.
  *
  * Renders nothing when the operator turned scheduling off, when no whole-shop hours are
  * authored (no honest slot list can be derived from nothing), or when every day in reach is
@@ -33,6 +37,19 @@ class OrderSchedule
     /** Minutes between offered times — the interval delivery platforms train customers on. */
     protected const SLOT_MINUTES = 30;
 
+    /**
+     * How many days get a one-tap button before the customer names a date instead.
+     *
+     * A week covers what a restaurant is actually asked for; past that the buttons stop being
+     * a row and start being a wall, which is the point a date field reads better than chips.
+     */
+    protected const QUICK_DAYS = 7;
+
+    public function __construct(
+        protected ServiceWindowRepository $windows
+    ) {
+    }
+
     public function render(array $data, string $locale, string $themeViewPath): string
     {
         $settings = ThemeSettings::all();
@@ -41,12 +58,25 @@ class OrderSchedule
             return '';
         }
 
-        $daysAhead = min(7, max(1, (int) ($settings['scheduling_days_ahead'] ?? 3)));
-
         // A missing table (a half-run migration, a stale import) must not take the cart page
         // down over a picker. Degrade to ASAP-only by rendering nothing.
         try {
-            $days = $this->days($daysAhead, config('app.timezone', 'UTC'));
+            // The horizon lives on the repository because the checkout guard clamps by the
+            // same number: offering a day the server would refuse is the one failure that
+            // matters here, and two copies of a default is how it happens.
+            $timezone = $this->windows->timezone();
+            $horizon  = $this->windows->schedulingHorizon();
+            $now      = Carbon::now($timezone);
+
+            // The near days stay precomputed: they are the quick buttons, and the overwhelming
+            // majority of orders are one of them. Everything past that is reached by naming a
+            // date, resolved in the browser from the pattern below — a horizon of three months
+            // is 90 dates, and asking the server per date is neither cheap nor possible (a
+            // theme registers no endpoint).
+            $days      = $this->days(min(self::QUICK_DAYS, $horizon), $timezone);
+            $open      = (bool) ($this->windows->openState($timezone)['open'] ?? true);
+            $pattern   = $this->windows->weeklyPattern();
+            $overrides = $this->windows->exceptionsBetween($now, $now->copy()->addDays($horizon - 1));
         } catch (\Throwable $e) {
             report($e);
 
@@ -63,11 +93,51 @@ class OrderSchedule
             // so a multi-key literal at the call site is the bug this theme already fixed once.
             'payload' => [
                 'days'   => $days,
+
+                // Everything the browser needs to resolve a date the quick buttons do not
+                // cover, with the same precedence the server applies: an override wins its
+                // date, the weekly pattern fills the rest.
+                'pattern'   => $pattern,
+                // Cast so an empty map serialises as `{}` rather than `[]`. A lookup on an
+                // array happens to return undefined too, but the browser is handed a
+                // dictionary and should be given one whatever the shop has authored.
+                'overrides' => (object) $overrides,
+                'minDate'   => $now->toDateString(),
+                // `$horizon - 1`, because today counts as the first of the horizon's days —
+                // the same arithmetic `ServiceWindowGuard` applies. Offering `+ $horizon`
+                // drew exactly one extra date, with real slots on it, that checkout then
+                // refused as "up to N days ahead": the customer picked what the page showed
+                // and was turned away with no way to see why. Sharing the setting was never
+                // enough; the arithmetic around it has to match too.
+                'maxDate'   => $now->copy()->addDays($horizon - 1)->toDateString(),
+                // Shop-local, so "is this slot far enough ahead" is decided in the shop's
+                // wall clock rather than the visitor's — a diner in another timezone must not
+                // be offered a slot the kitchen has already passed.
+                'nowLocal'  => $now->format('Y-m-d H:i'),
+                'lead'      => self::MIN_LEAD_MINUTES,
+                'step'      => self::SLOT_MINUTES,
+                // Drives whether ASAP is offered at all. Sent as data rather than baked into
+                // the markup because the same rendered page is served from cache to whoever
+                // asks; the block decides on the value it was rendered with, and the server
+                // decides again at checkout, which is the one that counts.
+                'open'   => $open,
                 'labels' => [
-                    'asap'     => __('As soon as possible'),
-                    'schedule' => __('Choose a time'),
-                    'day'      => __('Day'),
-                    'time'     => __('Time'),
+                    'asap'      => __('As soon as possible'),
+                    'schedule'  => __('Choose a time'),
+                    'day'       => __('Day'),
+                    'time'      => __('Time'),
+                    'closed'    => __('We are closed right now — choose a time below.'),
+                    'otherDate' => __('Another date'),
+                    'date'      => __('Date'),
+                    // Qualifies the small time on each day button. Bare, "Today 14:00" reads
+                    // as a delivery time rather than as the earliest one on offer.
+                    'from'      => __('from'),
+                    'upTo'      => __('up to'),
+                    'shut'      => __('We are closed that day — try another date.'),
+                    'noSlots'   => __('No times left that day — try another date.'),
+                    'openThat'  => __('Open that day'),
+                    'prevMonth' => __('Previous month'),
+                    'nextMonth' => __('Next month'),
                 ],
             ],
         ])->render();
@@ -89,12 +159,7 @@ class OrderSchedule
         // No whole-shop weekly hours at all means the shop has not configured them; unlike
         // the Store Status banner (which reports "open" so nothing looks broken), a picker
         // must not invent times nobody entered.
-        $hasHours = ServiceWindow::recurring()
-            ->where('status', 'active')
-            ->whereNull('scope_id')
-            ->exists();
-
-        if (! $hasHours) {
+        if (! $this->windows->hasHours()) {
             return [];
         }
 
@@ -104,9 +169,9 @@ class OrderSchedule
             $day   = $now->copy()->addDays($i)->startOfDay();
             $slots = [];
 
-            foreach ($this->windowsFor($day) as [$opens, $closes]) {
-                $slot = Carbon::parse($day->toDateString() . ' ' . $opens, $timezone);
-                $end  = Carbon::parse($day->toDateString() . ' ' . $closes, $timezone);
+            foreach ($this->windows->hoursForDate($day)['spans'] as $span) {
+                $slot = Carbon::parse($day->toDateString() . ' ' . $span['opens'], $timezone);
+                $end  = Carbon::parse($day->toDateString() . ' ' . $span['closes'], $timezone);
 
                 // The last slot sits one interval before close — an order for the minute
                 // the shutter comes down is a slot in name only.
@@ -133,45 +198,5 @@ class OrderSchedule
         }
 
         return $days;
-    }
-
-    /**
-     * The orderable spans for one date, as `[opens, closes]` pairs of `H:i` strings.
-     *
-     * A dated entry wins its date outright — the same precedence the Store Status banner and
-     * the hours table apply — and `closesTheDay()` also covers an override missing either
-     * time, so half a window never becomes a slot list.
-     *
-     * @return array<int, array{0: string, 1: string}>
-     */
-    protected function windowsFor(Carbon $day): array
-    {
-        $exception = ServiceWindow::exceptions()
-            ->where('status', 'active')
-            ->whereDate('date', $day->toDateString())
-            ->first();
-
-        if ($exception) {
-            if ($exception->closesTheDay()) {
-                return [];
-            }
-
-            return [[
-                substr((string) $exception->opens_at, 0, 5),
-                substr((string) $exception->closes_at, 0, 5),
-            ]];
-        }
-
-        return ServiceWindow::recurring()
-            ->where('status', 'active')
-            ->whereNull('scope_id')
-            ->where('day_of_week', (int) $day->dayOfWeek)
-            ->orderBy('opens_at')
-            ->get()
-            ->map(fn ($w) => [
-                substr((string) $w->opens_at, 0, 5),
-                substr((string) $w->closes_at, 0, 5),
-            ])
-            ->all();
     }
 }

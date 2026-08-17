@@ -29,9 +29,87 @@ use Theme\Backend\Support\ThemeSettings;
  */
 class DishSheet
 {
+    /**
+     * Tabler glyph bodies for the share panel, keyed by the network's settings key.
+     *
+     * Inlined because this theme ships no icon font — Ella writes `<i class="ti ti-brand-…">`
+     * and can, because its layout loads Tabler's webfont; Saffron's does not, and pulling one
+     * in for 28 glyphs would cost every page a font request for a panel most visitors never
+     * open. These strings are a constant declared here and never touched by user input, which
+     * is why the view is allowed to echo them raw.
+     */
+    private const SHARE_ICONS = [
+        'facebook' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 10v4h3v7h4v-7h3l1-4h-4V8a1 1 0 0 1 1-1h3V3h-3a5 5 0 0 0-5 5v2z"/>',
+        'twitter' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m4 4l11.733 16H20L8.267 4zm0 16l6.768-6.768m2.46-2.46L20 4"/>',
+        'linkedin' => '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M8 11v5m0-8v.01M12 16v-5m4 5v-3a2 2 0 1 0-4 0"/><path d="M3 7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/></g>',
+        'whatsapp' => '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m3 21l1.65-3.8a9 9 0 1 1 3.4 2.9z"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0zm0 0a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></g>',
+        'pinterest' => '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="m8 20l4-9m-1.3 3c.437 1.263 1.43 2 2.55 2c2.071 0 3.75-1.554 3.75-4a5 5 0 1 0-9.7 1.7"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0-18 0"/></g>',
+        'telegram' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 10l-4 4l6 6l4-16l-18 7l4 2l2 6l3-4"/>',
+        'reddit' => '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 8c2.648 0 5.028.826 6.675 2.14a2.5 2.5 0 0 1 2.326 4.36c0 3.59-4.03 6.5-9 6.5c-4.875 0-8.845-2.8-9-6.294l-1-.206a2.5 2.5 0 0 1 2.326-4.36C5.973 8.827 8.353 8 11.001 8zm0 0l1-5l6 1"/><path d="M18 4a1 1 0 1 0 2 0a1 1 0 1 0-2 0"/><circle cx="9" cy="13" r=".5" fill="currentColor"/><circle cx="15" cy="13" r=".5" fill="currentColor"/><path d="M10 17q1 .5 2 .5c1 0 1.333-.167 2-.5"/></g>',
+        'email' => '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m3 7l9 6l9-6"/></g>',
+        'tumblr' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 21h4v-4h-4v-6h4V7h-4V3h-4v1a3 3 0 0 1-3 3H6v4h4v6a4 4 0 0 0 4 4"/>',
+        'vk' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 19h-4a8 8 0 0 1-8-8V6h4v5a4 4 0 0 0 4 4V6h4v4.5h.03A4.53 4.53 0 0 0 18 6.004h4l-.342 1.711A6.86 6.86 0 0 1 18 12.504a5.34 5.34 0 0 1 3.566 4.111L22 19.004h-4a4.53 4.53 0 0 0-3.97-4.496v4.5z"/>',
+        'xing' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16 21l-4-7l6.5-11M7 7l2 3.5L6 15"/>',
+        'line' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10.663C21 6.439 16.959 3 12 3s-9 3.439-9 7.663c0 3.783 3.201 6.958 7.527 7.56c1.053.239.932.644.696 2.133c-.039.238-.184.932.777.512c.96-.42 5.18-3.201 7.073-5.48C20.377 13.884 21 12.359 21 10.673z"/>',
+        'viber' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2m10 3a2 2 0 0 1 2 2m-2-6a6 6 0 0 1 6 6"/>',
+        'skype' => '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 3a9 9 0 0 1 8.603 11.65a4.5 4.5 0 0 1-5.953 5.953A9 9 0 0 1 3.397 9.35A4.5 4.5 0 0 1 9.35 3.396A9 9 0 0 1 12 3"/><path d="M8 14.5c.5 2 2.358 2.5 4 2.5c2.905 0 4-1.187 4-2.5c0-1.503-1.927-2.5-4-2.5s-4-1-4-2.5C8 8.187 9.095 7 12 7c1.642 0 3.5.5 4 2.5"/></g>',
+        'weibo' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14.127C19 17.2 15.498 20 11 20c-4.126 0-8-2.224-8-5.565c0-1.78.984-3.737 2.7-5.567c2.362-2.51 5.193-3.687 6.551-2.238c.415.44.752 1.39.749 2.062c2-1.615 4.308.387 3.5 2.693c1.26.557 2.5.538 2.5 2.742M15 4h1a5 5 0 0 1 5 5v1"/>',
+        'hackernews' => '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="m8 7l4 6l4-6m-4 10v-4"/></g>',
+        'pocket' => '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M5 4h14a2 2 0 0 1 2 2v6a9 9 0 0 1-18 0V6a2 2 0 0 1 2-2"/><path d="m8 11l4 4l4-4"/></g>',
+        'flipboard' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 7v14l-6-4l-6 4V7a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4"/>',
+        'instapaper' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 7v14l-6-4l-6 4V7a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4"/>',
+        'evernote' => '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M4 8h5V3"/><path d="M17.9 19c.6-2.5 1.1-5.471 1.1-9c0-4.5-2-5-3-5c-1.906 0-3-.5-3.5-1c-.354-.354-.5-1-1.5-1H9L4 8c0 6 2.5 8 5 8c1 0 1.5-.5 2-1.5s1.414-.326 2.5 0c1.044.313 2.01.255 2.5.5c1 .5 2 1.5 2 3c0 .5 0 3-3 3s-3-3-1-3m1-8h1"/></g>',
+        'trello' => '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M7 7h3v10H7zm7 0h3v6h-3z"/></g>',
+        'mix' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zm0 10a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zm10 0a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1zm0-8h6m-3-3v6"/>',
+        'digg' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 6h3a1 1 0 0 1 1 1v11a2 2 0 0 1-4 0V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v12a3 3 0 0 0 3 3h11M8 8h4m-4 4h4m-4 4h4"/>',
+        'blogger' => '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M8 21h8a5 5 0 0 0 5-5v-3a3 3 0 0 0-3-3h-1V8a5 5 0 0 0-5-5H8a5 5 0 0 0-5 5v8a5 5 0 0 0 5 5"/><path d="M7 8.5A1.5 1.5 0 0 1 8.5 7h3A1.5 1.5 0 0 1 13 8.5a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 7 8.5m0 7A1.5 1.5 0 0 1 8.5 14h7a1.5 1.5 0 0 1 1.5 1.5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 15.5"/></g>',
+        'sms' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9h8m-8 4h6m4-9a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-5l-5 3v-3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z"/>',
+        'threads' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7.5Q17 3 12 3c-5 0-8 2.5-8 9s3.5 9 8 9s7-3 7-5s-1-5-7-5c-2.5 0-3 1.25-3 2.5C9 15 10 16 11.5 16c2.5 0 3.5-1.5 3.5-5s-2-4-3-4s-1.833.333-2.5 1"/>',
+        'tiktok' => '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 7.917v4.034A9.95 9.95 0 0 1 16 10v4.5a6.5 6.5 0 1 1-8-6.326V12.5a2.5 2.5 0 1 0 4 2V3h4.083A6.005 6.005 0 0 0 21 7.917"/>',
+        'xiaohongshu' => '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M19 4v16H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M19 16H7a2 2 0 0 0-2 2M9 8h6"/></g>',
+    ];
+
     public function __construct(
-        protected ApplicationInterface $appSettingsRepo
+        protected ApplicationInterface $appSettingsRepo,
+        // The review aggregate for the summary beside the dish title. Ella's ProductDetails
+        // injects the same repository for the same purpose.
+        protected \App\Repositories\Interaction\InteractionInterface $interactionRepo
     ) {}
+
+    /**
+     * The star line under the dish name: average, count, and a link down to the reviews.
+     *
+     * Ella prints this in its product header and Saffron printed nothing — a customer deciding
+     * whether to order saw no rating at all until they scrolled past the ordering form to the
+     * bottom of the page (register E3, the half that was missed when the list was ported).
+     *
+     * **Zero reviews still renders**, as empty stars reading "No reviews yet". Hiding the line
+     * until somebody has written one is what the reviews section itself was doing, and it makes
+     * a shop with no reviews look like a shop with no review feature — which is the opposite of
+     * an invitation to leave the first one.
+     *
+     * @return array{average: float|null, count: int}
+     */
+    protected function reviewSummary(Product $dish): array
+    {
+        try {
+            $aggregate = $this->interactionRepo->getProductReviewAggregate($dish);
+            $count     = $aggregate->count();
+
+            return [
+                'average' => $count > 0
+                    ? round($aggregate->avg(fn ($c) => (float) ($c->data['rating'] ?? 0)), 1)
+                    : null,
+                'count'   => $count,
+            ];
+        } catch (\Throwable $e) {
+            // A dish page must render even if the interactions table is unavailable. The
+            // reviews section below fetches its own copy over HTTP and will report separately.
+            report($e);
+
+            return ['average' => null, 'count' => 0];
+        }
+    }
 
     public function render(?array $data, string $locale, string $themeViewPath): string
     {
@@ -61,6 +139,7 @@ class DishSheet
                 'groups'      => [],
                 'variants'    => [],
                 'payload'     => [],
+                'shareNetworks' => [],
                 'heading'     => '',
                 'description' => '',
                 'notesLabel'  => '',
@@ -68,7 +147,10 @@ class DishSheet
                 'showNotes'   => false,
                 'isAvailable' => false,
                 'soldOutLabel' => '',
-                'hasUnpricedModifiers' => false,
+                // The blade reads both unconditionally; without them this branch throws on an
+                // undefined variable instead of rendering the "no dish resolved" notice.
+                'categoryLinks' => [],
+                'tags'          => [],
             ])->render();
         }
 
@@ -78,6 +160,38 @@ class DishSheet
 
         $title       = $this->translate($dish->title, $locale);
         $description = trim(strip_tags((string) $this->translate($dish->description, $locale)));
+
+        // ── What the dish is, and where it sits on the menu ──────────────────────
+        // Ella's product page prints both beside the price; Saffron printed neither, so a dish
+        // page named no course and showed none of the labels its own card already carries
+        // (register E4).
+        //
+        // Categories are links and tags are not, and that asymmetry is deliberate rather than an
+        // oversight. `Category::store_url` resolves to `/collections/{slug}`, which
+        // `ThemeController` matches to a real category page. A tag has no page: core answers
+        // `/collections?tag={slug}` by sharing a `currentTag`, and **nothing reads it** — not
+        // core's collection or product grids, not this theme's overrides of them — so the URL
+        // renders the entire unfiltered menu. A chip promising "just the spicy dishes" that
+        // returns all of them is worse than a chip that stays put, so tags render exactly as
+        // `DishCard` already renders them: plain labels.
+        $categoryLinks = ($data['show_categories'] ?? true)
+            ? $dish->categories
+                ->map(fn ($category) => [
+                    'title' => $this->translate($category->title, $locale),
+                    'url'   => $category->store_url,
+                ])
+                ->filter(fn (array $category) => $category['title'] !== '')
+                ->values()
+                ->all()
+            : [];
+
+        $tags = ($data['show_tags'] ?? true)
+            ? $dish->tags
+                ->map(fn ($tag) => $this->translate($tag->title, $locale))
+                ->filter()
+                ->values()
+                ->all()
+            : [];
 
         // ── Sizes ───────────────────────────────────────────────────────────────
         // A variant IS a Product whose productable_id points at the parent, so its own
@@ -103,12 +217,11 @@ class DishSheet
         // ── Modifier groups ─────────────────────────────────────────────────────
         $groups = $this->resolveGroups($dish, $locale);
 
-        // Any non-zero price_delta reaching the browser would show the customer a total the
-        // server will not charge. Flagged so the template can say so in debug rather than
-        // quietly lying about the price. See RESTAURANT-THEME-SPEC.md §2.3 / §17.3.
-        $hasUnpricedModifiers = collect($groups)
-            ->flatMap(fn ($g) => $g['modifiers'])
-            ->contains(fn ($m) => $m['price_delta'] !== 0.0);
+        // There was a debug warning here on any dish carrying a non-zero price_delta, because
+        // the sheet showed a surcharge the server then did not collect. `ModifierPricing`
+        // closed that gap — core asks this theme what a line's answers cost and adds it to the
+        // unit price — so the running total below is now the price that is charged, and a
+        // warning saying otherwise would be the lie (spec §2.3 approach C, register O1).
 
         // Sold out when nothing on the sheet can be bought. With sizes that means every size
         // is gone; without them it is the dish's own stock. `status` still gates publication,
@@ -124,13 +237,24 @@ class DishSheet
 
         $notesMax    = (int) ($data['notes_max'] ?? 140);
 
+        // ── Sharing ─────────────────────────────────────────────────────────────
+        // Absolute, because a shared link leaves this site. `store_url` is relative, which is
+        // right for an href on the page and useless in a WhatsApp message.
+        $shareUrl      = url($dish->store_url);
+        $shareNetworks = $this->shareNetworks($appSettings, $shareUrl, $title, $this->primaryImageUrl($dish));
+
         $payload = [
             'dish' => [
                 'id'    => $dish->id,
                 'title' => $title,
                 'price' => (float) ($dish->price ?? 0),
                 'image' => $this->primaryImageUrl($dish),
+                // For the saved-dishes list, which renders from localStorage alone and has
+                // no other route back to this sheet.
+                'url'   => $dish->store_url,
             ],
+            // Every photograph, for the gallery strip and the lightbox (register E1, E2).
+            'images'   => $this->galleryUrls($dish),
             'variants' => $variants,
             'groups'   => $groups,
             'currency' => [
@@ -148,9 +272,24 @@ class DishSheet
                 // The remaining strings the JS shows. Translated here, with everything else,
                 // rather than hardcoded in the script — a Malay menu was showing three
                 // English error lines because these lived in JS string literals.
+                'zoom'             => __('View this photo full size'),
+                'thumbnail'        => __('Show photo :n', ['n' => ':n']),
+                'closePhoto'       => __('Close the photo'),
+                'prevPhoto'        => __('Previous photo'),
+                'nextPhoto'        => __('Next photo'),
                 'chooseAtLeast'    => __('Choose at least :n', ['n' => ':n']),
                 'answerHighlighted' => __('Please answer the highlighted questions.'),
                 'cartUnavailable'  => __('The cart is unavailable. Please reload the page.'),
+                'save'             => __('Save this dish'),
+                'unsave'           => __('Remove from saved dishes'),
+                'share'            => __('Share'),
+                'shareDish'        => __('Share this dish'),
+                'copyLink'         => __('Copy link'),
+                'copied'           => __('Link copied'),
+            ],
+            'share' => [
+                'url'   => $shareUrl,
+                'title' => $title,
             ],
             'notesMax'  => $notesMax,
             'maxQty'    => max(1, (int) ($data['max_quantity'] ?? 20)),
@@ -162,16 +301,26 @@ class DishSheet
             'uid'                  => 'dish-sheet-' . $dish->id . '-' . Str::random(6),
             'heading'              => $title,
             'description'          => $description,
+            'categoryLinks'        => $categoryLinks,
+            'tags'                 => $tags,
             'variants'             => $variants,
             'groups'               => $groups,
             'payload'              => $payload,
+            'shareNetworks'        => $shareNetworks,
             'showNotes'            => (bool) ($data['show_notes'] ?? true),
             'notesLabel'           => $this->translate($data['notes_label'] ?? '', $locale) ?: __('Special instructions'),
             'notesMax'             => $notesMax,
             'isAvailable'          => $isAvailable,
             'soldOutLabel'         => $soldOutLabel,
-            'hasUnpricedModifiers' => $hasUnpricedModifiers,
+            // Theme-wide, not a per-block control: Saved Dishes is one feature with one
+            // switch, the same one the dish card and the header read.
+            'showWishlist'         => ThemeSettings::bool('wishlist_enabled', true),
             'imageUrl'             => $this->primaryImageUrl($dish),
+            'reviewSummary'        => $this->reviewSummary($dish),
+            'showReviews'          => ThemeSettings::bool('reviews_enabled', true),
+            // Every photograph, for the gallery and the lightbox. `imageUrl` stays as the
+            // first of these because the share card and the JSON-LD want one image, not a set.
+            'images'               => $this->galleryUrls($dish),
             'locale'               => $locale,
             'data'                 => $data,
         ])->render();
@@ -185,7 +334,7 @@ class DishSheet
      */
     protected function resolveDish(array $data): ?Product
     {
-        $eager = ['variants', 'tags', 'assets'];
+        $eager = ['variants', 'tags', 'categories', 'assets'];
 
         if (!empty($data['product_id'])) {
             return Product::with($eager)->whereKey((int) $data['product_id'])->whereNull('productable_id')->first();
@@ -258,6 +407,74 @@ class DishSheet
     }
 
     /**
+     * The share targets, in Ella's order and with Ella's URLs, filtered by the shop's
+     * `share_*` Application settings.
+     *
+     * The switches are core's, not this theme's, which is the point: an operator turns
+     * Pinterest off once on Settings → Application and it disappears from Saffron's dish sheet
+     * and Ella's product page together. A network missing from the settings row defaults to
+     * on, matching Ella's `?? true`.
+     *
+     * `mailto:`, `sms:` and `viber:` are deliberately kept in the list even though they are not
+     * web pages — the view refuses to open those in a popup window and lets the device's own
+     * app take them.
+     */
+    protected function shareNetworks(array $appSettings, string $url, string $title, string $image): array
+    {
+        $u   = urlencode($url);
+        $t   = urlencode($title);
+        $img = $image === '' ? '' : urlencode(url($image));
+
+        $networks = [
+            ['facebook',    'Facebook',    "https://www.facebook.com/sharer/sharer.php?u={$u}"],
+            ['twitter',     'X (Twitter)', "https://twitter.com/intent/tweet?url={$u}&text={$t}"],
+            ['linkedin',    'LinkedIn',    "https://www.linkedin.com/sharing/share-offsite/?url={$u}"],
+            ['whatsapp',    'WhatsApp',    "https://wa.me/?text={$t}%20{$u}"],
+            ['pinterest',   'Pinterest',   "https://pinterest.com/pin/create/button/?url={$u}&media={$img}&description={$t}"],
+            ['telegram',    'Telegram',    "https://t.me/share/url?url={$u}&text={$t}"],
+            ['reddit',      'Reddit',      "https://reddit.com/submit?url={$u}&title={$t}"],
+            ['email',       'Email',       "mailto:?subject={$t}&body={$t}%20{$u}"],
+            ['tumblr',      'Tumblr',      "https://www.tumblr.com/widgets/share/tool?canonicalUrl={$u}&title={$t}"],
+            ['vk',          'VKontakte',   "https://vk.com/share.php?url={$u}&title={$t}"],
+            ['xing',        'Xing',        "https://www.xing.com/spi/shares/new?url={$u}"],
+            ['line',        'Line',        "https://social-plugins.line.me/lineit/share?url={$u}"],
+            ['viber',       'Viber',       "viber://forward?text={$t}%20{$u}"],
+            ['skype',       'Skype',       "https://web.skype.com/share?url={$u}"],
+            ['weibo',       'Weibo',       "https://service.weibo.com/share/share.php?url={$u}&title={$t}"],
+            ['hackernews',  'Hacker News', "https://news.ycombinator.com/submitlink?u={$u}&t={$t}"],
+            ['pocket',      'Pocket',      "https://getpocket.com/save?url={$u}&title={$t}"],
+            ['flipboard',   'Flipboard',   "https://share.flipboard.com/bookmarklet/popout?v=2&title={$t}&url={$u}"],
+            ['instapaper',  'Instapaper',  "https://www.instapaper.com/hello2?url={$u}&title={$t}"],
+            ['evernote',    'Evernote',    "https://www.evernote.com/clip.action?url={$u}&title={$t}"],
+            ['trello',      'Trello',      "https://trello.com/add-card?url={$u}&name={$t}"],
+            ['mix',         'Mix',         "https://mix.com/add?url={$u}"],
+            ['digg',        'Digg',        "https://digg.com/submit?url={$u}&title={$t}"],
+            ['blogger',     'Blogger',     "https://www.blogger.com/blog-this.g?u={$u}&n={$t}"],
+            ['sms',         'SMS',         "sms:?&body={$t}%20{$u}"],
+            ['threads',     'Threads',     "https://threads.net/intent/post?text={$t}%20{$u}"],
+            ['tiktok',      'TikTok',      'https://www.tiktok.com/'],
+            ['xiaohongshu', 'Xiaohongshu', 'https://www.xiaohongshu.com/'],
+        ];
+
+        $out = [];
+
+        foreach ($networks as [$key, $label, $target]) {
+            if (!($appSettings['share_' . $key] ?? true)) {
+                continue;
+            }
+
+            $out[] = [
+                'key'   => $key,
+                'label' => $label,
+                'url'   => $target,
+                'icon'  => self::SHARE_ICONS[$key],
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * A variant's display label. Falls back to its option data, then its SKU — a size picker
      * showing "Product 4" because a title was never set is worse than showing the SKU.
      */
@@ -292,15 +509,44 @@ class DishSheet
 
     protected function primaryImageUrl(Product $dish): string
     {
-        $asset = $dish->assets->where('usage', 'PRODUCT_IMAGE')->sortByDesc('featured')->first()
-            ?? $dish->assets->first();
+        return $this->galleryUrls($dish)[0] ?? '';
+    }
 
-        if (!$asset) {
-            return '';
+    /**
+     * Every photograph of this dish, featured first.
+     *
+     * The sheet showed **one** image for its whole life — this method's predecessor returned a
+     * single URL and the rest of `assets` was eager-loaded and then thrown away. A dish with
+     * three photographs looked like a dish with one, on the page where a customer decides
+     * whether to order it. Ella's product page has carried a gallery with thumbnails the entire
+     * time (register E1).
+     *
+     * `PRODUCT_IMAGE` first and featured at the front of it, so the thumbnail order matches
+     * what an operator arranged in admin. Falls back to every asset when nothing carries the
+     * usage, because older rows predate it and a shop with photos should not see none.
+     *
+     * @return array<int,string>
+     */
+    protected function galleryUrls(Product $dish): array
+    {
+        $assets = $dish->assets->where('usage', 'PRODUCT_IMAGE')->sortByDesc('featured');
+
+        if ($assets->isEmpty()) {
+            $assets = $dish->assets;
         }
 
-        $path = (string) $asset->path;
+        return $assets
+            ->map(fn ($asset) => $this->assetUrl((string) $asset->path))
+            ->filter()
+            // The same file attached twice would give the gallery two identical slides and a
+            // thumbnail that highlights both.
+            ->unique()
+            ->values()
+            ->all();
+    }
 
+    protected function assetUrl(string $path): string
+    {
         if ($path === '') {
             return '';
         }

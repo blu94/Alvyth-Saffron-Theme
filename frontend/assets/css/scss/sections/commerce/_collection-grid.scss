@@ -1,0 +1,218 @@
+@use "../../base/colors" as *;
+@use "../../base/variables" as *;
+@use "../../mixins/breakpoints" as *;
+
+// ─── Product listing (sections/commerce/CollectionGrid) ───────────────────────
+// Saffron's claim on core's Collection Grid, which renders /products and any category page
+// carrying the block. The cards are DishCard, so everything below is only the furniture
+// around them: the toolbar, the sort links and the collection rail. Before this the whole
+// screen was core's Bootstrap fallback — blue buttons and currency-less prices inside
+// Saffron's own header (register E5).
+
+.saffron-listing__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid $color-line;
+}
+
+.saffron-listing__count {
+  font-size: 0.9375rem;
+  color: $color-muted;
+}
+
+// ─── Sort (sections/commerce/sort.blade.php) ──────────────────────────────────
+// A `<details>` dropdown. It was four inline links first, which put four competing choices on
+// the same line as the menu's only real call to action and wrapped to two rows on a phone.
+// One control that names the current order reads as one decision.
+.saffron-sort {
+  position: relative;
+}
+
+.saffron-sort__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-block-size: 40px;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid $color-line;
+  border-radius: $control-radius;
+  background: $color-surface;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  // The UA's disclosure triangle, replaced by the caret in the markup so it matches the
+  // header's dropdowns.
+  list-style: none;
+
+  &::-webkit-details-marker { display: none; }
+
+  &:hover { border-color: $color-secondary; }
+
+  svg { transition: transform 0.15s ease; }
+}
+
+.saffron-sort[open] > .saffron-sort__toggle svg {
+  transform: rotate(180deg);
+}
+
+.saffron-sort__label {
+  color: $color-muted;
+  white-space: nowrap;
+}
+
+.saffron-sort__current {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.saffron-sort__panel {
+  position: absolute;
+  z-index: 20;
+  inset-block-start: calc(100% + 0.35rem);
+  // End-aligned: this sits at the right of the toolbar, and a start-aligned panel would run
+  // off the viewport on a phone.
+  inset-inline-end: 0;
+  min-inline-size: 190px;
+  display: flex;
+  flex-direction: column;
+  padding: 0.35rem;
+  border: 1px solid $color-line;
+  // `$control-radius` is 999px in this theme — a pill, which is right for the toggle and
+  // turned the panel into an oval blob with the options floating inside it. Matched to the
+  // header's dropdown panel instead, which is the other panel of this shape on the site.
+  border-radius: calc(#{$card-radius} - 4px);
+  background-color: $color-card-surface;
+  box-shadow: $card-shadow-hover;
+}
+
+.saffron-sort__link {
+  display: block;
+  min-block-size: 40px;
+  padding: 0.5rem 0.75rem;
+  border-radius: calc(#{$card-radius} - 6px);
+  font-size: 0.9375rem;
+  color: $color-muted;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: $color-card-surface;
+    color: $color-black;
+  }
+
+  // The chosen order, in the same emphasis colour the filter rail and the pager use.
+  &.is-active {
+    color: $color-accent-dark;
+    font-weight: 600;
+  }
+}
+
+// The Product Grid rail stacks three filter groups; the Collection Grid rail has one.
+.saffron-listing__filter + .saffron-listing__filter {
+  margin-top: 2rem;
+}
+
+// Below lg the three groups stack to roughly a phone screen and a half, so a customer landing
+// on /products met filters and no food. This was briefly a `<details>` disclosure, which
+// **shipped the rail's column empty at every width**: a closed `<details>` has its content
+// hidden by the browser through `::details-content { content-visibility: hidden }`, and a
+// `display: block` on the child does not override that pseudo-element. Nothing here fights the
+// user agent now — each group is a single scrollable row of chips, about 200px all told, and
+// the dishes stay on the first screen.
+@include lg-down {
+  .saffron-listing__filter + .saffron-listing__filter {
+    margin-top: 1.25rem;
+  }
+}
+
+.saffron-listing__rail-title {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.85rem;
+}
+
+.saffron-listing__rail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+
+  // Below lg the rail sits above the grid, so each group becomes one scrollable row of chips
+  // rather than pushing every dish a screen and a half down the page. Wrapping was the first
+  // attempt and is why this matters: nine categories wrapped to five lines, and three groups
+  // of that put the first dish 830px down a 812px phone — filters and no food.
+  @include lg-down {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    overflow-x: auto;
+    // Room for the chips' focus ring, which a tightly clipped scroller would cut off.
+    padding-block-end: 0.35rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar { display: none; }
+
+    > li { flex: 0 0 auto; }
+  }
+}
+
+.saffron-listing__rail-link {
+  display: flex;
+  align-items: center;
+  // 40px on touch: this is primary navigation, not a caption.
+  min-block-size: 40px;
+  padding: 0.5rem 0.75rem;
+  margin-inline-start: -0.75rem;
+  // Carried by every row, transparent until selected. Adding the border only on `.is-active`
+  // would move the row 2px the moment it was chosen and nudge the whole list under it.
+  border: 1px solid $color-line;
+  border-color: transparent;
+  border-radius: $control-radius;
+  color: $color-muted;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: $color-card-surface;
+    color: $color-black;
+  }
+
+  // The selected filter is drawn with a **border**, in the theme's own emphasis colours.
+  //
+  // It was `$color-card-surface` — the same near-white the hover state uses — which on this
+  // theme's cream page is barely a shade apart from it, so the current filter read as blurred
+  // and hovering any row made it look selected. An outline separates the two cleanly: hover
+  // tints the background, selected draws an edge around it.
+  //
+  // Accent, not black, and not a dark fill — both of those were shipped first and both were
+  // invented rather than looked up. `.cms-pager__link` on this same page already says what an
+  // emphasised outline is here: `$color-accent` border, `$color-accent-dark` text. Matching it
+  // means the Next button and the chosen filter agree, and a shop that changes its accent gets
+  // both without touching either.
+  &.is-active {
+    background: $color-white;
+    border-color: $color-accent;
+    color: $color-accent-dark;
+    font-weight: 600;
+  }
+
+  @include lg-down {
+    margin-inline-start: 0;
+    white-space: nowrap;
+  }
+}
+
+.saffron-listing__pager {
+  margin-top: 2.5rem;
+}

@@ -23,6 +23,15 @@ class ModifierGroup extends Model
 {
     use HasTranslations, HasSlug, SoftDeletes, LogsSystemActivity;
 
+    /**
+     * How many dish names the group screen's read-only list prints before it summarises.
+     *
+     * A question attached to three hundred dishes would otherwise render three hundred chips
+     * and bury the rest of the form. The exact figure is on the list screen's Dishes column
+     * and in the count beside this list, so nothing is hidden — only the wall of names.
+     */
+    public const SUMMARY_LIMIT = 50;
+
     public $translatable = ['title', 'description'];
 
     protected $fillable = [
@@ -64,6 +73,55 @@ class ModifierGroup extends Model
         return $this->belongsToMany(Product::class, 'dish_modifier_group')
             ->withPivot(['orders', 'required_override'])
             ->withTimestamps();
+    }
+
+    /**
+     * The dishes that ask this question, as plain titles for the group screen's read-only list.
+     *
+     * Appended by {@see \Theme\Backend\Repositories\ModifierGroupRepository::find()} and never
+     * through `$appends`: the list screen serialises every row, and an accessor that resolved
+     * `dishes` there would turn one query into one per row for a column the list already gets
+     * from `withCount`. `find()` eager-loads the relation, so this reads what is in memory.
+     *
+     * Sorted by name rather than by pivot order, because the pivot's `orders` is the question's
+     * position *on each dish* — it says nothing about how the dishes relate to each other, and
+     * sorting a reach list by it would look arbitrary. Alphabetical is what a reader scans.
+     *
+     * @return array<int, string>
+     */
+    public function getDishesSummaryAttribute(): array
+    {
+        $titles = $this->dishes
+            ->map(fn (Product $dish) => $this->dishTitle($dish))
+            ->filter(fn (string $title) => $title !== '')
+            ->sort(SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+
+        if ($titles->count() <= self::SUMMARY_LIMIT) {
+            return $titles->all();
+        }
+
+        $extra = $titles->count() - self::SUMMARY_LIMIT;
+
+        return $titles->take(self::SUMMARY_LIMIT)
+            ->push(sprintf('… and %d more', $extra))
+            ->all();
+    }
+
+    /**
+     * A dish's name in the admin's locale, falling back to English and then to its SKU.
+     *
+     * A product with no title in either locale still has to be nameable, or it appears in the
+     * reach list as a blank chip the operator cannot act on.
+     */
+    protected function dishTitle(Product $dish): string
+    {
+        $locale = app()->getLocale();
+
+        return (string) ($dish->getTranslation('title', $locale, false)
+            ?: $dish->getTranslation('title', 'en', false)
+            ?: $dish->sku
+            ?: '');
     }
 
     /**

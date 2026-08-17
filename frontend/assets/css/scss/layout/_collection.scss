@@ -1,0 +1,11 @@
+@use "../base/variables" as *;
+
+// ─── Category page heading (components/CategoryMenu) ──────────────────────────
+// Deliberately not `.saffron-section`: the Menu Sections block that follows carries its own
+// `padding-block`, so using the full section rhythm here stacked two of them and left a gap
+// under the category title roughly the height of the title itself. This pads the top only and
+// lets the menu's own leading supply the space beneath.
+.saffron-collection__head {
+  padding-block-start: $section-pad-y;
+  padding-block-end: 0;
+}

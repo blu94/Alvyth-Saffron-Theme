@@ -89,10 +89,17 @@ class MenuSections
             ->orderBy('id')
             ->get();
 
-        $typed = $categories->where('type', 'product');
-        $usedTypeFilter = $typed->isNotEmpty();
+        // The type preference is a guess about which categories are menu sections, and an
+        // explicit allow-list is not a guess — so naming slugs turns it off. Without this, a
+        // block scoped to a category carrying the legacy `general` type rendered **nothing**
+        // on any shop that also had one properly typed category: the preference dropped it
+        // before the allow-list was ever consulted, and the section printed its empty panel
+        // with no hint that the slug had matched a real category. Measured on a seeded shop —
+        // `dummy-lifestyle` holds six dishes and drew an empty menu.
+        $typed  = $categories->where('type', 'product');
+        $scoped = $onlySlugs->isNotEmpty();
 
-        if ($usedTypeFilter) {
+        if (! $scoped && $typed->isNotEmpty()) {
             $categories = $typed;
         }
 
@@ -135,7 +142,19 @@ class MenuSections
             'gridColClass'     => $this->gridColClass($colsDesktop),
             'showSectionNav'   => $showSectionNav && $sections->count() > 1,
             'showSectionCount' => $showSectionCount,
-            'usedTypeFilter'   => $usedTypeFilter,
+            // Drives a debug-only notice telling the operator their categories are untyped.
+            // A block scoped to named slugs suppresses it: the type preference was not
+            // consulted for that block, so the advice would be about a decision it did not
+            // make — and it appeared mid-page on every category page until this was split
+            // out of the filtering flag it used to share.
+            'usedTypeFilter'   => $scoped || $typed->isNotEmpty(),
+            // Not a schema control, and deliberately not one: the only caller that turns it
+            // off is the category page, which renders this section scoped to a single
+            // category and prints that category's name as its own <h1>. Without it the name
+            // appears twice, once as the page heading and once as the section's <h3>. An
+            // operator dropping a Menu Sections block on a page always wants the titles, so
+            // offering a switch would be a control with one right answer.
+            'showSectionTitles' => $data['show_section_titles'] ?? true,
             // A theme setting, not a section key: the section schema never declared
             // `menu_sticky_nav`, so reading it from $data made the toggle permanently on.
             'stickyNav'        => SectionSetting::bool(null, $settings['menu_sticky_nav'] ?? null, true),

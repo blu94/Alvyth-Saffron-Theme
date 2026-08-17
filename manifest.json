@@ -21,5 +21,14 @@
   "modules": [
     "modifier-groups",
     "service-windows"
-  ]
+  ],
+  "checkout": {
+    "guards": [
+      "Theme\\Backend\\Guards\\ServiceWindowGuard",
+      "Theme\\Backend\\Guards\\MinimumOrderGuard"
+    ]
+  },
+  "cart": {
+    "line_pricer": "Theme\\Backend\\Pricing\\ModifierPricing"
+  }
 }

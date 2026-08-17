@@ -15,8 +15,19 @@
   "create": {
     "$ref": "create.json"
   },
+  "attach": {
+    "$ref": "attach.json"
+  },
   "navigation": [
     { "title": "List", "icon": "tabler-circle", "to": "module-type" },
+    {
+      "title": "Attach To Dishes",
+      "icon": "tabler-link",
+      "to": {
+        "name": "module-type-page-slug",
+        "params": { "slug": "attach" }
+      }
+    },
     { "title": "Add Group", "icon": "tabler-circle", "to": "module-type-create" }
   ]
 }

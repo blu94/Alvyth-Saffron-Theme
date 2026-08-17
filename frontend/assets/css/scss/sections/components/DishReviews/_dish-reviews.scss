@@ -1,0 +1,231 @@
+@use "../../../base/colors" as *;
+@use "../../../base/variables" as *;
+@use "../../../mixins/breakpoints" as *;
+
+// ─── Customer reviews (components/DishReviews) ────────────────────────────────
+// Ella's product page has carried reviews throughout; Saffron had none (register E3). The
+// list, average and form are ported from it — this is only the dressing.
+
+.saffron-reviews {
+  padding-block: $section-pad-y;
+  border-top: 1px solid $color-line;
+}
+
+.saffron-reviews__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.saffron-reviews__title {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  margin: 0;
+}
+
+.saffron-reviews__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.4rem 0 0;
+  color: $color-muted;
+}
+
+.saffron-reviews__stars {
+  display: inline-flex;
+  gap: 0.1rem;
+  color: $color-accent;
+  vertical-align: middle;
+}
+
+.saffron-reviews__count::before {
+  content: "·";
+  margin-inline-end: 0.5rem;
+}
+
+// ── Form ──────────────────────────────────────────────────────────────────────
+.saffron-reviews__form {
+  padding: clamp(1rem, 3vw, 1.75rem);
+  margin-bottom: 2rem;
+  border: 1px solid $color-line;
+  border-radius: $card-radius;
+  background: $color-card-surface;
+}
+
+.saffron-reviews__row {
+  display: grid;
+  gap: 0 1.25rem;
+
+  @include md {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.saffron-reviews__field {
+  display: block;
+  margin-bottom: 1.25rem;
+}
+
+// The form's controls.
+//
+// This shipped using a `.saffron-input` class that **does not exist in this theme** — there is
+// no shared input style here, the dish sheet's own notes box defines one locally. So every
+// field rendered at the browser's native width: three stubby boxes floating in a wide card,
+// with the review textarea the same size as the name field. Matched to
+// `.saffron-dish-sheet__notes`, which is the input a customer meets one section further up the
+// same page.
+.saffron-reviews__input {
+  inline-size: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid $color-line;
+  border-radius: calc(#{$card-radius} - 4px);
+  background-color: $color-surface;
+  font-family: $body-font-family;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  resize: vertical;
+
+  &:focus {
+    border-color: $color-accent;
+    outline: none;
+  }
+
+  &::placeholder { color: $color-muted; }
+}
+
+textarea.saffron-reviews__input {
+  min-block-size: 7rem;
+}
+
+.saffron-reviews__label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.saffron-reviews__hint {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.8125rem;
+  color: $color-muted;
+}
+
+.saffron-reviews__rate {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.saffron-reviews__rate-star {
+  // 44px: five adjacent targets where a mis-tap silently sets the wrong rating.
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: $color-line;
+  cursor: pointer;
+  transition: color 0.12s ease;
+
+  &.is-lit { color: $color-accent; }
+}
+
+.saffron-reviews__error   { color: $color-danger; margin: 0 0 0.75rem; }
+.saffron-reviews__success { color: $color-success; margin: 0 0 0.75rem; }
+
+// ── List ──────────────────────────────────────────────────────────────────────
+.saffron-reviews__empty {
+  padding: 2rem 0;
+  color: $color-muted;
+}
+
+.saffron-reviews__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.saffron-reviews__item {
+  display: flex;
+  gap: 1rem;
+  padding-block: 1.25rem;
+  border-bottom: 1px solid $color-line;
+}
+
+// The text column beside the avatar. `min-width: 0` is the whole point of this rule: a flex
+// item defaults to `min-width: auto`, which refuses to shrink below its content's own
+// min-content width, so one unbreakable token in a review — a pasted URL, a long compound
+// word — widened the row past the container and gave the entire dish page a horizontal
+// scrollbar. Measured at 375: a 75-character token took the body to 628px inside a 328px row
+// and pushed the document to 704px. The blade shipped this class from the start; nothing ever
+// styled it.
+.saffron-reviews__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.saffron-reviews__avatar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: $color-secondary;
+  color: $color-white;
+  font-weight: 700;
+
+  img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+}
+
+.saffron-reviews__byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.25rem;
+}
+
+.saffron-reviews__author { font-weight: 700; }
+
+.saffron-reviews__date {
+  margin-inline-start: auto;
+  font-size: 0.8125rem;
+  color: $color-muted;
+}
+
+.saffron-badge--verified {
+  background-color: rgba(47, 110, 90, 0.12);
+  border-color: rgba(47, 110, 90, 0.3);
+  color: $color-success;
+}
+
+.saffron-reviews__text {
+  margin: 0.35rem 0 0;
+  // Reviews are typed in a textarea; the paragraphs the author made should survive.
+  white-space: pre-line;
+  // `min-width: 0` above lets the column shrink; this is what makes the token inside it break
+  // rather than simply overflow its own paragraph. Customer copy is arbitrary — a URL has no
+  // space in it, and the theme cannot ask the author to add one.
+  overflow-wrap: anywhere;
+}
+
+.saffron-reviews__pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.75rem;
+  color: $color-muted;
+}

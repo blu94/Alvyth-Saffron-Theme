@@ -1,0 +1,180 @@
+[
+  {
+    "ui": {
+      "type": "section",
+      "icon": "tabler-link",
+      "cols": 12
+    },
+    "name": "Attach A Question To Many Dishes",
+    "subtitle": "Pick one question and every dish that should ask it, then Apply. A dish that already asks it is left exactly as it is — its own Required setting belongs to the dish. The question is added at the bottom of each dish's list, which is where the dish's Modifiers tab would have put it.",
+    "elements": [
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "md": 5
+          }
+        },
+        "key": "group_id",
+        "type": "select",
+        "label": "Question",
+        "placeholder": "Choose a modifier group",
+        "options": {
+          "url": "/admin/modules/modifier-groups/options",
+          "master": "group",
+          "params": { "columns[]": "group" }
+        }
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "md": 7
+          },
+          "multiple": true,
+          "chips": true,
+          "closableChips": true,
+          "autoSelectSingle": false
+        },
+        "key": "dish_ids",
+        "type": "autocomplete",
+        "label": "Dishes",
+        "placeholder": "Search and pick every dish this applies to",
+        "hint": "Parent dishes only — attach the parent and every variant inherits the question",
+        "options": {
+          "url": "/admin/products/options",
+          "params": { "limit": 500 }
+        }
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "md": 4
+          }
+        },
+        "key": "required_override",
+        "type": "select",
+        "label": "Required",
+        "hint": "Applies to new attachments only. A dish that already asks the question keeps whatever its own form says.",
+        "default": "",
+        "options": {
+          "items": [
+            { "title": "Inherit from group", "value": "" },
+            { "title": "Required", "value": "1" },
+            { "title": "Optional", "value": "0" }
+          ]
+        }
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "md": 4
+          }
+        },
+        "key": "apply_mode",
+        "type": "select",
+        "label": "Action",
+        "default": "attach",
+        "options": {
+          "items": [
+            { "title": "Attach to these dishes", "value": "attach" },
+            { "title": "Detach from these dishes", "value": "detach" }
+          ]
+        }
+      },
+      {
+        "ui": {
+          "type": "button",
+          "cols": {
+            "cols": 12,
+            "md": 4
+          },
+          "class": "align-self-end",
+          "color": "primary"
+        },
+        "type": "button",
+        "action": "save",
+        "label": "Apply",
+        "icon": "tabler-check",
+        "color": "primary"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": 12,
+          "valueClass": "text-body-1"
+        },
+        "type": "display",
+        "key": "last_result",
+        "label": "Last Action"
+      }
+    ]
+  },
+  {
+    "ui": {
+      "type": "section",
+      "icon": "tabler-tools-kitchen-2",
+      "cols": 12
+    },
+    "name": "Where Each Question Is Asked",
+    "subtitle": "The reach of every question you have written, and the dishes that ask nothing at all. Read-only — it refreshes as soon as you apply.",
+    "elements": [
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "icon": "tabler-help-circle",
+          "color": "primary"
+        },
+        "type": "display",
+        "key": "total_groups",
+        "label": "Questions Written"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "icon": "tabler-alert-triangle",
+          "color": "warning"
+        },
+        "type": "display",
+        "key": "unasked_count",
+        "label": "Dishes Asking Nothing"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": 12,
+          "color": "primary"
+        },
+        "type": "display",
+        "key": "groups_summary",
+        "label": "Questions And Their Reach"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": 12,
+          "color": "warning"
+        },
+        "type": "display",
+        "key": "unasked_dishes",
+        "label": "Dishes That Ask Nothing"
+      }
+    ]
+  }
+]

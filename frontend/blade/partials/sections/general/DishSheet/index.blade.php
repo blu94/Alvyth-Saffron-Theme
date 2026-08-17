@@ -11,9 +11,22 @@
     <div class="saffron-container">
         <div class="row g-4 g-lg-5">
             <div class="col-12 col-lg-6">
+                {{-- Photo and thumbnails stick together. The media alone used to carry
+                     `position: sticky`, so once the thumbnails were added below it they
+                     scrolled up underneath the pinned image and collided with it. One sticky
+                     wrapper round both is the fix; a z-index on the strip would only have
+                     hidden the overlap. --}}
+                <div class="saffron-dish-sheet__gallery">
                 <div class="saffron-dish-sheet__media">
                     @if($imageUrl)
-                        <img src="{{ $imageUrl }}" alt="{{ $heading }}" class="saffron-dish-sheet__img">
+                        <button type="button" class="saffron-dish-sheet__zoom" @click="openLightbox(activeImage)"
+                                @mousemove="onMagnify" @mouseleave="resetMagnify"
+                                :aria-label="zoomLabel" :title="zoomLabel">
+                            <img :src="images[activeImage]" alt="{{ $heading }}"
+                                 class="saffron-dish-sheet__img"
+                                 :class="{ 'is-zooming': isZooming }"
+                                 :style="{ '--magnifier-x': magnifierX + '%', '--magnifier-y': magnifierY + '%' }">
+                        </button>
                     @else
                         <span class="saffron-dish-card__placeholder">
                             <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.3"
@@ -26,13 +39,133 @@
                         </span>
                     @endif
                 </div>
+
+                {{-- Thumbnails. Rendered only when there is more than one photograph — a strip
+                     of one is a control that cannot do anything. --}}
+                <div class="saffron-dish-sheet__thumbs" v-if="images.length > 1">
+                    <button type="button" v-for="(src, i) in images" :key="src"
+                            class="saffron-dish-sheet__thumb" :class="{ 'is-active': i === activeImage }"
+                            @click="activeImage = i"
+                            :aria-current="i === activeImage ? 'true' : 'false'"
+                            :aria-label="thumbLabel.replace(':n', i + 1)">
+                        <img :src="src" alt="" loading="lazy">
+                    </button>
+                </div>
+                </div>
             </div>
 
             <div class="col-12 col-lg-6">
-                <h1 class="saffron-dish-sheet__title">{{ $heading }}</h1>
+                <div class="saffron-dish-sheet__head">
+                    <h1 class="saffron-dish-sheet__title">{{ $heading }}</h1>
+                    @if($showWishlist)
+                        <button type="button" class="saffron-dish-sheet__save" :class="{ 'is-saved': saved }"
+                                @click="toggleSave" :aria-pressed="saved ? 'true' : 'false'"
+                                :aria-label="saved ? unsaveLabel : saveLabel" :title="saved ? unsaveLabel : saveLabel">
+                            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.8"
+                                 :fill="saved ? 'currentColor' : 'none'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </button>
+                    @endif
+
+                    <div class="saffron-share" ref="shareRoot">
+                        <button type="button" class="saffron-share__trigger" ref="shareTrigger" @click="onShare"
+                                :aria-expanded="shareOpen ? 'true' : 'false'"
+                                :aria-label="labels.shareDish" :title="labels.shareDish">
+                            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="1.8"
+                                 fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="18" cy="5" r="3"></circle>
+                                <circle cx="6" cy="12" r="3"></circle>
+                                <circle cx="18" cy="19" r="3"></circle>
+                                <line x1="8.6" y1="13.5" x2="15.4" y2="17.5"></line>
+                                <line x1="15.4" y1="6.5" x2="8.6" y2="10.5"></line>
+                            </svg>
+                        </button>
+
+                        {{-- Deliberately NOT `data-share-popup`, though the shipped bundle
+                             ships a handler for it: that handler binds once at page load, and
+                             this panel is created by Vue when the button is clicked, so it
+                             would never be bound. The attribute would have looked correct and
+                             the links would have navigated the customer away from the shop —
+                             measured, not assumed. `openShare` does the same job for markup
+                             that appears later. --}}
+                        <div class="saffron-share__panel" v-if="shareOpen" v-cloak>
+                            <div class="saffron-share__grid">
+                                @foreach($shareNetworks as $network)
+                                    <a href="{{ $network['url'] }}" @click="openShare($event)"
+                                       class="saffron-share__net saffron-share__net--{{ $network['key'] }}"
+                                       target="_blank" rel="noopener" title="{{ $network['label'] }}"
+                                       aria-label="{{ __('Share on :network', ['network' => $network['label']]) }}">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">{!! $network['icon'] !!}</svg>
+                                    </a>
+                                @endforeach
+
+                                <button type="button" class="saffron-share__net saffron-share__net--copy"
+                                        :class="{ 'is-copied': copied }" @click="copyLink"
+                                        :title="copied ? labels.copied : labels.copyLink"
+                                        :aria-label="copied ? labels.copied : labels.copyLink">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2"
+                                         fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                    </svg>
+                                    <span class="saffron-share__toast" v-if="copied" v-cloak>@{{ labels.copied }}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if($showReviews)
+                    {{-- Its own line under the head, not inside it. The head is a flex row
+                         holding the title and the save/share controls, so putting the rating
+                         there made it a third item competing for the same width — it squeezed
+                         into a column and wrapped one word per line. Server-rendered, and shown
+                         even at zero as empty stars reading "No reviews yet", because a shop
+                         with no reviews should read as an invitation rather than as a shop with
+                         no review feature. --}}
+                    <a href="#dish-reviews-{{ $payload['dish']['id'] }}" class="saffron-dish-sheet__rating">
+                        <span class="saffron-dish-sheet__rating-stars" aria-hidden="true">
+                            @for($i = 1; $i <= 5; $i++)
+                                <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="1.6"
+                                     fill="{{ $reviewSummary['average'] !== null && $i <= round($reviewSummary['average']) ? 'currentColor' : 'none' }}">
+                                    <path d="M8.243 7.34l-6.38.925-.113.023a1 1 0 0 0-.44 1.684l4.622 4.499-1.09 6.355-.013.11a1 1 0 0 0 1.464.944l5.706-3 5.693 3 .1.046a1 1 0 0 0 1.352-1.1l-1.091-6.355 4.624-4.5.078-.085a1 1 0 0 0-.633-1.62l-6.38-.926-2.852-5.78a1 1 0 0 0-1.794 0z"></path>
+                                </svg>
+                            @endfor
+                        </span>
+                        @if($reviewSummary['count'] > 0)
+                            <span>{{ $reviewSummary['average'] }} {{ __('out of 5') }}</span>
+                            <span class="saffron-dish-sheet__rating-count">{{ trans_choice('{1} :count review|[2,*] :count reviews', $reviewSummary['count'], ['count' => $reviewSummary['count']]) }}</span>
+                        @else
+                            <span class="saffron-dish-sheet__rating-count">{{ __('No reviews yet') }}</span>
+                        @endif
+                    </a>
+                @endif
 
                 @if($description !== '')
                     <p class="saffron-dish-sheet__desc">{{ $description }}</p>
+                @endif
+
+                @if(!empty($categoryLinks) || !empty($tags))
+                    <div class="saffron-dish-sheet__meta">
+                        @if(!empty($categoryLinks))
+                            <p class="saffron-dish-sheet__meta-row">
+                                <span class="saffron-dish-sheet__meta-label">{{ __('Categories:') }}</span>
+                                @foreach($categoryLinks as $category)
+                                    <a href="{{ $category['url'] }}" class="saffron-badge saffron-badge--link">{{ $category['title'] }}</a>
+                                @endforeach
+                            </p>
+                        @endif
+
+                        @if(!empty($tags))
+                            <p class="saffron-dish-sheet__meta-row">
+                                <span class="saffron-dish-sheet__meta-label">{{ __('Tags:') }}</span>
+                                @foreach($tags as $tag)
+                                    <span class="saffron-badge">{{ $tag }}</span>
+                                @endforeach
+                            </p>
+                        @endif
+                    </div>
                 @endif
 
                 @unless($isAvailable)
@@ -126,21 +259,59 @@
                     <p class="saffron-dish-sheet__error" v-if="formError">@{{ formError }}</p>
                 </form>
 
-                @if($hasUnpricedModifiers && config('app.debug'))
-                    <p class="saffron-dish-sheet__warning">
-                        {{ __('One or more modifiers on this dish carry a price. Nothing in core applies a modifier surcharge, so the server will re-price this line without it. Decide RESTAURANT-THEME-SPEC.md §17.3 before charging for add-ons.') }}
-                    </p>
-                @endif
                 @endif
             </div>
         </div>
     </div>
+
+    {{-- Lightbox (register E2). Inside the section because that is the mounted element — a
+         panel outside it would be inert markup, the same trap the share popup documents.
+         Closes on the backdrop, on Escape, and on its own button; arrow keys move between
+         photographs while it is open. --}}
+    <div class="saffron-lightbox" v-if="lightboxOpen" @click.self="closeLightbox"
+         role="dialog" aria-modal="true" :aria-label="labels.closePhoto">
+        <button type="button" class="saffron-lightbox__close" @click="closeLightbox"
+                :aria-label="labels.closePhoto" ref="lightboxClose">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2"
+                 fill="none" stroke-linecap="round" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        <button type="button" class="saffron-lightbox__nav saffron-lightbox__nav--prev"
+                v-if="images.length > 1" @click="stepImage(-1)" :aria-label="labels.prevPhoto">
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2"
+                 fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6"></path>
+            </svg>
+        </button>
+
+        <img :src="images[activeImage]" alt="{{ $heading }}" class="saffron-lightbox__img">
+
+        <button type="button" class="saffron-lightbox__nav saffron-lightbox__nav--next"
+                v-if="images.length > 1" @click="stepImage(1)" :aria-label="labels.nextPhoto">
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2"
+                 fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 18l6-6-6-6"></path>
+            </svg>
+        </button>
+
+        <p class="saffron-lightbox__count" v-if="images.length > 1">@{{ activeImage + 1 }} / @{{ images.length }}</p>
+    </div>
 </section>
 
-@if($isAvailable)
+{{-- Reviews sit below the sheet, outside its Vue app — they have their own, because the
+     ordering form and a review list share no state and mounting one app over both would make
+     a failure in either take out the other. Ella places them in the same position. --}}
+<x-theme.component name="DishReviews" :data="['dish' => $dish]" />
+
+{{-- Also mounted for a sold-out dish when Saved Dishes is on: the ordering form is not
+     rendered then, but the heart is, and an unmounted app would leave its :class and @click
+     as inert attributes. Saving a dish you cannot order today is the point of saving it. --}}
+@if($isAvailable || $showWishlist)
 <script>
 (function () {
-    const { createApp, ref, reactive, computed } = Vue;
+    const { createApp, ref, reactive, computed, onMounted, onUnmounted } = Vue;
 
     const payload = @json($payload);
 
@@ -312,10 +483,215 @@
                 window.setTimeout(() => { added.value = false; }, 1800);
             };
 
+            // Saved dishes. Same store, same shape and the same reason for not calling
+            // OvyntStore.toggleWishlist() as the dish card: that method drops every key it
+            // does not name, and the saved-dishes page needs the url to link back here.
+            // The price saved is whatever the sheet is showing — the parent's, or the
+            // selected size's — which makes it indicative rather than a quote. The list is
+            // a reminder; the dish page prices it again on arrival.
+            const saved = computed(() => {
+                if (!window.OvyntStore) return false;
+                return window.OvyntStore.isInWishlist(payload.dish.id);
+            });
+
+            const toggleSave = () => {
+                const store = window.OvyntStore;
+
+                if (!store) {
+                    console.error('OvyntStore is not loaded — storefront.min.js is missing from this theme.');
+                    return;
+                }
+
+                const at = store.wishList.findIndex((line) => line.id === payload.dish.id);
+
+                if (at > -1) {
+                    store.wishList.splice(at, 1);
+                } else {
+                    store.wishList.push({
+                        id:    payload.dish.id,
+                        title: payload.dish.title,
+                        price: basePrice.value,
+                        image: payload.dish.image || null,
+                        url:   payload.dish.url,
+                    });
+                }
+
+                store.saveWishlist();
+            };
+
+            // Sharing. The panel of networks IS the share control, on every device — the same
+            // arrangement Ella uses, driven by the same Application settings. `navigator.share`
+            // was tried first here once; it handed the customer the operating system's own
+            // sheet, which on desktop Chrome is a Windows dialog listing Mail and Bluetooth
+            // rather than the shop's chosen networks, and it made the two themes behave
+            // differently on the same site.
+            const shareOpen   = ref(false);
+            const copied      = ref(false);
+            const shareRoot   = ref(null);
+            const shareTrigger = ref(null);
+
+            // A popover a customer cannot dismiss is a popover that is stuck. Both listeners
+            // are document-level because the click that should close it lands anywhere on the
+            // page, and both are removed on unmount so a page with several dish sheets does
+            // not accumulate them.
+            const closeShareOnOutsideClick = (e) => {
+                if (!shareOpen.value) return;
+                if (shareRoot.value && shareRoot.value.contains(e.target)) return;
+                shareOpen.value = false;
+            };
+
+            const closeShareOnEscape = (e) => {
+                if (!shareOpen.value || e.key !== 'Escape') return;
+                shareOpen.value = false;
+                // Focus goes back where it came from, or it lands on <body> and a keyboard
+                // user has to tab from the top of the page to get back to the dish.
+                shareTrigger.value?.focus();
+            };
+
+            onMounted(() => {
+                document.addEventListener('click', closeShareOnOutsideClick);
+                document.addEventListener('keydown', closeShareOnEscape);
+            });
+
+            onUnmounted(() => {
+                document.removeEventListener('click', closeShareOnOutsideClick);
+                document.removeEventListener('keydown', closeShareOnEscape);
+            });
+
+            const onShare = () => {
+                shareOpen.value = !shareOpen.value;
+            };
+
+            // A centred popup rather than a new tab, which is what a share window should be —
+            // and the reason the panel does not use the bundle's `data-share-popup`: that
+            // handler is bound once at page load and this panel does not exist yet then.
+            //
+            // Only for http(s). `mailto:`, `sms:` and `viber:` are handed to an app on the
+            // device, and window.open()ing one of those leaves an empty popup sitting on the
+            // screen while the mail client loads behind it — the bundle's handler does exactly
+            // that, and it is the one behaviour here not worth copying. Those navigate normally.
+            const openShare = (event) => {
+                const url = event.currentTarget.getAttribute('href');
+
+                if (/^https?:/i.test(url)) {
+                    event.preventDefault();
+
+                    const w = 620;
+                    const h = 560;
+                    const left = Math.max(0, (window.screen.width - w) / 2);
+                    const top  = Math.max(0, (window.screen.height - h) / 2);
+
+                    window.open(
+                        url,
+                        payload.labels.shareDish,
+                        'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top + ',resizable=yes,scrollbars=yes'
+                    );
+                }
+
+                shareOpen.value = false;
+            };
+
+            // Handled here rather than by the bundle's `data-share-copy`, which reports success
+            // by toggling a class named for the other theme. A translated label on our own
+            // button says the same thing without borrowing Ella's namespace.
+            const copyLink = async () => {
+                try {
+                    await navigator.clipboard.writeText(payload.share.url);
+                    copied.value = true;
+                    window.setTimeout(() => { copied.value = false; }, 1800);
+                } catch (e) {
+                    console.error('Could not copy the link', e);
+                }
+            };
+
+            // ── Gallery and lightbox (register E1, E2) ──────────────────────────────
+            // The sheet showed one photograph and could not be opened; Ella's product page
+            // has had a gallery and a lightbox throughout. Plain Vue, no Swiper: a strip of
+            // thumbnails is not a carousel, and pulling in a slider for it would add a
+            // dependency to a component whose whole job is four small buttons.
+            const images       = ref(Array.isArray(payload.images) ? payload.images : []);
+            const activeImage  = ref(0);
+            const lightboxOpen = ref(false);
+
+            const openLightbox = (index) => {
+                if (!images.value.length) return;
+                activeImage.value = index;
+                lightboxOpen.value = true;
+                // The page behind a full-screen overlay must not scroll under it.
+                document.body.style.overflow = 'hidden';
+            };
+
+            const closeLightbox = () => {
+                lightboxOpen.value = false;
+                document.body.style.overflow = '';
+            };
+
+            /** Wraps at both ends, so the last photo's Next is the first rather than a dead button. */
+            const stepImage = (by) => {
+                if (!images.value.length) return;
+                activeImage.value = (activeImage.value + by + images.value.length) % images.value.length;
+            };
+
+            // ── Hover magnifier ─────────────────────────────────────────────────────
+            // Ella's, copied rather than reinvented: the image scales 2.5× and its
+            // `transform-origin` tracks the pointer as a percentage, so the part under the
+            // cursor is the part that grows. No second zoomed image, no canvas, no lens
+            // element — one transform on the photo already on the page.
+            const isZooming  = ref(false);
+            const magnifierX = ref(50);
+            const magnifierY = ref(50);
+
+            const onMagnify = (e) => {
+                // A coarse pointer has no hover: a tap would zoom and stick until the next
+                // tap elsewhere, and the tap is meant to open the lightbox instead.
+                if (!window.matchMedia('(hover: hover)').matches) return;
+
+                const rect = e.currentTarget.getBoundingClientRect();
+                isZooming.value  = true;
+                magnifierX.value = ((e.clientX - rect.left) / rect.width) * 100;
+                magnifierY.value = ((e.clientY - rect.top) / rect.height) * 100;
+            };
+
+            const resetMagnify = () => {
+                isZooming.value = false;
+                // Recentre only after the scale-out has finished, or the origin snaps back to
+                // the middle while the image is still shrinking and the photo appears to jump.
+                window.setTimeout(() => {
+                    if (!isZooming.value) {
+                        magnifierX.value = 50;
+                        magnifierY.value = 50;
+                    }
+                }, 300);
+            };
+
+            const onLightboxKey = (e) => {
+                if (!lightboxOpen.value) return;
+                if (e.key === 'Escape')     closeLightbox();
+                if (e.key === 'ArrowLeft')  stepImage(-1);
+                if (e.key === 'ArrowRight') stepImage(1);
+            };
+
+            onMounted(() => document.addEventListener('keydown', onLightboxKey));
+            onUnmounted(() => {
+                document.removeEventListener('keydown', onLightboxKey);
+                // Leaving with the overlay open would strand the lock on <body>.
+                document.body.style.overflow = '';
+            });
+
             return {
+                images, activeImage, lightboxOpen, openLightbox, closeLightbox, stepImage,
+                isZooming, magnifierX, magnifierY, onMagnify, resetMagnify,
+                zoomLabel: payload.labels.zoom,
+                thumbLabel: payload.labels.thumbnail,
                 variants, groups, selectedVariant, quantity, notes, added, errors, formError,
                 addedLabel, maxQty, money, runningTotal, upToLabel, isChosen, isBlocked,
                 pickSingle, toggleMulti, setQty, addToCart,
+                saved, toggleSave,
+                saveLabel: payload.labels.save,
+                unsaveLabel: payload.labels.unsave,
+                labels: payload.labels,
+                shareOpen, copied, onShare, openShare, copyLink,
+                shareRoot, shareTrigger,
             };
         },
     }).mount('#{{ $uid }}');

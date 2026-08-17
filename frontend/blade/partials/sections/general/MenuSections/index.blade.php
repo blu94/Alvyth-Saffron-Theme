@@ -38,14 +38,16 @@
 
             @foreach($sections as $section)
                 <div id="{{ $section['anchor'] }}" class="saffron-menu__section">
-                    <header class="saffron-menu__section-head" data-saffron-reveal>
-                        <h3 class="saffron-menu__section-title">{{ $section['title'] }}</h3>
-                        @if($showSectionCount)
-                            <span class="saffron-menu__section-count">
-                                {{ trans_choice('{1} :count dish|[2,*] :count dishes', $section['total'], ['count' => $section['total']]) }}
-                            </span>
-                        @endif
-                    </header>
+                    @if($showSectionTitles)
+                        <header class="saffron-menu__section-head" data-saffron-reveal>
+                            <h3 class="saffron-menu__section-title">{{ $section['title'] }}</h3>
+                            @if($showSectionCount)
+                                <span class="saffron-menu__section-count">
+                                    {{ trans_choice('{1} :count dish|[2,*] :count dishes', $section['total'], ['count' => $section['total']]) }}
+                                </span>
+                            @endif
+                        </header>
+                    @endif
 
                     @if($section['desc'] !== '')
                         <p class="saffron-menu__section-desc">{{ $section['desc'] }}</p>

@@ -6,3 +6,7 @@ theme.zip
 
 # Playwright MCP browser artifacts (screenshots, traces). Machine-local.
 .playwright-mcp/
+
+# Claude Code's per-checkout permission grants. Machine-local, and personal to whoever
+# is working here — never someone else's to inherit.
+.claude/

@@ -5,13 +5,12 @@
      Cart section; the full restaurant checkout — mode picker, address or pickup, scheduled
      time — is phase 4.
 
-     The `checkout` plugin slot is mandatory: a plugin ships controls that reduce the total
-     and owns no template, so a theme that omits the slot silently drops every storefront
-     feature the shop has paid for. The server prices those adjustments in the discount
-     position, and that is where the slot belongs — but the summary markup is core's Cart
-     section, which renders no slot of its own, so the closest this theme can put it is
-     directly under the cart, in the same container, styled as part of it (audit A15).
-     When core's section gains the slot, drop this one or plugins render twice. --}}
+     The `checkout` plugin slot is **not** called here, and that is deliberate. It belongs
+     in the discount position, which is core's Cart section, and since 2026-08-16 that
+     section renders the slot itself. This theme used to carry a copy directly under the
+     cart because core offered no seam (audit A15); keeping it now would put two elements
+     with the same `data-checkout-field` on the page, and `collectPluginFields()` keeps
+     whichever it reads last. --}}
 <div class="saffron-cart">
     {{-- ASAP or a scheduled slot, from the shop's own hours. Rendered BEFORE the cart, never
          after: a control that changes the order must be met before the button that places it,
@@ -20,6 +19,11 @@
          once that button exists; this position is the floor it falls back to, and it is still
          ahead of the button. --}}
     <div class="saffron-container">
+        {{-- Delivery or pickup, then when. Both seat themselves inside core's order summary
+             above Proceed to Checkout; this is the floor they fall back to, and it is still
+             ahead of the button. Mode first, because it decides whether the address form the
+             summary draws is wanted at all. --}}
+        <x-theme.component name="OrderMode" />
         <x-theme.component name="OrderSchedule" />
     </div>
 
@@ -44,9 +48,5 @@
             </div>
         </div>
     @endif
-
-    <div class="saffron-container saffron-cart__plugins">
-        <x-plugin-slot name="checkout" :data="['screen' => 'cart']" />
-    </div>
 </div>
 @endsection

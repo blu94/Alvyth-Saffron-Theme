@@ -2,7 +2,7 @@
     "type": "STORE_STATUS_SECTION",
     "component": "StoreStatusSection",
     "name": "Store Status",
-    "description": "Open / closed / opens-at banner, read from the theme's service windows. Presentation only — it does not refuse an out-of-hours order.",
+    "description": "Open / closed / opens-at banner, read from the theme's service windows — the same hours checkout enforces, so what this says and what the server accepts agree.",
     "ui": {
         "icon": "tabler-clock-hour-9"
     },

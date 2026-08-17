@@ -2,7 +2,16 @@
 @use "../base/variables" as *;
 @use "../mixins/breakpoints" as *;
 
-.saffron-container {
+// The second selector is the dish page's builder rows. Core's own sections (Text Block,
+// Image, Raw HTML, …) render no container of their own — several render no root class at
+// all — so they take their measure from whatever wraps them, and on this template nothing
+// did: a paragraph an operator added under the dish sheet ran the whole width of the
+// viewport while the sheet above it sat in this measure. `.cms-section-wrapper` is core's
+// per-section box (`components/builder/section.blade.php`) and the only element every
+// section type is guaranteed to have, so the measure goes there rather than on a class list
+// that differs per section. Sharing this rule rather than repeating it keeps one width.
+.saffron-container,
+.saffron-dish-page .cms-section-wrapper {
   width: 100%;
   max-width: 1240px;
   margin-inline: auto;
@@ -16,6 +25,14 @@
   @include lg {
     padding-inline: 1.5rem;
   }
+}
+
+// The theme's own sections ship a `.saffron-container` of their own. Nested inside the
+// measure the wrapper now carries, it would pad a second time and pull the dish sheet in
+// by two gutters — so it goes transparent. The outer box is the same box.
+.saffron-dish-page .cms-section-wrapper .saffron-container {
+  max-width: none;
+  padding-inline: 0;
 }
 
 .saffron-stack-sm > * + * { margin-top: 0.5rem; }

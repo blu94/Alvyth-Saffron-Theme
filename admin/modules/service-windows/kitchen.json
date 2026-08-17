@@ -6,7 +6,7 @@
       "cols": 12
     },
     "name": "Kitchen Queue",
-    "subtitle": "Every open order, oldest first, with its options spelled out. Reload to refresh.",
+    "subtitle": "Every open order, oldest first, with its options spelled out. Refreshes itself every 10 seconds, and announces a new order while Kitchen Alerts are on — the button above turns the chime on for this device.",
     "elements": [
       {
         "ui": {
@@ -82,6 +82,21 @@
         "type": "display",
         "key": "total_open",
         "label": "Open Orders"
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "sm": 6,
+            "md": 3
+          },
+          "icon": "tabler-calendar-event",
+          "color": "info"
+        },
+        "type": "display",
+        "key": "upcoming_count",
+        "label": "Booked Ahead"
       },
       {
         "ui": {
@@ -187,58 +202,33 @@
       {
         "ui": {
           "type": "field",
-          "cols": {
-            "cols": 12,
-            "sm": 6,
-            "md": 3
-          },
-          "valueClass": "text-body-2"
+          "cols": 12
         },
-        "type": "display",
-        "key": "queue_new",
-        "label": "New"
-      },
+        "type": "board",
+        "key": "board",
+        "label": "The Queue",
+        "empty": "Nothing here."
+      }
+    ]
+  },
+  {
+    "ui": {
+      "type": "section",
+      "icon": "tabler-calendar-event",
+      "cols": 12
+    },
+    "name": "Booked Ahead",
+    "subtitle": "Orders wanted on a later date, by the day they are for. They are kept out of the queue above until that morning, so a party three months away does not sit at the top of New ageing past today's lunch.",
+    "elements": [
       {
         "ui": {
           "type": "field",
-          "cols": {
-            "cols": 12,
-            "sm": 6,
-            "md": 3
-          },
+          "cols": 12,
           "valueClass": "text-body-2"
         },
         "type": "display",
-        "key": "queue_preparing",
-        "label": "Preparing"
-      },
-      {
-        "ui": {
-          "type": "field",
-          "cols": {
-            "cols": 12,
-            "sm": 6,
-            "md": 3
-          },
-          "valueClass": "text-body-2"
-        },
-        "type": "display",
-        "key": "queue_ready",
-        "label": "Ready"
-      },
-      {
-        "ui": {
-          "type": "field",
-          "cols": {
-            "cols": 12,
-            "sm": 6,
-            "md": 3
-          },
-          "valueClass": "text-body-2"
-        },
-        "type": "display",
-        "key": "queue_out",
-        "label": "Out For Delivery"
+        "key": "upcoming",
+        "label": ""
       }
     ]
   },

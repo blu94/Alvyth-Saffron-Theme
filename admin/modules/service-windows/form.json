@@ -222,8 +222,8 @@
             },
             "type": "display",
             "key": "enforcement_notice",
-            "label": "What This Does And Does Not Do",
-            "default": "These windows are read by the storefront's Store Status banner and Outlet Info hours. They do NOT refuse an order placed outside them — nothing in core checks service hours at checkout, so a direct request can still place an order at 3 a.m. Refusing one is a core change (RESTAURANT-THEME-SPEC.md §14 item 6)."
+            "label": "What This Does",
+            "default": "These hours drive the storefront's Store Status banner and Outlet Info, the time slots offered on the cart — and checkout itself: an order placed while you are closed is refused, and so is a scheduled time you are not open for. A scheduled slot is checked against the hours of the day it is FOR, not today's, so a customer can order tomorrow's lunch tonight. An Inactive entry is ignored everywhere."
           },
           {
             "ui": {
@@ -240,8 +240,8 @@
                   "value": "active"
                 },
                 {
-                  "title": "Draft",
-                  "value": "draft"
+                  "title": "Inactive",
+                  "value": "inactive"
                 }
               ]
             }

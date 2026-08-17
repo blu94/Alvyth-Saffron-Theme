@@ -6,6 +6,7 @@ use App\Repositories\Setting\Application\ApplicationInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Theme\Backend\Support\ThemeSettings;
 
 /**
  * One dish on the menu.
@@ -79,11 +80,22 @@ class DishCard
         $hasDiscount  = $comparePrice !== null && $comparePrice > $displayPrice;
 
         // Tags become the dietary and heat badges — Spicy, New, Halal, Vegan.
+        //
+        // One, and this was walked down from three.
+        //
+        // They are drawn over the photograph, and the row has to stop short of the save heart,
+        // which leaves about 124px on a 203px card. Three chips stacked four rows deep and
+        // covered the image; two still stacked, and each one truncated mid-word — "Dummy
+        // TypeScript" wants 128px and had 123. Measured on the live page, not guessed.
+        //
+        // So the fix is fewer labels rather than smaller ones: a single tag gets the whole
+        // width and almost never truncates, and one word over a photo is what a menu card can
+        // actually carry. The dish sheet is where a dish lists everything it is.
         $tags = $showTags
             ? $dish->tags
                 ->map(fn ($tag) => $this->translate($tag->title, $locale))
                 ->filter()
-                ->take(3)
+                ->take(1)
                 ->values()
                 ->all()
             : [];
@@ -125,6 +137,14 @@ class DishCard
             && $dish->variants->where('status', 'active')->isEmpty()
             && ! $this->hasRequiredModifierGroup($dish->id);
 
+        // Read from the theme rather than taken from $settings like the display switches
+        // above, because Saved Dishes is one feature with one switch — the card heart, the
+        // dish sheet heart, the header link and the page all answer to it — and there is no
+        // per-block override to resolve. Passing it through every caller's $cardSettings
+        // would be three places to forget it, which is exactly how `sold_out_label` came to
+        // be read by a card that never received it (audit A7).
+        $showWishlist = ThemeSettings::bool('wishlist_enabled', true);
+
         $uid = 'dish-card-' . $dish->id . '-' . Str::random(6);
 
         // Assembled here rather than as an array literal inside `@json(...)` in the
@@ -138,12 +158,18 @@ class DishCard
                 'title' => $title,
                 'price' => $displayPrice,
                 'image' => $image !== '' ? $image : null,
+                // Carried for the saved-dishes list, which is rendered entirely from
+                // localStorage and has no other way back to the dish. Core's addToCart
+                // copies id/title/price/image by name, so the extra key is inert there.
+                'url'   => $url,
             ],
             'labels' => [
                 // The dish name is never interpolated into a JS string literal — the menu
                 // will eventually contain a "Chef's Special".
-                'add'   => trim($addButtonLabel . ' ' . $title),
-                'added' => __('Added to your order'),
+                'add'     => trim($addButtonLabel . ' ' . $title),
+                'added'   => __('Added to your order'),
+                'save'    => __('Save this dish'),
+                'unsave'  => __('Remove from saved dishes'),
             ],
         ];
 
@@ -163,6 +189,7 @@ class DishCard
             'soldOutLabel'     => $soldOutLabel,
             'isAvailable'      => $isAvailable,
             'canQuickAdd'      => $canQuickAdd,
+            'showWishlist'     => $showWishlist,
             'isFromPrice'      => $isFromPrice,
             'displayPrice'     => $displayPrice,
             'formattedPrice'   => $this->formatMoney($displayPrice, $currencySymbol, $currencyPosition),

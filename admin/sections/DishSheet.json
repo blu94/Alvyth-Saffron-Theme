@@ -33,6 +33,22 @@
                 "placeholder": "e.g. Special instructions",
                 "translatable": true,
                 "default": "Special instructions"
+            },
+            {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "show_categories",
+                "type": "switch",
+                "label": "Show Categories",
+                "hint": "The courses this dish belongs to, each linking to its own menu page",
+                "default": true
+            },
+            {
+                "ui": { "type": "field", "cols": 6 },
+                "key": "show_tags",
+                "type": "switch",
+                "label": "Show Tags",
+                "hint": "The dish's labels, shown as plain chips — the same ones its card carries",
+                "default": true
             }
         ]
     },
