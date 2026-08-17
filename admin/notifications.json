@@ -1,0 +1,17 @@
+{
+    "types": [
+        {
+            "key": "order_ready",
+            "name": "Order ready",
+            "description": "The kitchen marked an order ready — for collection, or on its way out for delivery.",
+            "audience": "customer",
+            "level": "success",
+            "icon": "tabler-tools-kitchen-3",
+            "collapse": "subject",
+            "action_url": "/profile",
+            "placeholders": ["order_number", "state_label"],
+            "title": { "en": "Order {{ order_number }} is {{ state_label }}" },
+            "body": { "en": "Thanks for waiting — we will let you know when anything changes." }
+        }
+    ]
+}
