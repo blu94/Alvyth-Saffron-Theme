@@ -1,0 +1,222 @@
+@use "../../../base/colors" as *;
+@use "../../../base/variables" as *;
+@use "../../../mixins/breakpoints" as *;
+
+// ─── Comments and likes on a post ─────────────────────────────────────────────
+// Register E7. Shares the dish reviews' shape on purpose — a reader who has seen one has seen
+// the other — but carries no stars: a comment on a story has no rating, and sending one would
+// put a number on the post that nothing reads.
+// The inner box is a plain `.saffron-container`, which is the whole point: the article above
+// takes its width from the same class, so the comments open on the article's left edge and
+// close on its right at every viewport. Anything narrower here — or a measure of its own on
+// either box — and the two stop lining up.
+.saffron-comments {
+  padding-block: $section-pad-y;
+  border-top: 1px solid $color-line;
+}
+
+.saffron-comments__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.saffron-comments__title {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  margin: 0;
+}
+
+.saffron-comments__summary {
+  margin: 0.4rem 0 0;
+  color: $color-muted;
+}
+
+.saffron-comments__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+// The like control. 40px minimum because it is a real tap target, not decoration.
+.saffron-comments__like {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.4rem 0.9rem;
+  color: $color-muted;
+  background-color: transparent;
+  border: 1px solid $color-line;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.16s ease, border-color 0.16s ease;
+
+  &:hover,
+  &:focus-visible {
+    color: $color-accent-dark;
+    border-color: $color-accent;
+  }
+
+  &.is-liked {
+    color: $color-accent-dark;
+    border-color: $color-accent;
+  }
+}
+
+.saffron-comments__form {
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+  background-color: $color-surface;
+  border: 1px solid $color-line;
+  border-radius: $card-radius;
+}
+
+.saffron-comments__row {
+  display: grid;
+  gap: 1rem;
+
+  @include md {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.saffron-comments__field {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.saffron-comments__label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+// The theme ships no generic input class — `.saffron-input` was reached for once and does not
+// exist — so the field styling lives with the component that needs it.
+.saffron-comments__input {
+  display: block;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  font-family: $body-font-family;
+  font-size: 1rem;
+  color: $color-black;
+  background-color: $color-card-surface;
+  border: 1px solid $color-line;
+  border-radius: $card-radius;
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 1px;
+  }
+}
+
+.saffron-comments__hint {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.8125rem;
+  color: $color-muted;
+}
+
+.saffron-comments__notice {
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background-color: $hex-sand-100;
+  border-radius: $card-radius;
+  font-size: 0.9rem;
+  color: $color-secondary;
+}
+
+.saffron-comments__error {
+  margin: 0 0 0.6rem;
+  color: $color-danger;
+  font-weight: 600;
+}
+
+.saffron-comments__success {
+  margin: 0 0 0.6rem;
+  color: $color-success;
+  font-weight: 600;
+}
+
+.saffron-comments__empty {
+  margin: 0;
+  color: $color-muted;
+}
+
+.saffron-comments__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.saffron-comments__item {
+  display: flex;
+  gap: 1rem;
+  padding-block: 1.25rem;
+  border-bottom: 1px solid $color-line;
+}
+
+.saffron-comments__avatar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: $color-secondary;
+  color: $color-white;
+  font-weight: 700;
+
+  img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+}
+
+// `min-width: 0` for the reason the reviews list learned the hard way: a flex item defaults to
+// `min-width: auto` and refuses to shrink below its content, so one pasted URL in a comment
+// widened the row past the container and gave the whole page a horizontal scrollbar at 375.
+.saffron-comments__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.saffron-comments__byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.25rem;
+}
+
+.saffron-comments__author { font-weight: 700; }
+
+.saffron-comments__date {
+  margin-inline-start: auto;
+  font-size: 0.8125rem;
+  color: $color-muted;
+}
+
+.saffron-comments__text {
+  margin: 0.35rem 0 0;
+  // Comments are typed in a textarea; the paragraphs the author made should survive.
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.saffron-comments__pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.75rem;
+  color: $color-muted;
+}

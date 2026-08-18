@@ -149,3 +149,36 @@
   line-height: 1.45;
   white-space: pre-line;
 }
+
+// ─── Which branch to collect from (Q5) ────────────────────────────────────────
+// Only rendered when the shop has more than one collecting outlet, so these rules never apply
+// to the single-outlet shop that is every install today.
+.saffron-order-mode__outlet-label {
+  display: block;
+  margin-block-start: 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: $color-muted;
+}
+
+.saffron-order-mode__outlet {
+  display: block;
+  width: 100%;
+  // 40px is the theme's floor for anything a finger has to hit, and a native select on a phone
+  // is exactly that.
+  min-height: 40px;
+  margin-block-start: 0.3rem;
+  padding: 0.5rem 0.75rem;
+  font-family: $body-font-family;
+  font-size: 0.9375rem;
+  color: $color-black;
+  background-color: $color-card-surface;
+  border: 1px solid $color-line;
+  border-radius: $card-radius;
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 1px;
+  }
+}

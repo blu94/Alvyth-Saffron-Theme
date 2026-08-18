@@ -1,0 +1,104 @@
+@use "../../base/colors" as *;
+@use "../../base/variables" as *;
+@use "../../mixins/breakpoints" as *;
+
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+// Quotes from diners (register E9). Cards on the theme's Bootstrap grid rather than a carousel:
+// a carousel hides most of its content behind a control nobody presses, and three quotes a shop
+// chose deliberately are worth showing at once.
+.saffron-testimonials {
+  padding-block: $section-pad-y;
+}
+
+.saffron-testimonials__head {
+  margin-bottom: 2.25rem;
+
+  &--center {
+    text-align: center;
+    // A lede that runs the full container width reads as a paragraph, not a standfirst.
+    .saffron-section-lede {
+      margin-inline: auto;
+      max-width: 60ch;
+    }
+  }
+}
+
+.saffron-testimonial {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  // `height: 100%` is on the element in the blade so three cards in a row match regardless of
+  // quote length; the margin reset is because `figure` carries one by default and it would
+  // break the grid gutter.
+  margin: 0;
+  padding: 1.5rem;
+  background-color: $color-card-surface;
+  border: 1px solid $color-line;
+  border-radius: $card-radius;
+}
+
+.saffron-testimonial__stars {
+  display: inline-flex;
+  gap: 0.1rem;
+  color: $color-accent;
+}
+
+.saffron-testimonial__quote {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: $color-secondary;
+  // Customer copy is arbitrary — a diner may paste a link into a quote, and a flex column will
+  // not shrink it below its own min-content without this pair.
+  min-width: 0;
+  overflow-wrap: anywhere;
+
+  &::before { content: "\201C"; }
+  &::after  { content: "\201D"; }
+}
+
+.saffron-testimonial__by {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: auto;
+}
+
+.saffron-testimonial__avatar {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background-color: $color-secondary;
+  color: $color-white;
+  font-weight: 700;
+
+  img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+}
+
+.saffron-testimonial__who {
+  display: flex;
+  flex-direction: column;
+  // The text column of a flex row; without this a long location pushes the card wider.
+  min-width: 0;
+}
+
+.saffron-testimonial__author {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.saffron-testimonial__role {
+  font-size: 0.85rem;
+  color: $color-muted;
+  overflow-wrap: anywhere;
+}

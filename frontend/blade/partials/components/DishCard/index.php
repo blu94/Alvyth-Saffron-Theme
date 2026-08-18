@@ -145,6 +145,19 @@ class DishCard
         // be read by a card that never received it (audit A7).
         $showWishlist = ThemeSettings::bool('wishlist_enabled', true);
 
+        // Quick view (register E8). Theme-level for the same reason as the wishlist above: it
+        // is one feature with one switch, and threading it through every caller's
+        // `$cardSettings` would be four more places to forget it.
+        //
+        // It deliberately does **not** configure the dish. A quick view that carries sizes and
+        // compulsory questions would be the dish sheet written a second time, and the two
+        // copies would drift on the one screen where drift costs money. So the dialog is a
+        // closer look — every photograph, the full description, the labels — and the ordering
+        // decision stays where `$canQuickAdd` already puts it: added straight from the card
+        // when there is nothing to decide, and handed to the sheet when there is. That is the
+        // same line the saved-dishes list draws, and for the same reason (audit A1).
+        $showQuickView = ThemeSettings::bool('quick_view_enabled', true);
+
         $uid = 'dish-card-' . $dish->id . '-' . Str::random(6);
 
         // Assembled here rather than as an array literal inside `@json(...)` in the
@@ -170,6 +183,21 @@ class DishCard
                 'added'   => __('Added to your order'),
                 'save'    => __('Save this dish'),
                 'unsave'  => __('Remove from saved dishes'),
+                'quickView'  => __('Take a closer look'),
+                'closeQuick' => __('Close'),
+                'viewDish'   => __('View dish'),
+                'thumbnail'  => __('Show photo :n', ['n' => ':n']),
+            ],
+            // Every photograph, for the quick view's gallery. The card itself still shows one.
+            'images' => $showQuickView ? $this->galleryUrls($dish) : [],
+            'quick'  => [
+                'description' => trim(strip_tags((string) $this->translate($dish->description, $locale))),
+                'tags'        => $tags,
+                'price'       => $this->formatMoney($displayPrice, $currencySymbol, $currencyPosition),
+                'fromPrice'   => $isFromPrice,
+                'available'   => $isAvailable,
+                'canAdd'      => $canQuickAdd,
+                'soldOut'     => $soldOutLabel,
             ],
         ];
 
@@ -190,6 +218,7 @@ class DishCard
             'isAvailable'      => $isAvailable,
             'canQuickAdd'      => $canQuickAdd,
             'showWishlist'     => $showWishlist,
+            'showQuickView'    => $showQuickView,
             'isFromPrice'      => $isFromPrice,
             'displayPrice'     => $displayPrice,
             'formattedPrice'   => $this->formatMoney($displayPrice, $currencySymbol, $currencyPosition),
@@ -285,5 +314,43 @@ class DishCard
         return Str::startsWith($path, ['http://', 'https://', '/'])
             ? $path
             : '/storage/' . ltrim($path, '/');
+    }
+
+    /**
+     * Every photograph of this dish, featured first — the quick view's gallery.
+     *
+     * Same resolution order as `DishSheet::galleryUrls()` on purpose: a customer who opens the
+     * quick view and then the dish page should see the photographs in the same order, and the
+     * duplicate is two short methods rather than a shared trait a theme would have to publish.
+     * `assets` is already eager-loaded, so this issues no query.
+     *
+     * @return array<int,string>
+     */
+    protected function galleryUrls(mixed $dish): array
+    {
+        $assets = $dish->assets->where('usage', 'PRODUCT_IMAGE')->sortByDesc('featured');
+
+        if ($assets->isEmpty()) {
+            $assets = $dish->assets;
+        }
+
+        return $assets
+            ->map(function ($asset) {
+                $path = (string) $asset->path;
+
+                if ($path === '') {
+                    return '';
+                }
+
+                return Str::startsWith($path, ['http://', 'https://', '/'])
+                    ? $path
+                    : '/storage/' . ltrim($path, '/');
+            })
+            ->filter()
+            // The same file attached twice would give the gallery two identical slides and a
+            // thumbnail strip that highlights both.
+            ->unique()
+            ->values()
+            ->all();
     }
 }

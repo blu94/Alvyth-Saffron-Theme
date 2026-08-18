@@ -122,6 +122,39 @@
           "label": "Saved Dishes",
           "hint": "One switch for the whole feature: the heart on every dish card and dish sheet, the header link, and the Saved Dishes page. Saved dishes live in the customer's own browser, so they do not follow them to another device",
           "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "quick_view_enabled",
+          "type": "switch",
+          "label": "Quick View",
+          "hint": "A magnifier on every dish card that opens a closer look — every photograph, the full description and the labels — without leaving the menu. It does not replace the dish page: a dish with sizes or a compulsory question is still answered there",
+          "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "post_comments_enabled",
+          "type": "switch",
+          "label": "Comments On Stories",
+          "hint": "Readers may comment on a blog post. Every comment from someone without an account is held until you read it, under Comments & Reviews — a story has no order to check them against. Shown only while Enable Comments is on under Settings → Application → Interactions & Sharing, which governs the whole storefront",
+          "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "post_likes_enabled",
+          "type": "switch",
+          "label": "Likes On Stories",
+          "hint": "A heart with a count on each blog post. Shown only while Comments On Stories is on, and while Enable Likes is on under Settings → Application → Interactions & Sharing",
+          "default": true
         }
       ]
     },
@@ -307,7 +340,7 @@
           "key": "reviews_enabled",
           "type": "switch",
           "label": "Show Customer Reviews On A Dish",
-          "hint": "A star rating, the reviews left so far, and a form to add one. New reviews are held until you approve them under Comments & Reviews — a customer whose order contains the dish is published straight away and shown as a verified buyer",
+          "hint": "A star rating, the reviews left so far, and a form to add one. New reviews are held until you approve them under Comments & Reviews — a customer whose order contains the dish is published straight away and shown as a verified buyer. Shown only while Enable Comments is on under Settings → Application → Interactions & Sharing, which governs the whole storefront",
           "default": true
         },
         {

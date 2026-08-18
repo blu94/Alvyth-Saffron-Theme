@@ -339,6 +339,33 @@ than assumed:
 The panel closes on an outside click, on Escape with focus returned to the trigger, and after
 a network is picked. Copy leaves it open and shows a "Link copied" toast, as Ella's does.
 
+## Quick view
+
+A magnifier under the save heart on every dish card opens a closer look without leaving the
+menu: every photograph with a thumbnail strip, the full description, the price and the labels.
+One switch, *Restaurant → Quick View*.
+
+**It is a look, not a second ordering form**, and that is the design rather than a shortcut. A
+quick view carrying sizes and compulsory questions would be the dish sheet written twice, and the
+two copies would drift on the one screen where drift costs money. So the ordering decision stays
+exactly where `$canQuickAdd` already puts it: added straight from the dialog when the dish asks
+nothing at all, and handed to the sheet the moment it has a size or a compulsory question. A
+sold-out dish shows its wording and offers only *View dish*. That is the same line the saved-dishes
+list draws, for the same reason (audit A1).
+
+**The dialog is teleported to `<body>`, and that is load-bearing.** The card is `overflow: hidden`
+and takes `transform: translateY(-2px)` on hover, and a transformed ancestor becomes the containing
+block for `position: fixed` — so a dialog left inside the card would have been measured against the
+card and clipped by it, precisely while the pointer rested on the card, which is the only way it
+opens. Measured rather than assumed: a `position: fixed; inset: 0` probe placed inside a card comes
+back **380×441**, the card's own size, against a 1440×900 viewport. `<Teleport>` is in the Vue 3
+CDN global build, so this costs no build step.
+
+The trigger is **always visible, not revealed on hover** — a hover-only control on this theme
+shipped unreachable once already, and a phone has no hover at all. Escape and the close button both
+return focus to the trigger that opened the dialog, and the body scroll is locked while it is open,
+the same way the dish sheet's lightbox behaves.
+
 ## Categories and tags on a dish
 
 Under the description, the dish sheet prints the courses the dish belongs to and the labels it

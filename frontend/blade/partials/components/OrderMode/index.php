@@ -3,6 +3,7 @@
 namespace Theme\Components;
 
 use Illuminate\Support\Facades\View;
+use Theme\Backend\Models\Outlet;
 use Theme\Backend\Support\ThemeSettings;
 
 /**
@@ -42,6 +43,16 @@ class OrderMode
             $pickupAddress = trim((string) $this->translate($settings['footer_address'] ?? '', $locale));
         }
 
+        // ── Which branch to collect from (Q5) ───────────────────────────────────
+        // The picker lives HERE, inside the pickup flow, because that is where you said it
+        // belongs: "if user choose pick up by themselve, need to show branch option that allow
+        // user to pick, but if admin only add 1 outlet, then no need to show outlet options."
+        //
+        // So one outlet renders no picker at all — its address simply becomes the collection
+        // address — which is the same rule this component already applies to a single-mode shop.
+        // A shop that has never created an outlet is unchanged in every respect.
+        $outlets = $this->collectionOutlets($locale);
+
         $payload = [
             'offered' => $offered,
             'labels'  => [
@@ -51,18 +62,59 @@ class OrderMode
                 'deliveryHint' => __('Brought to your address'),
                 'pickupHint'   => __('Collect it from us'),
                 'collectFrom'  => __('Collect from'),
+                'chooseOutlet' => __('Which branch?'),
                 'ready'    => $this->translate($settings['pickup_ready_label'] ?? '', $locale)
                     ?: __('Ready to collect in about 20 minutes'),
             ],
             'pickupAddress' => $pickupAddress,
+            'outlets'       => $outlets,
         ];
 
         return View::make($themeViewPath, [
             'offered'       => $offered,
             'pickupAddress' => $pickupAddress,
             'payload'       => $payload,
+            'outlets'       => $outlets,
+            // More than one is what makes it a choice. One is an answer, and an answer belongs
+            // in a hidden input, not a control with a single option.
+            'showPicker'    => count($outlets) > 1,
             'uid'           => 'saffron-order-mode',
         ])->render();
+    }
+
+    /**
+     * The branches a customer may collect from, default first.
+     *
+     * Wrapped in a try/catch because `outlets` ships with this theme's migrations: a storefront
+     * rendering against a half-deployed import or a stale cache must fall back to no outlets —
+     * which is exactly the shop-with-one-address behaviour that already worked — rather than
+     * taking the cart page down on a missing table. The same guard `DishSheet` puts round
+     * `modifier_groups`, for the same reason.
+     *
+     * @return array<int,array{id:int,title:string,address:string,phone:string}>
+     */
+    protected function collectionOutlets(string $locale): array
+    {
+        try {
+            return Outlet::active()
+                ->pickup()
+                // Default first so the picker opens on the branch the shop nominated, then the
+                // operator's own arrangement.
+                ->orderByDesc('is_default')
+                ->ordered()
+                ->get()
+                ->map(fn (Outlet $outlet) => [
+                    'id'      => $outlet->id,
+                    'title'   => $this->translate($outlet->title, $locale) ?: $outlet->slug,
+                    'address' => trim((string) $outlet->address),
+                    'phone'   => trim((string) $outlet->phone),
+                ])
+                ->all();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [];
+        }
     }
 
     /** Resolve a translatable setting that may arrive as a raw string or a locale map. */

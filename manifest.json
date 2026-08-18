@@ -15,10 +15,12 @@
       "admin/sections/PromoStrip.json",
       "admin/sections/OutletInfo.json",
       "admin/sections/FaqAccordion.json",
-      "admin/sections/Newsletter.json"
+      "admin/sections/Newsletter.json",
+      "admin/sections/Testimonials.json"
     ]
   },
   "modules": [
+    "outlets",
     "modifier-groups",
     "service-windows"
   ],

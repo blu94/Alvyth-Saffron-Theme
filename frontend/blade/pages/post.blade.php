@@ -88,4 +88,7 @@
         </article>
     @endif
 </div>
+
+{{-- Kept identical to pages.blog by hand, as the note at the top of this file requires. --}}
+<x-theme.component name="PostComments" />
 @endsection

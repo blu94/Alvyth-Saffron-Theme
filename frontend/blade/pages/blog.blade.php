@@ -84,4 +84,10 @@
         </article>
     @endif
 </div>
+
+{{-- Outside the container above, not inside it: the component ships its own
+     `.saffron-container`, and nesting one inside another pads the region by two gutters. Placed
+     after the branch rather than in it, so a post laid out with builder rows keeps its comments
+     too (register E7). --}}
+<x-theme.component name="PostComments" />
 @endsection

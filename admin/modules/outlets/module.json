@@ -1,0 +1,22 @@
+{
+  "name": "Outlets",
+  "type": "outlets",
+  "routeBase": "module/outlets",
+  "order": 5,
+  "icon": "tabler-building-store",
+  "api": "/admin/modules/outlets",
+  "resource": "modules",
+  "table": {
+    "$ref": "index.json"
+  },
+  "form": {
+    "$ref": "form.json"
+  },
+  "create": {
+    "$ref": "create.json"
+  },
+  "navigation": [
+    { "title": "List", "icon": "tabler-circle", "to": "module-type" },
+    { "title": "Add Outlet", "icon": "tabler-circle", "to": "module-type-create" }
+  ]
+}

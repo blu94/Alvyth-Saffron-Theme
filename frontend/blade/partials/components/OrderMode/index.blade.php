@@ -54,7 +54,34 @@
 
         <div v-if="mode === 'pickup'" class="saffron-order-mode__pickup">
             <p class="saffron-order-mode__ready mb-0">@{{ labels.ready }}</p>
-            <template v-if="pickupAddress">
+
+            {{-- The branch picker, shown only when the shop has more than one outlet that
+                 collects. With one, the block below states its address instead — a question with
+                 a single answer is not a question. The chosen id rides to the server on
+                 `data-checkout-field`, the bag this theme already uses for the scheduled time,
+                 so it needs no core change to be persisted onto the order. --}}
+            <template v-if="outlets.length > 1">
+                <label class="saffron-order-mode__outlet-label" :for="uid + '-outlet'">@{{ labels.chooseOutlet }}</label>
+                <select :id="uid + '-outlet'" class="saffron-order-mode__outlet"
+                        v-model="outletId" data-checkout-field="outlet_id">
+                    <option v-for="outlet in outlets" :key="outlet.id" :value="String(outlet.id)">@{{ outlet.title }}</option>
+                </select>
+
+                <template v-if="chosenOutlet && chosenOutlet.address">
+                    <p class="saffron-order-mode__fixed-label mb-0">@{{ labels.collectFrom }}</p>
+                    <p class="saffron-order-mode__address mb-0">@{{ chosenOutlet.address }}</p>
+                </template>
+            </template>
+
+            <template v-else-if="outlets.length === 1">
+                {{-- One outlet: its id still travels, so the kitchen knows which branch is
+                     making the order even though the customer was never asked. --}}
+                <input type="hidden" data-checkout-field="outlet_id" :value="String(outlets[0].id)">
+                <p class="saffron-order-mode__fixed-label mb-0">@{{ labels.collectFrom }}</p>
+                <p class="saffron-order-mode__address mb-0">@{{ outlets[0].address || pickupAddress }}</p>
+            </template>
+
+            <template v-else-if="pickupAddress">
                 <p class="saffron-order-mode__fixed-label mb-0">@{{ labels.collectFrom }}</p>
                 <p class="saffron-order-mode__address mb-0">@{{ pickupAddress }}</p>
             </template>
@@ -134,11 +161,21 @@
 
             onMounted(() => { mounted.value = true; });
 
+            // The branch. Seeded with the shop's default, which the driver put first, so the
+            // field is never posted empty. Kept as a string because that is what a `<select>`
+            // gives back, and a number here would fail the `:value` comparison and leave the
+            // control looking unselected.
+            const outlets = payload.outlets || [];
+            const outletId = ref(outlets.length ? String(outlets[0].id) : '');
+            const chosenOutlet = computed(() => outlets.find(o => String(o.id) === outletId.value) || null);
+
             return {
                 mode,
                 visible,
                 labels: payload.labels,
                 pickupAddress: payload.pickupAddress,
+                outlets, outletId, chosenOutlet,
+                uid: '{{ $uid }}',
             };
         },
     }).mount('#{{ $uid }}');

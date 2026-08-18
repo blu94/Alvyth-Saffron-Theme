@@ -1,0 +1,44 @@
+{
+    "expandable": false,
+    "headerActions": {
+        "elements": [
+            {
+                "key": "reload",
+                "ui": { "type": "button", "icon": "tabler-refresh", "color": "success", "rounded": true },
+                "tooltip": "Refresh List",
+                "action": "reload",
+                "class": "ms-2"
+            },
+            {
+                "key": "create",
+                "ui": { "type": "button", "icon": "tabler-plus", "color": "primary", "rounded": "md" },
+                "label": "New Outlet",
+                "tooltip": "Click to add a new outlet",
+                "action": "navigate",
+                "to": "/module/outlets/create"
+            }
+        ]
+    },
+    "filters": {
+        "elements": [
+            {
+                "ui": { "type": "field" },
+                "key": "status",
+                "label": "Status",
+                "placeholder": "Select Status",
+                "type": "select",
+                "options": {
+                    "url": "/admin/modules/outlets/options",
+                    "master": "status"
+                }
+            }
+        ]
+    },
+    "columns": [
+        { "title": "Outlet", "key": "title", "sortable": false },
+        { "title": "Slug", "key": "slug", "sortable": true },
+        { "title": "Phone", "key": "phone", "sortable": false },
+        { "title": "Status", "key": "status", "type": "status", "sortable": true },
+        { "title": "Actions", "key": "actions", "sortable": false }
+    ]
+}

@@ -1,0 +1,165 @@
+{
+    "elements": [
+        {
+            "ui": { "type": "row" },
+            "elements": [
+                {
+                    "ui": { "type": "column", "cols": 12, "md": 8 },
+                    "elements": [
+                        {
+                            "ui": { "type": "section", "cols": 12 },
+                            "name": "The outlet",
+                            "elements": [
+                                {
+                                    "ui": { "type": "field", "cols": 12 },
+                                    "key": "title",
+                                    "type": "text",
+                                    "label": "Outlet Name",
+                                    "placeholder": "e.g. Bangsar",
+                                    "hint": "What a customer picking a branch will see",
+                                    "translatable": true,
+                                    "rules": ["required"]
+                                },
+                                {
+                                    "ui": { "type": "field", "cols": 12 },
+                                    "key": "slug",
+                                    "type": "text",
+                                    "label": "Slug",
+                                    "placeholder": "Leave empty and it is made from the name",
+                                    "hint": "Used in links and kept unique automatically"
+                                },
+                                {
+                                    "ui": { "type": "field", "cols": 12 },
+                                    "key": "address",
+                                    "type": "textarea",
+                                    "label": "Collection Address",
+                                    "placeholder": "e.g. 12 Jalan Telawi, Bangsar, 59100 Kuala Lumpur",
+                                    "hint": "Shown to a customer collecting from here. Leave empty to fall back to the footer address"
+                                },
+                                {
+                                    "ui": { "type": "field", "cols": 6 },
+                                    "key": "phone",
+                                    "type": "text",
+                                    "label": "Phone",
+                                    "placeholder": "e.g. +60 3 1234 5678"
+                                },
+                                {
+                                    "ui": { "type": "field", "cols": 6 },
+                                    "key": "timezone",
+                                    "type": "text",
+                                    "label": "Timezone",
+                                    "placeholder": "e.g. Asia/Kuala_Lumpur",
+                                    "hint": "Leave empty to use the shop's timezone. Set it only for a branch in another zone"
+                                }
+                            ]
+                        },
+                        {
+                            "ui": { "type": "section", "cols": 12 },
+                            "name": "What this outlet serves",
+                            "elements": [
+                                {
+                                    "ui": { "type": "field", "cols": 12 },
+                                    "key": "restricts_menu",
+                                    "type": "switch",
+                                    "label": "This Outlet Serves Only Selected Dishes",
+                                    "hint": "Off means it serves the whole menu, which is what most branches want. Turn it on only if this branch does not make everything",
+                                    "default": false
+                                },
+                                {
+                                    "ui": { "type": "field", "cols": 12 },
+                                    "key": "product_ids",
+                                    "type": "autocomplete",
+                                    "label": "Dishes This Outlet Serves",
+                                    "placeholder": "Search the menu",
+                                    "hint": "Only consulted while the switch above is on",
+                                    "multiple": true,
+                                    "options": {
+                                        "url": "/admin/products/options",
+                                        "itemTitle": "title",
+                                        "itemValue": "id"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "ui": { "type": "column", "cols": 12, "md": 4 },
+                    "elements": [
+                        {
+                            "ui": { "type": "section", "cols": 12 },
+                            "name": "How it takes orders",
+                            "elements": [
+                                {
+                                    "ui": { "type": "field", "cols": 12 },
+                                    "key": "offers_pickup",
+                                    "type": "switch",
+                                    "label": "Offers Collection",
+                                    "hint": "Customers may choose to collect from here",
+                                    "default": true
+                                },
+                                {
+                                    "ui": { "type": "field", "cols": 12 },
+                                    "key": "offers_delivery",
+                                    "type": "switch",
+                                    "label": "Offers Delivery",
+                                    "hint": "This outlet delivers to its own zones",
+                                    "default": true
+                                },
+                                {
+                                    "ui": { "type": "field", "cols": 12 },
+                                    "key": "is_default",
+                                    "type": "switch",
+                                    "label": "Default Outlet",
+                                    "hint": "The branch used for a customer who has not chosen one. Setting this here clears it from whichever outlet held it before",
+                                    "default": false
+                                }
+                            ]
+                        },
+                        {
+                            "ui": { "type": "section", "cols": 12 },
+                            "name": "Where it is",
+                            "elements": [
+                                {
+                                    "ui": { "type": "field", "cols": 6 },
+                                    "key": "latitude",
+                                    "type": "text",
+                                    "label": "Latitude",
+                                    "placeholder": "e.g. 3.1279"
+                                },
+                                {
+                                    "ui": { "type": "field", "cols": 6 },
+                                    "key": "longitude",
+                                    "type": "text",
+                                    "label": "Longitude",
+                                    "placeholder": "e.g. 101.6708"
+                                },
+                                {
+                                    "ui": { "type": "field", "cols": 12 },
+                                    "key": "status",
+                                    "type": "select",
+                                    "label": "Status",
+                                    "options": {
+                                        "items": [
+                                            { "title": "Active", "value": "active" },
+                                            { "title": "Inactive", "value": "inactive" }
+                                        ]
+                                    },
+                                    "default": "active"
+                                },
+                                {
+                                    "ui": { "type": "field", "cols": 12 },
+                                    "key": "orders",
+                                    "type": "number",
+                                    "label": "Display Order",
+                                    "placeholder": "e.g. 1",
+                                    "default": 0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

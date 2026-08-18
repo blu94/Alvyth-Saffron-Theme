@@ -164,6 +164,43 @@
   opacity: 1;
 }
 
+// Quick view trigger. Badges hold the top-inline-start corner and the save heart holds
+// top-inline-end, so this sits directly under the heart — and drops up into the heart's place
+// on a card that has no heart, which is what `--savable` distinguishes.
+//
+// Deliberately **always visible**, not revealed on hover. A hover-only control on this theme
+// shipped unreachable once already, and a phone has no hover at all; the icon is small enough
+// that showing it costs the photograph nothing.
+.saffron-dish-card__peek {
+  position: absolute;
+  z-index: 2;
+  inset-block-start: 0.6rem;
+  inset-inline-end: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  color: $color-muted;
+  background-color: rgba(255, 255, 255, 0.92);
+  border: 1px solid $color-line;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    color: $color-accent;
+    border-color: $color-accent;
+    transform: scale(1.06);
+  }
+}
+
+.saffron-dish-card--savable .saffron-dish-card__peek {
+  inset-block-start: 3.5rem;
+}
+
 // In list layout the media is a 108px thumbnail on the inline-start edge, so the
 // control lands over the body instead. Keep the title clear of it.
 .saffron-dish-card--list .saffron-dish-card__title {

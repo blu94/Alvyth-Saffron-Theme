@@ -12,6 +12,20 @@
         </button>
     @endif
 
+    @if($showQuickView)
+        {{-- A sibling of the media anchor for the same reason the save heart is one: a button
+             inside an anchor is invalid markup and its click would navigate to the dish
+             before the dialog ever opened. --}}
+        <button type="button" class="saffron-dish-card__peek" @click="openQuick"
+                :aria-label="quickViewLabel" :title="quickViewLabel">
+            <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="1.9"
+                 fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0"></path>
+                <path d="m21 21l-6-6"></path>
+            </svg>
+        </button>
+    @endif
+
     <a href="{{ $url }}" class="saffron-dish-card__media" aria-label="{{ $title }}" tabindex="-1">
         @if($image)
             <img src="{{ $image }}" alt="{{ $title }}" class="saffron-dish-card__img" loading="lazy" decoding="async">
@@ -85,9 +99,76 @@
             @endif
         </div>
     </div>
+
+    @if($showQuickView)
+        {{-- Teleported to the body, and this is load-bearing rather than tidiness. The card is
+             `overflow: hidden` and takes `transform: translateY(-2px)` on hover, and a
+             transformed ancestor becomes the containing block for `position: fixed` — so a
+             dialog left inside the card would be sized against the card and clipped by it,
+             exactly while the pointer rests on the card, which is the only way this opens. --}}
+        <Teleport to="body">
+            <div class="saffron-peek" v-if="quickOpen" @click.self="closeQuick"
+                 role="dialog" aria-modal="true" :aria-label="payloadTitle">
+                <div class="saffron-peek__panel">
+                    <button type="button" class="saffron-peek__close" @click="closeQuick"
+                            :aria-label="closeQuickLabel" :title="closeQuickLabel" ref="peekClose">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2"
+                             fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M18 6 6 18"></path>
+                            <path d="m6 6 12 12"></path>
+                        </svg>
+                    </button>
+
+                    <div class="saffron-peek__media">
+                        <img v-if="images.length" :src="images[activeImage]" :alt="payloadTitle"
+                             class="saffron-peek__img">
+                        <div class="saffron-peek__thumbs" v-if="images.length > 1">
+                            <button type="button" v-for="(src, i) in images" :key="src"
+                                    class="saffron-peek__thumb" :class="{ 'is-active': i === activeImage }"
+                                    @click="activeImage = i" :aria-label="thumbLabel(i)">
+                                <img :src="src" alt="" loading="lazy">
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="saffron-peek__body">
+                        <h2 class="saffron-peek__title">@{{ payloadTitle }}</h2>
+
+                        <p class="saffron-peek__price">
+                            <span v-if="quick.fromPrice" class="saffron-peek__price-from">{{ __('from') }}</span>
+                            <span>@{{ quick.price }}</span>
+                        </p>
+
+                        <p class="saffron-peek__desc" v-if="quick.description">@{{ quick.description }}</p>
+
+                        <p class="saffron-peek__tags" v-if="quick.tags.length">
+                            <span class="saffron-badge" v-for="tag in quick.tags" :key="tag">@{{ tag }}</span>
+                        </p>
+
+                        <p class="saffron-peek__soldout" v-if="!quick.available">@{{ quick.soldOut }}</p>
+
+                        <div class="saffron-peek__actions">
+                            {{-- Add straight from here only when the dish asks nothing. Anything
+                                 with a size or a compulsory question goes to the sheet, which is
+                                 the one place those are answered (audit A1). --}}
+                            <button type="button" v-if="quick.available && quick.canAdd"
+                                    class="saffron-btn saffron-btn--accent saffron-btn--large"
+                                    @click="addToCart" :disabled="added">
+                                @{{ added ? addedLabel : addLabel }}
+                            </button>
+                            <a href="{{ $url }}" class="saffron-btn"
+                               :class="(quick.available && quick.canAdd) ? 'saffron-btn--outline' : 'saffron-btn--accent saffron-btn--large'">
+                                @{{ viewDishLabel }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
+    @endif
 </article>
 
-@if($showWishlist || ($showAddButton && $isAvailable && $canQuickAdd))
+@if($showWishlist || $showQuickView || ($showAddButton && $isAvailable && $canQuickAdd))
 <script>
 (function () {
     const { createApp, ref, computed } = Vue;
@@ -103,6 +184,44 @@
             const added = ref(false);
             const addLabel = payload.labels.add;
             const addedLabel = payload.labels.added;
+
+            // ── Quick view (register E8) ──────────────────────────────────────
+            const quickOpen  = ref(false);
+            const activeImage = ref(0);
+            const images = payload.images || [];
+            const quick  = payload.quick || {};
+            const peekClose = ref(null);
+
+            // Where focus was before the dialog took it, so Escape or Close puts it back on
+            // the control the customer actually pressed rather than at the top of the menu.
+            let returnFocusTo = null;
+
+            const onKeydown = (event) => {
+                if (event.key === 'Escape') closeQuick();
+            };
+
+            const openQuick = () => {
+                returnFocusTo = document.activeElement;
+                activeImage.value = 0;
+                quickOpen.value = true;
+                // The dialog is teleported to the body, so the page behind it is what scrolls
+                // if this is not locked — the same lock the dish sheet's lightbox takes.
+                document.body.style.overflow = 'hidden';
+                document.addEventListener('keydown', onKeydown);
+                // Focus lands on Close once Vue has actually rendered the teleported markup.
+                Vue.nextTick(() => { if (peekClose.value) peekClose.value.focus(); });
+            };
+
+            const closeQuick = () => {
+                quickOpen.value = false;
+                document.body.style.overflow = '';
+                document.removeEventListener('keydown', onKeydown);
+                if (returnFocusTo && returnFocusTo.focus) returnFocusTo.focus();
+            };
+
+            // Interpolated from the driver's translated string rather than concatenated here,
+            // because ":n of" and "of :n" are different sentences in different languages.
+            const thumbLabel = (i) => (payload.labels.thumbnail || '').replace(':n', String(i + 1));
 
             const addToCart = () => {
                 if (!window.OvyntStore) {
@@ -166,6 +285,11 @@
                 saved, toggleSave,
                 saveLabel: payload.labels.save,
                 unsaveLabel: payload.labels.unsave,
+                quickOpen, openQuick, closeQuick, activeImage, images, quick, thumbLabel, peekClose,
+                payloadTitle: payload.dish.title,
+                quickViewLabel: payload.labels.quickView,
+                closeQuickLabel: payload.labels.closeQuick,
+                viewDishLabel: payload.labels.viewDish,
             };
         },
     }).mount('#{{ $uid }}');

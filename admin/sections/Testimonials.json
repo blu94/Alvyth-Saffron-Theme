@@ -1,0 +1,202 @@
+{
+    "type": "TESTIMONIALS_SECTION",
+    "component": "TestimonialsSection",
+    "name": "Testimonials",
+    "description": "Quotes from diners — a grid of cards with a star rating, a name and where they are from.",
+    "ui": {
+        "icon": "tabler-quote"
+    },
+    "contents": {
+        "elements": [
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "heading",
+                "type": "text",
+                "label": "Section Heading",
+                "placeholder": "e.g. What diners say",
+                "translatable": true,
+                "default": ""
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "subheading",
+                "type": "textarea",
+                "label": "Subheading",
+                "placeholder": "e.g. A few words from the people who eat here every week",
+                "translatable": true,
+                "default": ""
+            },
+            {
+                "ui": { "type": "field", "cols": 12 },
+                "key": "items",
+                "type": "repeater",
+                "label": "Testimonials",
+                "itemLabel": "Testimonial",
+                "columns": [
+                    { "label": "Author", "key": "author" },
+                    { "label": "Rating", "key": "rating" },
+                    { "label": "Status", "key": "status", "type": "status" }
+                ],
+                "dialog": {
+                    "width": 700,
+                    "create": {
+                        "title": "Add Testimonial",
+                        "subtitle": "The quote, who said it, and how many stars they gave."
+                    },
+                    "update": {
+                        "title": "Edit Testimonial",
+                        "subtitle": "Update the quote or the diner's details."
+                    }
+                },
+                "elements": [
+                    {
+                        "ui": { "type": "field", "cols": 12 },
+                        "key": "quote",
+                        "type": "textarea",
+                        "label": "Quote",
+                        "placeholder": "e.g. The best nasi lemak I have had outside my grandmother's kitchen.",
+                        "translatable": true,
+                        "rules": ["required"]
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 6 },
+                        "key": "author",
+                        "type": "text",
+                        "label": "Author Name",
+                        "placeholder": "e.g. Aisyah",
+                        "rules": ["required"]
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 6 },
+                        "key": "role",
+                        "type": "text",
+                        "label": "Author Role Or Location",
+                        "placeholder": "e.g. Regular, Bangsar"
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 6 },
+                        "key": "rating",
+                        "type": "select",
+                        "label": "Star Rating",
+                        "options": {
+                            "items": [
+                                { "title": "5 stars", "value": 5 },
+                                { "title": "4 stars", "value": 4 },
+                                { "title": "3 stars", "value": 3 },
+                                { "title": "2 stars", "value": 2 },
+                                { "title": "1 star", "value": 1 },
+                                { "title": "No rating", "value": 0 }
+                            ]
+                        },
+                        "default": 5
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 6 },
+                        "key": "status",
+                        "type": "select",
+                        "label": "Status",
+                        "options": {
+                            "items": [
+                                { "title": "Active", "value": "active" },
+                                { "title": "Draft", "value": "draft" }
+                            ]
+                        },
+                        "default": "active"
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 12 },
+                        "key": "avatar",
+                        "type": "image",
+                        "label": "Author Photo (optional)",
+                        "dropzoneOptions": {
+                            "uploadUrl": "",
+                            "autoProcess": true,
+                            "maxFiles": 1,
+                            "maxFilesize": 2,
+                            "resolution": "200x200",
+                            "acceptedFiles": "image/jpeg,image/png,image/webp",
+                            "protectedDisk": false,
+                            "usage": "TESTIMONIAL_AVATAR",
+                            "hideManage": true,
+                            "hideFeatured": true
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "settings": {
+        "elements": [
+            {
+                "ui": { "type": "tabs", "cols": 12, "icon": "tabler-settings" },
+                "elements": [
+                    {
+                        "ui": { "type": "tab", "name": "Layout", "icon": "tabler-layout-grid" },
+                        "name": "Layout",
+                        "elements": [
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "columns",
+                                "type": "select",
+                                "label": "Columns",
+                                "options": {
+                                    "items": [
+                                        { "title": "Two", "value": 2 },
+                                        { "title": "Three", "value": 3 }
+                                    ]
+                                },
+                                "default": 3
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "align",
+                                "type": "select",
+                                "label": "Heading Alignment",
+                                "options": {
+                                    "items": [
+                                        { "title": "Start", "value": "start" },
+                                        { "title": "Centre", "value": "center" }
+                                    ]
+                                },
+                                "default": "center"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "status",
+                                "type": "select",
+                                "label": "Status",
+                                "options": {
+                                    "items": [
+                                        { "title": "Active", "value": "active" },
+                                        { "title": "Disabled", "value": "disabled" }
+                                    ]
+                                },
+                                "default": "active"
+                            }
+                        ]
+                    },
+                    {
+                        "ui": { "type": "tab", "name": "Styling", "icon": "tabler-brush" },
+                        "name": "Styling",
+                        "elements": [
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "data.style.section.id",
+                                "type": "text",
+                                "label": "Custom CSS ID",
+                                "placeholder": "e.g. diner-quotes"
+                            },
+                            {
+                                "ui": { "type": "field", "cols": 6 },
+                                "key": "data.style.section.class",
+                                "type": "text",
+                                "label": "Custom CSS Class",
+                                "placeholder": "e.g. my-quotes"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

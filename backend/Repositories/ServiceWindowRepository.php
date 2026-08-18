@@ -354,6 +354,17 @@ class ServiceWindowRepository
                     ?? $order->meta['ordering_mode']
                     ?? ($order->shipping_address_id ? 'delivery' : 'pickup'),
                 'scheduled_at' => ($order->meta['checkout_fields']['scheduled_at'] ?? $order->meta['scheduled_at'] ?? null) ?: null,
+                // Which branch is making it (Q5). Rides in on the same `checkout_fields` bag as
+                // the scheduled time, because the cart's picker posts it as a
+                // `[data-checkout-field]` — so no core change was needed to persist it, and none
+                // is needed to read it here.
+                //
+                // Resolved to the branch's NAME, not left as an id: a counter reading a ticket
+                // needs to know it says Bangsar, and an id would send them to another screen to
+                // find out. Null on every order placed before outlets existed, and on every
+                // single-outlet shop that never posted one — the ticket simply omits the line
+                // rather than printing a blank label.
+                'outlet'       => $this->outletName($order),
                 'note'         => $order->notes,
                 'total'        => $order->grand_total,
                 'payment'      => $order->payment_status,
@@ -540,8 +551,63 @@ class ServiceWindowRepository
         $header[] = $this->waitLabel($o['waiting_mins']);
         $header[] = $this->scheduleLabel($o['scheduled_at'] ?? null);
 
+        // Only when the shop actually runs branches. A single-outlet kitchen already knows which
+        // kitchen it is, and printing the same name on every ticket costs a line of a screen the
+        // counter reads at arm's length.
+        if (! empty($o['outlet'])) {
+            $header[] = '@ ' . $o['outlet'];
+        }
+
         return implode(' · ', $header) . "\n" . $lines . ($o['note'] ? "\n   Note: " . $o['note'] : '');
     }
+
+    /**
+     * The name of the branch an order was placed for, or null.
+     *
+     * Null covers three ordinary cases, and none of them is an error: an order placed before
+     * outlets existed, a single-outlet shop whose picker posted nothing, and an id naming a
+     * branch that has since been deleted. The ticket omits the line in all three.
+     *
+     * Resolved one order at a time on purpose — the queue holds a few dozen tickets, the cache
+     * below collapses a shift's worth of orders onto the same handful of branches, and a shop
+     * with one outlet never reaches the query at all.
+     */
+    protected function outletName($order): ?string
+    {
+        $id = $order->meta['checkout_fields']['outlet_id'] ?? $order->meta['outlet_id'] ?? null;
+
+        if (! $id) {
+            return null;
+        }
+
+        $id = (int) $id;
+
+        if (isset($this->outletNames[$id])) {
+            return $this->outletNames[$id] ?: null;
+        }
+
+        try {
+            $outlet = \Theme\Backend\Models\Outlet::withTrashed()->find($id);
+
+            // A deleted branch still names itself on the tickets it took, which is the whole
+            // reason `delete()` on this model is a soft delete.
+            $name = $outlet
+                ? ($outlet->getTranslation('title', app()->getLocale(), false) ?: $outlet->slug)
+                : '';
+        } catch (\Throwable $e) {
+            // The table ships with this theme's migrations; a queue rendering against a
+            // half-deployed import shows tickets without a branch rather than not at all.
+            report($e);
+            $name = '';
+        }
+
+        $this->outletNames[$id] = $name;
+
+        return $name ?: null;
+    }
+
+    /** Branch names already looked up while building this payload, keyed by id. */
+    protected array $outletNames = [];
 
     /**
      * "for 20 Aug 18:30" when the customer picked a slot, "ASAP" otherwise (spec §8.2 —
