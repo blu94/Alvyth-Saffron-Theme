@@ -137,5 +137,11 @@
                 <div class="saffron-footer__bar">{{ $copyright }}</div>
             @endif
         @endif
+
+        {{-- Outside both branches on purpose. A shop that configures its own footer columns
+             takes the @if side and would otherwise lose a credit its licence requires — the
+             same reason the plugin slots are rendered outside whichever branch draws a page.
+             The component decides whether anything is owed; here it is only placed. --}}
+        <x-theme.component name="GeoAttribution" />
     </div>
 </footer>

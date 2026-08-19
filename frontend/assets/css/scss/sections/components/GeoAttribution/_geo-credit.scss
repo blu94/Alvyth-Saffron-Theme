@@ -1,0 +1,28 @@
+@use "../../../base/colors" as *;
+@use "../../../base/variables" as *;
+
+// The OpenStreetMap credit. A licence obligation, so it must be legible — but it is a notice,
+// not a message, and it sits at the very bottom of a dark footer beside the copyright. Same
+// size and weight as `.saffron-footer__bar` for that reason: two legal lines that disagreed on
+// type would read as one of them having gone wrong.
+//
+// No top border of its own. When the copyright bar is present this line follows it directly and
+// a second rule would draw a stripe across an otherwise quiet corner; when the bar is absent
+// (a shop using composed footer columns) the row above already carries one.
+.saffron-geo-credit {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: rgba($hex-white, 0.45);
+
+  a {
+    color: rgba($hex-white, 0.7);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover,
+    &:focus-visible {
+      color: $color-accent;
+    }
+  }
+}
