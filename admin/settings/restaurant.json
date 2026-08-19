@@ -236,6 +236,41 @@
           "hint": "Where the customer comes to collect. Shown on the cart the moment they choose pickup — leave it empty and the shop's footer address is used instead",
           "translatable": true,
           "default": ""
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "offer_dine_in",
+          "type": "switch",
+          "label": "Offer Dine In",
+          "hint": "Adds a third choice beside Delivery and Pickup, and asks which table. The order is still handled as a collection — no address, no delivery fee — so the kitchen sees DINE IN and the table instead of PICKUP",
+          "default": false
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "dine_in_tables",
+          "type": "number",
+          "label": "How Many Tables",
+          "placeholder": "e.g. 12",
+          "hint": "Turns the table question into a list of 1 to this number, which is harder to get wrong than typing. Leave empty and the customer types whatever your tables are called",
+          "rules": ["nullable", "integer", "min:1", "max:200"],
+          "default": null
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "ask_cutlery",
+          "type": "switch",
+          "label": "Ask About Cutlery",
+          "hint": "Puts an opt-out on the cart — the customer says they do not need it, and the kitchen sees NO CUTLERY on the ticket. Off by default: a shop that always packs cutlery should not ask a question it will ignore",
+          "default": false
         }
       ]
     },

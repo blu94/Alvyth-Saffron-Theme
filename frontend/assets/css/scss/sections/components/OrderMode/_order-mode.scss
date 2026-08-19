@@ -182,3 +182,74 @@
     outline-offset: 1px;
   }
 }
+
+// ─── Dine in: which table (O2) ────────────────────────────────────────────────
+// The table question shares the collection panel rather than opening a second one: a diner
+// answers *which branch* and *which table* as one thought, and two stacked panels would read as
+// two unrelated questions. Only its first label needs the leading margin removed, since nothing
+// precedes it when the ready-wording line is hidden for dine-in.
+.saffron-order-mode__pickup > .saffron-order-mode__outlet-label:first-child {
+  margin-block-start: 0;
+}
+
+// The typed table, for a shop whose tables are not numbered 1..N. Deliberately identical to
+// the select beside it: the customer is answering one question, and two controls that look
+// different would read as two.
+.saffron-order-mode__table {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  margin-block-start: 0.3rem;
+  padding: 0.5rem 0.75rem;
+  font-family: $body-font-family;
+  font-size: 0.9375rem;
+  color: $color-black;
+  background-color: $color-card-surface;
+  border: 1px solid $color-line;
+  border-radius: $card-radius;
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 1px;
+  }
+}
+
+// ─── Cutlery opt-out (O2) ─────────────────────────────────────────────────────
+// A quiet line under the tiles, not a tile of its own: it is a preference about the order, not
+// a choice about what the order is. Sized so the whole row is the target — a 14px checkbox is
+// not something to ask a thumb to find.
+.saffron-order-mode__cutlery {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-height: 40px;
+  margin-block-start: 0.75rem;
+  padding: 0.5rem 0.15rem;
+  cursor: pointer;
+}
+
+.saffron-order-mode__cutlery-input {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-block-start: 0.15rem;
+  accent-color: $color-accent;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+}
+
+.saffron-order-mode__cutlery-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.saffron-order-mode__cutlery-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.3;
+}

@@ -1,9 +1,9 @@
-{{-- A shop offering one mode asks nothing and states the fact in a hidden input: core still
-     learns which mode the order is, and the customer is not shown a question with one answer.
-     `data-checkout-mode` on a non-radio element is read by value, so this needs no script. --}}
-@if($offered !== 'both')
-    <input type="hidden" data-checkout-mode value="{{ $offered }}">
-    @if($offered === 'pickup' && $pickupAddress !== '')
+{{-- Nothing to ask: one mode, and no cutlery question. Core still learns which mode the order
+     is, from a hidden input read by value, and the customer is not shown a question with one
+     answer. --}}
+@if(count($modes) < 2 && ! $askCutlery)
+    <input type="hidden" data-checkout-mode value="{{ $modes[0] ?? $offered }}">
+    @if(($modes[0] ?? $offered) === 'pickup' && $pickupAddress !== '')
         <div class="saffron-order-mode saffron-order-mode--fixed">
             <p class="saffron-order-mode__fixed-label mb-0">{{ __('Collect from') }}</p>
             <p class="saffron-order-mode__address mb-0">{{ $pickupAddress }}</p>
@@ -11,14 +11,28 @@
     @endif
 @else
 <div id="{{ $uid }}" class="saffron-order-mode" v-cloak v-show="visible">
+    {{-- **One** [data-checkout-mode] on the page, and never on the radios.
+
+         Core reads the FIRST such element, and if that element is a radio it takes whichever is
+         `:checked` — so a third radio would post `dine_in` as the fulfilment type, which core
+         does not have and would refuse with a 422. Dine-in is a kind of collection: the diner
+         needs no address and pays no delivery fee, so the type core is told is `pickup`, and
+         which kind of collection it is travels on `checkout_fields` instead. Reading a hidden
+         input by value is the same path the single-mode branch above already uses. --}}
+    <input type="hidden" data-checkout-mode :value="fulfillmentType" ref="modeInput">
+
+    {{-- Blade, not `v-if`, for everything the server already knows. How many modes are offered,
+         whether dine-in is on and whether the tables are numbered are settings, not state the
+         customer changes — rendering markup only to hide it at runtime leaves controls in the
+         DOM for a shop that never offered them, which is how a hidden field ends up posted. --}}
+    @if(count($modes) > 1)
     <fieldset class="saffron-order-mode__group">
         <legend class="saffron-order-mode__legend">@{{ labels.heading }}</legend>
 
         <div class="saffron-order-mode__options">
+            @if(in_array('delivery', $modes, true))
             <label class="saffron-order-mode__option" :class="{ 'is-active': mode === 'delivery' }">
-                {{-- The value core reads. Radios are only collected when checked, so the two
-                     inputs need no hidden field kept in step. --}}
-                <input type="radio" name="saffron-order-mode" value="delivery" data-checkout-mode
+                <input type="radio" name="saffron-order-mode" value="delivery"
                        v-model="mode" class="saffron-order-mode__input">
                 <span class="saffron-order-mode__icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.7"
@@ -34,9 +48,11 @@
                     <span class="saffron-order-mode__hint">@{{ labels.deliveryHint }}</span>
                 </span>
             </label>
+            @endif
 
+            @if(in_array('pickup', $modes, true))
             <label class="saffron-order-mode__option" :class="{ 'is-active': mode === 'pickup' }">
-                <input type="radio" name="saffron-order-mode" value="pickup" data-checkout-mode
+                <input type="radio" name="saffron-order-mode" value="pickup"
                        v-model="mode" class="saffron-order-mode__input">
                 <span class="saffron-order-mode__icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.7"
@@ -50,10 +66,41 @@
                     <span class="saffron-order-mode__hint">@{{ labels.pickupHint }}</span>
                 </span>
             </label>
-        </div>
+            @endif
 
-        <div v-if="mode === 'pickup'" class="saffron-order-mode__pickup">
-            <p class="saffron-order-mode__ready mb-0">@{{ labels.ready }}</p>
+            @if(in_array('dine_in', $modes, true))
+            <label class="saffron-order-mode__option" :class="{ 'is-active': mode === 'dine_in' }">
+                <input type="radio" name="saffron-order-mode" value="dine_in"
+                       v-model="mode" class="saffron-order-mode__input">
+                <span class="saffron-order-mode__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.7"
+                         fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 3v8a2 2 0 0 0 2 2h0a2 2 0 0 0 2 -2V3"></path>
+                        <path d="M9 13v8"></path>
+                        <path d="M17 3c-1.5 1.5 -2 3.5 -2 6s.5 3 2 3v9"></path>
+                    </svg>
+                </span>
+                <span class="saffron-order-mode__text">
+                    <span class="saffron-order-mode__name">@{{ labels.dineIn }}</span>
+                    <span class="saffron-order-mode__hint">@{{ labels.dineInHint }}</span>
+                </span>
+            </label>
+            @endif
+        </div>
+    </fieldset>
+    @endif
+
+    {{-- Outside the tile group on purpose: a shop offering collection only still has a branch
+         to name and an address to state, and it renders no tiles at all. --}}
+    @if(in_array('pickup', $modes, true) || in_array('dine_in', $modes, true))
+        {{-- One panel for both kinds of collection. **The branch question belongs to both**: a
+             diner is sitting in one of the shop's rooms, so a dine-in order that named no outlet
+             would reach the kitchen without the `@ Bangsar` line every collection ticket carries
+             — and in a multi-branch shop that is the one thing the counter needs. Only the
+             collection *address* and the ready-wording are pickup's alone; somebody already in
+             the room does not need directions to it. --}}
+        <div v-if="mode !== 'delivery'" class="saffron-order-mode__pickup">
+            <p v-if="mode === 'pickup'" class="saffron-order-mode__ready mb-0">@{{ labels.ready }}</p>
 
             {{-- The branch picker, shown only when the shop has more than one outlet that
                  collects. With one, the block below states its address instead — a question with
@@ -67,7 +114,7 @@
                     <option v-for="outlet in outlets" :key="outlet.id" :value="String(outlet.id)">@{{ outlet.title }}</option>
                 </select>
 
-                <template v-if="chosenOutlet && chosenOutlet.address">
+                <template v-if="mode === 'pickup' && chosenOutlet && chosenOutlet.address">
                     <p class="saffron-order-mode__fixed-label mb-0">@{{ labels.collectFrom }}</p>
                     <p class="saffron-order-mode__address mb-0">@{{ chosenOutlet.address }}</p>
                 </template>
@@ -77,21 +124,66 @@
                 {{-- One outlet: its id still travels, so the kitchen knows which branch is
                      making the order even though the customer was never asked. --}}
                 <input type="hidden" data-checkout-field="outlet_id" :value="String(outlets[0].id)">
-                <p class="saffron-order-mode__fixed-label mb-0">@{{ labels.collectFrom }}</p>
-                <p class="saffron-order-mode__address mb-0">@{{ outlets[0].address || pickupAddress }}</p>
+                <template v-if="mode === 'pickup'">
+                    <p class="saffron-order-mode__fixed-label mb-0">@{{ labels.collectFrom }}</p>
+                    <p class="saffron-order-mode__address mb-0">@{{ outlets[0].address || pickupAddress }}</p>
+                </template>
             </template>
 
-            <template v-else-if="pickupAddress">
+            <template v-else-if="mode === 'pickup' && pickupAddress">
                 <p class="saffron-order-mode__fixed-label mb-0">@{{ labels.collectFrom }}</p>
                 <p class="saffron-order-mode__address mb-0">@{{ pickupAddress }}</p>
             </template>
+
+            {{-- Which table. `dining` rides alongside it so the kitchen can tell a dine-in order
+                 from a collection — both are `pickup` to core, and a ticket that could not tell
+                 them apart would send a waiter looking for a customer who has gone home.
+
+                 Guarded in Blade: a shop that does not offer dine-in must not have a
+                 `data-checkout-field="dining"` input sitting in its DOM at all. --}}
+            @if(in_array('dine_in', $modes, true))
+            <template v-if="mode === 'dine_in'">
+                <input type="hidden" data-checkout-field="dining" value="dine_in">
+
+                <label class="saffron-order-mode__outlet-label" :for="uid + '-table'">@{{ labels.chooseTable }}</label>
+
+                {{-- The table count is a setting, so only one of the two controls is ever sent
+                     to the browser. Rendering both and letting `v-if` pick would leave a second
+                     `table_number` field in the DOM, and core's collector keeps the last one it
+                     reads. --}}
+                @if($tables > 0)
+                <select :id="uid + '-table'" class="saffron-order-mode__outlet"
+                        v-model="table" data-checkout-field="table_number">
+                    <option v-for="n in tables" :key="n" :value="String(n)">@{{ labels.tableOption.replace(':number', n) }}</option>
+                </select>
+                @else
+                <input :id="uid + '-table'" type="text" class="saffron-order-mode__table"
+                       v-model="table" data-checkout-field="table_number"
+                       :placeholder="labels.tablePlaceholder" maxlength="20" autocomplete="off">
+                @endif
+            </template>
+            @endif
         </div>
-    </fieldset>
+    @endif
+
+    {{-- Cutlery. An opt-out, and never asked of a diner sitting at a laid table. An unchecked
+         checkbox is skipped by core's collector, so ticking it is the only thing that posts —
+         "absent" and "false" are the same answer, which is what an opt-out means. --}}
+    @if($askCutlery)
+    <label v-if="mode !== 'dine_in'" class="saffron-order-mode__cutlery">
+        <input type="checkbox" value="1" data-checkout-field="no_cutlery"
+               v-model="noCutlery" class="saffron-order-mode__cutlery-input">
+        <span class="saffron-order-mode__cutlery-text">
+            <span class="saffron-order-mode__cutlery-name">@{{ labels.noCutlery }}</span>
+            <span class="saffron-order-mode__hint">@{{ labels.noCutleryHint }}</span>
+        </span>
+    </label>
+    @endif
 </div>
 
 <script>
 (function () {
-    const { createApp, ref, computed, onMounted } = Vue;
+    const { createApp, ref, computed, watch, nextTick, onMounted } = Vue;
 
     const payload = @json($payload);
 
@@ -147,7 +239,32 @@
     createApp({
         setup() {
             const mounted = ref(false);
-            const mode    = ref('delivery');
+            const modes   = payload.modes || ['delivery'];
+            const mode    = ref(modes[0]);
+
+            // What core is told. Dine-in is a collection as far as an address and a delivery
+            // fee are concerned, and those are the only two things the type decides.
+            const fulfillmentType = computed(() => mode.value === 'delivery' ? 'delivery' : 'pickup');
+
+            // **A bound value is not a change event, and core listens for the event.**
+            //
+            // Core re-renders the whole checkout region — the address panel, the fee row, the
+            // totals, the tax quote — from a delegated `change` listener that fires when the
+            // event's target sits inside a `[data-checkout-mode]` element. While the radios
+            // carried that attribute themselves a click fired it for free; now that the
+            // attribute lives on one hidden input (so a third tile cannot post a type core does
+            // not have), nothing fires it, because assigning a value in JavaScript never does.
+            //
+            // The symptom without this is quiet and looks like a theme bug: Dine in is chosen,
+            // the summary keeps asking for a delivery address, and the customer fills it in.
+            // Dispatched after the DOM has the new value, so the listener reads what it expects.
+            const modeInput = ref(null);
+
+            watch(fulfillmentType, () => {
+                nextTick(() => {
+                    modeInput.value?.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            });
 
             // Hidden until there is something to fulfil. The cart lives in the browser, so the
             // server cannot know whether it is empty at render time; asking how someone wants
@@ -169,12 +286,26 @@
             const outletId = ref(outlets.length ? String(outlets[0].id) : '');
             const chosenOutlet = computed(() => outlets.find(o => String(o.id) === outletId.value) || null);
 
+            // The table. Seeded with the first one when the shop numbers them, so a select is
+            // never posted empty; left blank when the customer types it, because guessing a
+            // table name is worse than asking.
+            const tables = payload.tables || 0;
+            const table  = ref(tables > 0 ? '1' : '');
+
+            // Cutlery is a takeaway question. Somebody who switches to dining in after ticking
+            // it should not have the answer follow them to a table that is already laid — and
+            // the control is hidden by then, so it could not be un-ticked.
+            const noCutlery = ref(false);
+            watch(mode, m => { if (m === 'dine_in') noCutlery.value = false; });
+
             return {
-                mode,
+                mode, modes, fulfillmentType, modeInput,
                 visible,
                 labels: payload.labels,
                 pickupAddress: payload.pickupAddress,
                 outlets, outletId, chosenOutlet,
+                tables, table,
+                noCutlery,
                 uid: '{{ $uid }}',
             };
         },

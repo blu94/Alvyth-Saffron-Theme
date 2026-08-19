@@ -53,21 +53,68 @@ class OrderMode
         // A shop that has never created an outlet is unchanged in every respect.
         $outlets = $this->collectionOutlets($locale);
 
+        // ── Dine in, and which table (O2) ───────────────────────────────────────
+        // A third tile rather than a question buried inside the pickup flow, because that is
+        // how a diner thinks about it and what spec §9.2 describes. **Core is still told
+        // `pickup`**: a customer sitting in the room needs no address and pays no delivery fee,
+        // and `fulfillment_type` only knows delivery and pickup. Which of the two kinds of
+        // collection it is rides on `checkout_fields`, the theme's own bag — the same split as
+        // everything else here, and the reason this needed no core change.
+        //
+        // Offered only where a shop actually has a dining room. Most takeaway shops do not, and
+        // a tile that leads to "which table?" in a shop with no tables is worse than no tile.
+        $dineIn = $offered !== 'delivery' && $this->bool($settings['offer_dine_in'] ?? false);
+
+        // A list beats free text when the shop knows its own tables: a diner mistyping 21 for 12
+        // sends the food to somebody else's table, and nothing downstream can catch it. Empty
+        // means the tables are not numbered 1..N — a courtyard, named booths — so the customer
+        // types whatever they are called.
+        $tables = (int) ($settings['dine_in_tables'] ?? 0);
+        $tables = $tables > 0 ? min($tables, 200) : 0;
+
+        // ── Cutlery (O2) ────────────────────────────────────────────────────────
+        // An opt-OUT, which is what the platforms that popularised it settled on: the default
+        // stays what the shop already does, and only a customer who says so changes it. Asked
+        // for delivery and collection alike — the waste is the same either way — but never for
+        // dine-in, where the cutlery is already on the table.
+        $askCutlery = $this->bool($settings['ask_cutlery'] ?? false);
+
+        // The choices in the order they are offered. Two or more is a question; one is an
+        // answer, and an answer belongs in a hidden input rather than a control the customer
+        // cannot change — the rule this component already applied to a single-mode shop, now
+        // applied to the dine-in tile as well.
+        $modes = array_values(array_filter([
+            $offered !== 'pickup'   ? 'delivery' : null,
+            $offered !== 'delivery' ? 'pickup'   : null,
+            $dineIn                 ? 'dine_in'  : null,
+        ]));
+
         $payload = [
             'offered' => $offered,
+            'modes'   => $modes,
             'labels'  => [
                 'heading'  => __('How do you want it'),
                 'delivery' => __('Delivery'),
                 'pickup'   => __('Pickup'),
+                'dineIn'   => __('Dine in'),
                 'deliveryHint' => __('Brought to your address'),
                 'pickupHint'   => __('Collect it from us'),
+                'dineInHint'   => __('Eat with us'),
                 'collectFrom'  => __('Collect from'),
                 'chooseOutlet' => __('Which branch?'),
+                'chooseTable'  => __('Which table?'),
+                'tablePlaceholder' => __('e.g. 12'),
+                'tableOption'  => __('Table :number'),
+                'noCutlery'    => __('I do not need cutlery'),
+                'noCutleryHint' => __('Helps us cut down on waste'),
                 'ready'    => $this->translate($settings['pickup_ready_label'] ?? '', $locale)
                     ?: __('Ready to collect in about 20 minutes'),
             ],
             'pickupAddress' => $pickupAddress,
             'outlets'       => $outlets,
+            'dineIn'        => $dineIn,
+            'tables'        => $tables,
+            'askCutlery'    => $askCutlery,
         ];
 
         return View::make($themeViewPath, [
@@ -78,8 +125,18 @@ class OrderMode
             // More than one is what makes it a choice. One is an answer, and an answer belongs
             // in a hidden input, not a control with a single option.
             'showPicker'    => count($outlets) > 1,
+            'dineIn'        => $dineIn,
+            'askCutlery'    => $askCutlery,
+            'modes'         => $modes,
+            'tables'        => $tables,
             'uid'           => 'saffron-order-mode',
         ])->render();
+    }
+
+    /** A switch setting, read the way every other theme switch is. */
+    protected function bool(mixed $value): bool
+    {
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
     }
 
     /**

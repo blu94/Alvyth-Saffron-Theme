@@ -596,11 +596,17 @@ Verified against core, not assumed. Each is a limit on what this theme can promi
   **operator's** choice per zone — state, a postcode list, or a distance radius from the outlet,
   mixable within one shop — rather than this project picking one delivery model on their behalf.
   Not built (register O7b).
-- **A table number still awaits its control** (O2). Ordering mode and scheduled time are both
-  captured now; dine-in table numbers and a cutlery prompt are the remaining checkout fields.
-- **Nothing decrements stock.** `stock = 0` does stop a dish being ordered (core validates it
-  in `validateCart`), but nothing reduces the number when an order is placed, so with
-  `stock = 1` two customers can still both buy the last portion. Spec §14 item 1.
+- **Dine in and the cutlery prompt are built** (O2, 2026-08-19), both off by default. Turning
+  *Offer Dine In* on adds a third tile beside Delivery and Pickup and asks which table — a list
+  of 1..N when the shop says how many tables it has, free text otherwise. **Core is still told
+  `pickup`**: a diner needs no address and pays no delivery fee, and `fulfillment_type` knows
+  only the two. Which kind of collection it is rides on `checkout_fields` as `dining` +
+  `table_number`, so the kitchen ticket reads `DINE IN · Table 7` where core reads `pickup`.
+  *Ask About Cutlery* adds an opt-out for delivery and collection (never for a diner at a laid
+  table) and prints `NO CUTLERY` on the ticket.
+- **Stock is a real count** (O6, 2026-08-19). Placing an order reduces it inside the order's own
+  transaction, in one conditional statement, so the last portion cannot be sold twice; cancelling
+  gives it back. Empty still means unlimited.
 - **Service hours do not yet distinguish delivery from pickup.** A window's **Applies To**
   (`delivery` / `pickup`) is stored and displayed but still not consulted by the refusal. It
   was blocked on there being no ordering mode to compare against; now that an order carries

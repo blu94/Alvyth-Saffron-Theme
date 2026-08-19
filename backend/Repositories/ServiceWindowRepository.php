@@ -354,6 +354,16 @@ class ServiceWindowRepository
                     ?? $order->meta['ordering_mode']
                     ?? ($order->shipping_address_id ? 'delivery' : 'pickup'),
                 'scheduled_at' => ($order->meta['checkout_fields']['scheduled_at'] ?? $order->meta['scheduled_at'] ?? null) ?: null,
+                // Dine in, and which table (O2). Core is told `pickup` for both kinds of
+                // collection — a diner needs no address and pays no delivery fee, and
+                // `fulfillment_type` knows only delivery and pickup — so the ticket is the one
+                // place that has to tell them apart. Without this a waiter would be sent to find
+                // a customer who took their food home.
+                'dining'       => ($order->meta['checkout_fields']['dining'] ?? null) === 'dine_in',
+                'table'        => trim((string) ($order->meta['checkout_fields']['table_number'] ?? '')) ?: null,
+                // An opt-out, so its presence IS the answer: core's collector skips an unchecked
+                // box, and a shop that never asks the question never sees the line.
+                'no_cutlery'   => ! empty($order->meta['checkout_fields']['no_cutlery']),
                 // Which branch is making it (Q5). Rides in on the same `checkout_fields` bag as
                 // the scheduled time, because the cart's picker posts it as a
                 // `[data-checkout-field]` — so no core change was needed to persist it, and none
@@ -542,7 +552,17 @@ class ServiceWindowRepository
             return '   ' . $item['qty'] . '× ' . $item['title'] . ($opts !== '' ? ' [' . $opts . ']' : '');
         })->implode("\n");
 
-        $header = [$o['order_number'], strtoupper((string) $o['mode'])];
+        // DINE IN rather than PICKUP where the customer is eating in the room. Both are `pickup`
+        // to core, and the counter's whole question when a ticket comes up is whether to bag it
+        // or plate it.
+        $header = [
+            $o['order_number'],
+            ! empty($o['dining']) ? 'DINE IN' : strtoupper((string) $o['mode']),
+        ];
+
+        if (! empty($o['dining']) && ! empty($o['table'])) {
+            $header[] = 'Table ' . $o['table'];
+        }
 
         if ($withState) {
             $header[] = self::KITCHEN_STATES[$o['state']]['label'] ?? $o['state'];
@@ -556,6 +576,12 @@ class ServiceWindowRepository
         // counter reads at arm's length.
         if (! empty($o['outlet'])) {
             $header[] = '@ ' . $o['outlet'];
+        }
+
+        // Last in the header, because it is an instruction to whoever bags the order rather than
+        // a fact about the order. Only ever present when the customer said so.
+        if (! empty($o['no_cutlery'])) {
+            $header[] = 'NO CUTLERY';
         }
 
         return implode(' · ', $header) . "\n" . $lines . ($o['note'] ? "\n   Note: " . $o['note'] : '');

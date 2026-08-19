@@ -72,6 +72,12 @@ later date are listed separately under **Booked Ahead**:
   customer picked a time at checkout), then every line spelled out:
   `2× Charcoal Chicken [Size: Large · Extras: Cheese, Bacon]`, plus the customer's note.
   Spelling the options out is the whole point of the screen.
+
+  A ticket says **DINE IN** and the table (`DINE IN · Table 7`) when the customer chose to eat
+  with you, rather than PICKUP — the two look the same to the rest of the system, and this is
+  the line that tells you whether to plate it or bag it. It ends **NO CUTLERY** when they said
+  they do not need any. Both appear only if you have turned those questions on under
+  *Themes → Saffron → Restaurant → Ordering Modes*.
 - **Booked Ahead**: orders wanted on a **later date**, grouped by the day they are for, each
   line showing the time and the order number. They are deliberately kept **out** of the four
   columns above until that day arrives — the queue sorts by how long a ticket has waited, so a
