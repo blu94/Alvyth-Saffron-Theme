@@ -19,12 +19,26 @@ class OutletRepository
     {
         $query = Outlet::query()->ordered();
 
-        if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+        // Both filters are hardened to scalars before use. The admin list is a DataTable, and
+        // DataTables sends `search` as an OBJECT (`{value, regex}`) rather than a string — casting
+        // that with `(string)` threw "Array to string conversion" and 500'd the whole Outlets
+        // list. `status` gets the same treatment because a multi-select filter would arrive as an
+        // array for exactly the same reason.
+        $status = $filters['status'] ?? null;
+
+        if (is_scalar($status) && (string) $status !== '') {
+            $query->where('status', (string) $status);
         }
 
-        if (! empty($filters['search'])) {
-            $term = trim((string) $filters['search']);
+        $search = $filters['search'] ?? null;
+
+        // DataTables' shape, unwrapped rather than rejected: the value is what the operator typed.
+        if (is_array($search)) {
+            $search = $search['value'] ?? null;
+        }
+
+        if (is_scalar($search) && trim((string) $search) !== '') {
+            $term = trim((string) $search);
             $query->where(function ($q) use ($term) {
                 $q->where('slug', 'like', "%{$term}%")
                     ->orWhere('address', 'like', "%{$term}%")

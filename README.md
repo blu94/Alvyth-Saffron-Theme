@@ -37,9 +37,14 @@ form, inline), `Breadcrumbs`, `StructuredData` (JSON-LD).
 **Animation:** every section above except `DishSheet` eases into view on scroll, with its own
 effect, speed, stagger and delay under *Styling → Animation*; the theme's **Animation** settings
 tab holds the master switch and the defaults a section inherits. See "Animation" below.
-**Admin modules:** `modifier-groups` (the questions, plus an **Attach To Dishes** page that puts
+**Admin modules:** `outlets` (the branches the shop trades from — a picker appears in the cart's
+collection flow only once there is more than one, and the chosen branch rides to checkout as
+`data-checkout-field="outlet_id"` and onto the kitchen ticket as `@ Bangsar`),
+`modifier-groups` (the questions, plus an **Attach To Dishes** page that puts
 one question on many dishes at once), `service-windows` (weekly hours *and* dated holidays in
-one list, plus the Kitchen Queue page).
+one list, plus the Kitchen Queue page). Three Outlets fields — the per-branch menu, timezone and
+coordinates — are stored and read by nothing yet; `docs/outlets.md` and
+`.agent/docs/restaurant.md` both say which and why.
 **Extends:** `products` — a Modifiers tab on the dish's own form — and `orders` — a Kitchen
 tab that moves an order through New / Preparing / Ready / Out for delivery / Delivered from
 its own edit screen, the same write the Kitchen Queue's Advance card makes. Both via core's

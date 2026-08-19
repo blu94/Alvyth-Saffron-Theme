@@ -4,14 +4,24 @@
         "elements": [
             {
                 "key": "reload",
-                "ui": { "type": "button", "icon": "tabler-refresh", "color": "success", "rounded": true },
+                "ui": {
+                    "type": "button",
+                    "icon": "tabler-refresh",
+                    "color": "success",
+                    "rounded": true
+                },
                 "tooltip": "Refresh List",
                 "action": "reload",
                 "class": "ms-2"
             },
             {
                 "key": "create",
-                "ui": { "type": "button", "icon": "tabler-plus", "color": "primary", "rounded": "md" },
+                "ui": {
+                    "type": "button",
+                    "icon": "tabler-plus",
+                    "color": "primary",
+                    "rounded": "md"
+                },
                 "label": "New Outlet",
                 "tooltip": "Click to add a new outlet",
                 "action": "navigate",
@@ -22,7 +32,9 @@
     "filters": {
         "elements": [
             {
-                "ui": { "type": "field" },
+                "ui": {
+                    "type": "field"
+                },
                 "key": "status",
                 "label": "Status",
                 "placeholder": "Select Status",
@@ -34,11 +46,102 @@
             }
         ]
     },
-    "columns": [
-        { "title": "Outlet", "key": "title", "sortable": false },
-        { "title": "Slug", "key": "slug", "sortable": true },
-        { "title": "Phone", "key": "phone", "sortable": false },
-        { "title": "Status", "key": "status", "type": "status", "sortable": true },
-        { "title": "Actions", "key": "actions", "sortable": false }
-    ]
+    "elements": [
+        {
+            "ui": {
+                "type": "display"
+            },
+            "label": "ID",
+            "key": "id",
+            "sortable": true,
+            "width": "60px"
+        },
+        {
+            "ui": {
+                "type": "display"
+            },
+            "label": "Outlet",
+            "key": "title",
+            "sortable": true,
+            "searchable": true
+        },
+        {
+            "ui": {
+                "type": "display"
+            },
+            "label": "Slug",
+            "key": "slug",
+            "sortable": true,
+            "searchable": true
+        },
+        {
+            "ui": {
+                "type": "display"
+            },
+            "label": "Phone",
+            "key": "phone",
+            "sortable": false
+        },
+        {
+            "ui": {
+                "type": "display"
+            },
+            "label": "Collection",
+            "key": "offers_pickup",
+            "sortable": false,
+            "align": "center",
+            "type": "boolean"
+        },
+        {
+            "ui": {
+                "type": "display"
+            },
+            "label": "Delivery",
+            "key": "offers_delivery",
+            "sortable": false,
+            "align": "center",
+            "type": "boolean"
+        },
+        {
+            "ui": {
+                "type": "display"
+            },
+            "label": "Default",
+            "key": "is_default",
+            "sortable": false,
+            "align": "center",
+            "type": "boolean"
+        },
+        {
+            "ui": {
+                "type": "display"
+            },
+            "label": "Status",
+            "key": "status",
+            "sortable": false,
+            "align": "center",
+            "type": "status"
+        }
+    ],
+    "actions": {
+        "elements": [
+            "view",
+            "edit",
+            {
+                "key": "delete",
+                "action": "delete",
+                "ui": {
+                    "type": "button",
+                    "icon": "tabler-trash",
+                    "color": "error",
+                    "rounded": true
+                },
+                "params": {
+                    "confirm": true,
+                    "confirmText": "Delete this outlet? Orders already placed for it keep its name."
+                }
+            }
+        ],
+        "class": "fit"
+    }
 }

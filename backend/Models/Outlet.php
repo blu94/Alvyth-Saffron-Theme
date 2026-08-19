@@ -47,10 +47,18 @@ class Outlet extends Model
         'orders',
     ];
 
-    public array $translatable = ['title'];
+    public $translatable = ['title'];
 
+    // `title` is deliberately NOT cast to json: `HasTranslations` already serialises a
+    // translatable attribute, and `ModifierGroup` declares its translatables the same way.
+    //
+    // **This is not what caused the "Array to string conversion" 500**, whatever the earlier
+    // note here said — removing the cast did not fix it, because the array reaching
+    // `Str::slug()` was `slug`, not `title`. Core's `ModuleRequest::prepareForValidation()`
+    // was inventing a locale map for a slug this model keeps as a plain string. Fixed there,
+    // pinned by `tests/Feature/Admin/Module/ModuleSlugPreparationTest`. The cast stays off on
+    // its own merits; do not read its absence as the fix.
     protected $casts = [
-        'title'           => 'json',
         'latitude'        => 'float',
         'longitude'       => 'float',
         'offers_pickup'   => 'boolean',
