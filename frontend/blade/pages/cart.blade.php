@@ -25,6 +25,10 @@
              summary draws is wanted at all. --}}
         <x-theme.component name="OrderMode" />
         <x-theme.component name="OrderSchedule" />
+        {{-- Last, because how to pay is the last decision: what kind of order → where it goes
+             → when → how it is paid for → place it. Renders nothing unless the shop actually
+             offers a choice. --}}
+        <x-theme.component name="PaymentChoice" />
     </div>
 
     @if(isset($page) && $page->rows && $page->rows->count() > 0)

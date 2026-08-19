@@ -607,6 +607,13 @@ Verified against core, not assumed. Each is a limit on what this theme can promi
 - **Stock is a real count** (O6, 2026-08-19). Placing an order reduces it inside the order's own
   transaction, in one conditional statement, so the last portion cannot be sold twice; cancelling
   gives it back. Empty still means unlimited.
+- **Cash on delivery** (O8, 2026-08-19), off by default, under *Settings → Payment*. The order is
+  accepted `confirmed` + `unpaid` and settled on handover — not a gateway that charges nothing,
+  which would put a fake payment in the reports. The theme's `PaymentChoice` component renders
+  the choice on `[data-checkout-payment]`, core's collector, and draws nothing unless the shop
+  offers both. A cash order is deliberately **never** given a stock-hold deadline: the sweep
+  cancels `pending` + `unpaid`, and a cash order wearing that shape would be cancelled from under
+  the kitchen an hour after it was placed.
 - **Service hours do not yet distinguish delivery from pickup.** A window's **Applies To**
   (`delivery` / `pickup`) is stored and displayed but still not consulted by the refusal. It
   was blocked on there being no ordering mode to compare against; now that an order carries
