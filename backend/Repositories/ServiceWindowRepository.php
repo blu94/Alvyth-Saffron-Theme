@@ -58,13 +58,13 @@ class ServiceWindowRepository
         'ready' => [
             'label'              => 'Ready',
             'status'             => Order::STATUS_PROCESSING,
-            'fulfillment_status' => Order::FULFILLMENT_PARTIAL,
+            'fulfillment_status' => Order::FULFILLMENT_READY,
             'next'               => 'out',
         ],
         'out' => [
             'label'              => 'Out for delivery',
             'status'             => Order::STATUS_PROCESSING,
-            'fulfillment_status' => Order::FULFILLMENT_PARTIAL,
+            'fulfillment_status' => Order::FULFILLMENT_OUT,
             'next'               => 'delivered',
         ],
         'delivered' => [
@@ -761,8 +761,12 @@ class ServiceWindowRepository
     /**
      * Derive the kitchen state from `meta.kitchen_state`, falling back to the status pair.
      *
-     * The stored value wins because it carries the distinction the status axes cannot —
-     * "ready at the counter" and "with the rider" are the same pair.
+     * The stored value used to win because it carried a distinction the status axes could not:
+     * "ready at the counter" and "with the rider" were both `partial`. **Core gained
+     * `ready` and `out_for_delivery` on 2026-08-20**, so the pair now says it on its own and
+     * the fallback below is exact rather than a best guess. The stored key is still read
+     * first, and still written, because an order placed before that change has one and its
+     * fulfilment value is the older `partial`.
      *
      * Public because the order's own edit screen shows this too (`OrderKitchenState`), and
      * that screen sees every order, not only the queue's confirmed/processing ones. So the
@@ -780,7 +784,14 @@ class ServiceWindowRepository
 
         return match ($order->status) {
             Order::STATUS_CONFIRMED  => 'new',
-            Order::STATUS_PROCESSING => $order->fulfillment_status === Order::FULFILLMENT_PARTIAL ? 'ready' : 'preparing',
+            Order::STATUS_PROCESSING => match ($order->fulfillment_status) {
+                Order::FULFILLMENT_OUT     => 'out',
+                Order::FULFILLMENT_READY   => 'ready',
+                // An order written before core had the two states above: `partial` was what
+                // Ready was stored as, and there is nothing finer to read.
+                Order::FULFILLMENT_PARTIAL => 'ready',
+                default                    => 'preparing',
+            },
             Order::STATUS_COMPLETED  => 'delivered',
             default                  => null,
         };
@@ -865,7 +876,11 @@ class ServiceWindowRepository
             }
         }
 
-        // Ready → Out for delivery moves neither axis, so nothing above wrote the meta key.
+        // A safety net rather than a live branch. Every pair in the table above is distinct
+        // since core gained `ready` and `out_for_delivery` — before that, Ready → Out moved
+        // neither axis and nothing else would have written the meta key. Kept because the
+        // table is data: give two states the same pair again and this is what stops the move
+        // from being silently lost.
         if ($order->isDirty()) {
             $order->save();
         }

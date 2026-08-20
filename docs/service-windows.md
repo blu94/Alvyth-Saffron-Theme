@@ -134,8 +134,10 @@ sidebar change to match, and the queue shows it in the new column the next time 
 
 Worth knowing:
 
-- **Ready and Out for delivery look the same on the sidebar** — both are Processing /
-  Partial. The Kitchen tab is the only place the two differ, which is why it exists.
+- **Ready and Out for delivery are now separate Fulfillment Statuses.** They used to be the
+  same pair on the sidebar — both Processing / Partial — and the Kitchen tab was the only
+  place the difference showed. Since August 2026 the sidebar says **Ready** and **Out for
+  delivery** outright, so you can also filter the Orders list by either.
 - **Leaving the tab alone leaves the sidebar alone.** If you only change Order Status or
   Fulfillment Status yourself — putting an order on hold, cancelling it — the Kitchen tab does
   not overwrite what you chose. Only picking a *different* kitchen state moves the order.
