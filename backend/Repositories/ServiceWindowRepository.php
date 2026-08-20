@@ -5,6 +5,7 @@ namespace Theme\Backend\Repositories;
 use App\Contracts\Notification\Notifier;
 use App\Models\Order;
 use App\Models\Product;
+use App\Repositories\Order\OrderInterface;
 use App\Services\Notification\NotificationTypeRegistry;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -797,6 +798,36 @@ class ServiceWindowRepository
      * The caller owns the transaction: the queue opens its own with the row locked, and the
      * order form's handler already runs inside `OrderController`'s. A cancelled order refuses
      * with a `ValidationException`, which that controller answers as a 422.
+     *
+     * ## Through core's transition path, not straight onto the model
+     *
+     * This used to be a single `fill()->save()`, and it was a hole. `.agent/docs/orders.md`
+     * states the invariant without qualification — *an order cannot be placed or transitioned
+     * without emitting* — and a kitchen move was a third path that transitioned two axes and
+     * emitted nothing. Measured on 2026-08-19 before the change: New → Preparing → Ready → Out
+     * → Delivered dispatched **no** `OrderStatusChanged` at all, so no lifecycle email, no core
+     * notification and no plugin listener saw a restaurant order move, ever. A loyalty plugin
+     * awarding points on `status → completed` would never have fired for a food shop.
+     *
+     * So each axis that moves now goes through `OrderRepository::transitionStatus()`, which is
+     * the same call `POST /admin/orders/{id}/transition` makes. Two consequences worth knowing:
+     *
+     * - **The buyer is told by this theme, not by core.** Every transition is made with
+     *   `notifyCustomer: false` and {@see notifyKitchenState()} sends the food wording instead.
+     *   Without that a diner is emailed "Partially fulfilled" when their meal is ready and
+     *   "Shipped" when they collect it — core's vocabulary is orthogonal status axes, and it
+     *   has no way to know one of them means a curry is on the pass. Everything that is not a
+     *   message to the buyer still runs: the activity log, the stock settlement, plugins.
+     * - **The order the axes move in is load-bearing.** `contradictsCompletion()` rejects
+     *   `completed` + `unfulfilled`, so moving *to* Delivered sets fulfillment first, and moving
+     *   *away* from it sets status first. Either sequence passes through a legal pair; the two
+     *   opposite ones both 422.
+     *
+     * `meta.kitchen_state` is filled **before** the transitions rather than saved after, so it
+     * rides along on the first axis's own write. `save()` persists everything dirty, and this is
+     * the busiest table in the application — an extra row per kitchen move, per order, per
+     * service is a cost with nothing to show for it. The trailing `save()` catches Ready → Out,
+     * which is one kitchen state to another and no status change at all.
      */
     public function moveKitchenOrder(Order $order, string $target): void
     {
@@ -810,17 +841,78 @@ class ServiceWindowRepository
 
         $state = self::KITCHEN_STATES[$target];
 
-        $order->fill([
-            'status'             => $state['status'],
-            'fulfillment_status' => $state['fulfillment_status'],
-            'meta'               => array_merge($order->meta ?? [], ['kitchen_state' => $target]),
-        ])->save();
+        $order->fill(['meta' => array_merge($order->meta ?? [], ['kitchen_state' => $target])]);
+
+        $orders = app(OrderInterface::class);
+        $note   = "Kitchen: {$state['label']}";
+
+        $axes = [
+            ['status', $state['status']],
+            ['fulfillment_status', $state['fulfillment_status']],
+        ];
+
+        // Fulfillment first only when the destination is a completed order; see the docblock.
+        if ($state['status'] === Order::STATUS_COMPLETED) {
+            $axes = array_reverse($axes);
+        }
+
+        foreach ($axes as [$field, $to]) {
+            // Only an axis that genuinely moves. `transitionStatus()` declines to dispatch on a
+            // no-op but still writes its activity row, and Ready → Out for delivery moves
+            // neither axis — two rows saying nothing happened, on every ticket that leaves.
+            if ($order->{$field} !== $to) {
+                $orders->transitionStatus($order, $field, $to, $note, notifyCustomer: false);
+            }
+        }
+
+        // Ready → Out for delivery moves neither axis, so nothing above wrote the meta key.
+        if ($order->isDirty()) {
+            $order->save();
+        }
 
         $this->notifyKitchenState($order, $target, $state['label']);
     }
 
     /**
-     * Tell the customer their food is ready.
+     * Which type each kitchen state tells the customer through, and `null` for the states
+     * that tell them nothing.
+     *
+     * Spec §11's table, mapped onto the states this theme actually has:
+     *
+     * | §11 trigger                | State       | Who sends it                        |
+     * |----------------------------|-------------|-------------------------------------|
+     * | Order placed               | —           | core, `order_placed` (email)         |
+     * | New order → the shop       | —           | core, `core.order_placed` (staff)    |
+     * | Order accepted, prep begun | `preparing` | `order_preparing`                    |
+     * | Ready / out for delivery   | `ready`,`out`| `order_ready`                       |
+     * | Delivered                  | `delivered` | `order_delivered`                    |
+     * | Rejected                   | —           | core, on the cancellation            |
+     *
+     * **`new` is deliberately silent.** It is the state an order is already in when it
+     * reaches the queue, so telling the customer would mean a bell entry saying what the
+     * confirmation page in front of them says — core declines a customer "we received your
+     * order" notification for exactly that reason, and this is the same moment.
+     *
+     * **`ready` and `out` share one type**, as §11 shares one row for them: the difference
+     * between "come and collect it" and "the rider has it" is a phrase, not a different
+     * message, and one type means one email template for an operator to word rather than two
+     * that must be kept saying the same thing. `state_label` carries the phrase.
+     *
+     * @return array{0: string, 1: string}|null [short type key, the phrase for `state_label`]
+     */
+    protected function customerNotificationFor(string $target, string $label): ?array
+    {
+        return match ($target) {
+            'preparing' => ['order_preparing', strtolower($label)],
+            'ready'     => ['order_ready', strtolower($label)],
+            'out'       => ['order_ready', 'on its way'],
+            'delivered' => ['order_delivered', strtolower($label)],
+            default     => null,
+        };
+    }
+
+    /**
+     * Tell the customer what the kitchen just did.
      *
      * **Called from here rather than from an event listener**, and that is the theme seam
      * working as designed: a theme has no service provider, so it cannot subscribe to
@@ -828,12 +920,24 @@ class ServiceWindowRepository
      * both the Kitchen Queue's Advance card and the order form's Kitchen tab go through, so
      * calling `Notifier` here catches every kitchen move there is.
      *
-     * Only `ready` and `out`. `new` and `preparing` are the kitchen talking to itself, and
-     * `delivered` reaches the customer through core's own fulfilment notification — sending a
-     * second one would be this theme saying the same thing twice.
+     * **This is the whole of what the buyer hears about a kitchen move**, because
+     * {@see moveKitchenOrder()} transitions with `notifyCustomer: false`. It used to be a
+     * supplement to core's own status messages; it is now the replacement for them, which is
+     * why Delivered is here. The previous note said Delivered *"reaches the customer through
+     * core's own fulfilment notification"* — that was measured on 2026-08-19 and found false
+     * even then: no kitchen move emitted an event, so nothing of core's had ever fired for one.
      *
-     * A guest order has no account to address, so there is nobody to notify. The core
-     * lifecycle email still reaches them, and an in-app feed needs an account to be a feed of.
+     * Each type declares `channels: ["inapp", "mail"]`, so one call produces the bell entry
+     * and the email Q4 asked for. Core owns both — `MailChannel` hands off to `TemplatedMailer`
+     * and `NotificationMailTemplates` seeds an editable `EmailTemplate` on the send path — so
+     * this theme ships wording, not a mail system.
+     *
+     * A guest order has no account to address, so there is nobody to notify: `toUser()` needs a
+     * `User`, a preference switch needs somebody to own it, and an in-app feed needs an account
+     * to be a feed of. The order confirmation email still reached them at checkout, and the
+     * kitchen's own moves reach them not at all — stated as a limitation rather than papered
+     * over, because fixing it means addressing mail to an order's billing address, which is a
+     * different mechanism from a notification.
      *
      * `Notifier` never throws and answers `0` on anything it cannot do — which matters here,
      * because this runs inside the caller's transaction and a failed notification must not
@@ -841,9 +945,13 @@ class ServiceWindowRepository
      */
     protected function notifyKitchenState(Order $order, string $target, string $label): void
     {
-        if (! in_array($target, ['ready', 'out'], true) || ! $order->user_id) {
+        $wording = $this->customerNotificationFor($target, $label);
+
+        if ($wording === null || ! $order->user_id) {
             return;
         }
+
+        [$key, $stateLabel] = $wording;
 
         // `themeKey()`, not a hardcoded `theme:saffron.…`. The deployed slug comes from the
         // manifest *title*, so this theme installs as `ovynt-saffron-theme` while its manifest
@@ -851,10 +959,10 @@ class ServiceWindowRepository
         // notification silently goes nowhere.
         app(Notifier::class)->toUser(
             $order->user_id,
-            app(NotificationTypeRegistry::class)->themeKey('order_ready'),
+            app(NotificationTypeRegistry::class)->themeKey($key),
             [
                 'order_number' => $order->order_number,
-                'state_label'  => $target === 'out' ? 'on its way' : strtolower($label),
+                'state_label'  => $stateLabel,
             ],
             $order,
         );

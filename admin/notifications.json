@@ -1,6 +1,20 @@
 {
     "types": [
         {
+            "key": "order_preparing",
+            "name": "Order accepted",
+            "description": "The kitchen accepted an order and started cooking it.",
+            "audience": "customer",
+            "level": "info",
+            "icon": "tabler-flame",
+            "collapse": "subject",
+            "action_url": "/profile",
+            "channels": ["inapp", "mail"],
+            "placeholders": ["order_number"],
+            "title": { "en": "We are cooking order {{ order_number }}" },
+            "body": { "en": "The kitchen has your order and has started on it. We will let you know the moment it is ready." }
+        },
+        {
             "key": "order_ready",
             "name": "Order ready",
             "description": "The kitchen marked an order ready — for collection, or on its way out for delivery.",
@@ -9,9 +23,24 @@
             "icon": "tabler-tools-kitchen-3",
             "collapse": "subject",
             "action_url": "/profile",
+            "channels": ["inapp", "mail"],
             "placeholders": ["order_number", "state_label"],
             "title": { "en": "Order {{ order_number }} is {{ state_label }}" },
             "body": { "en": "Thanks for waiting — we will let you know when anything changes." }
+        },
+        {
+            "key": "order_delivered",
+            "name": "Order completed",
+            "description": "The order was handed over — delivered, or collected at the counter.",
+            "audience": "customer",
+            "level": "success",
+            "icon": "tabler-circle-check",
+            "collapse": "subject",
+            "action_url": "/profile",
+            "channels": ["inapp", "mail"],
+            "placeholders": ["order_number", "state_label"],
+            "title": { "en": "Order {{ order_number }} is {{ state_label }}" },
+            "body": { "en": "That is your order complete. Your receipt is on your orders page — we hope you enjoyed it." }
         }
     ]
 }

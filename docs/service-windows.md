@@ -147,6 +147,32 @@ Worth knowing:
 - **The queue's Advance An Order card is still there.** It is the counter's control during
   service; the tab is for when you already have the order open.
 
+### What the customer is told when you move a ticket
+
+Moving an order along tells the customer, on both surfaces at once — a notification in their
+account and an email — however you moved it, from the queue or from the order's own page.
+
+| You move it to | They are told |
+|---|---|
+| **New** | nothing — they have only just ordered and are looking at the confirmation |
+| **Preparing** | *"We are cooking order ORD-000123"* |
+| **Ready** | *"Order ORD-000123 is ready"* |
+| **Out for delivery** | *"Order ORD-000123 is on its way"* |
+| **Delivered** | *"Order ORD-000123 is delivered"*, with a link to their receipt |
+
+Worth knowing:
+
+- **The wording is yours to change.** All three sit under **Settings → Notifications & Emails**
+  beside your other store emails, and editing one is permanent — reinstalling or updating the
+  theme never puts the original wording back.
+- **To stop one entirely**, switch it off under **Settings → Notifications**. The customer can
+  also turn any of them off for themselves from their account page.
+- **A guest order tells nobody.** Someone who ordered without an account has nowhere to receive
+  a notification, so only their original order confirmation reaches them. Ask customers to
+  create an account if you want them kept posted.
+- **Ready and Out for delivery share one email**, because they are the same message with a
+  different phrase in it — editing that template changes both.
+
 ## Things worth knowing
 
 - **These hours are enforced at checkout.** An order placed while you are closed is refused,
