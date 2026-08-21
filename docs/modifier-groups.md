@@ -15,7 +15,8 @@ Rule of thumb: if the kitchen needs to *know* it, it is a modifier. If your acco
 
 ## Where to find it
 
-Open **Modifier Groups** in the sidebar. It has three links:
+Open **Saffron → Modifier Groups** in the sidebar — every screen this theme adds lives
+under the one **Saffron** group. It has three links:
 
 - **List** — everything you have written.
 - **Attach To Dishes** — put one question on many dishes in a single action.

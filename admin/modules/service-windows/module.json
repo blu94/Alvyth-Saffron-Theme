@@ -6,6 +6,11 @@
   "icon": "tabler-clock-hour-9",
   "api": "/admin/modules/service-windows",
   "resource": "modules",
+  "pages": {
+    "kitchen": {
+      "resource": "kitchen"
+    }
+  },
   "table": {
     "$ref": "index.json"
   },

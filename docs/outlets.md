@@ -12,7 +12,8 @@ question appears by itself.
 
 ## Where to find it
 
-Open **Outlets** in the sidebar. It has two links:
+Open **Saffron → Outlets** in the sidebar — every screen this theme adds lives under the
+one **Saffron** group. It has two links:
 
 - **List** — every branch you have created.
 - **Add Outlet** — write a new one.

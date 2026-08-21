@@ -9,7 +9,8 @@ It also carries the **Kitchen Queue**, the screen the counter works from during 
 
 ## Where to find it
 
-Open **Service Hours** in the sidebar. It has three links:
+Open **Saffron → Service Hours** in the sidebar — every screen this theme adds lives under
+the one **Saffron** group. It has three links:
 
 - **Kitchen Queue** — today's open orders, oldest first, plus what is booked ahead.
 - **Hours & Holidays** — the list of every entry, weekly hours first, then dated overrides.
@@ -174,6 +175,25 @@ Worth knowing:
   create an account if you want them kept posted.
 - **Ready and Out for delivery share one email**, because they are the same message with a
   different phrase in it — editing that template changes both.
+
+### Who can reach the queue
+
+The Kitchen Queue has its own permission, **kitchen**, so a counter tablet can be given the
+queue and nothing else. Create a role under **Settings → Roles** and tick **kitchen: view**
+(watch the board) and **kitchen: create** (press *Move Order*). A login holding only that role
+reaches the queue and is refused everywhere else — Hours & Holidays, Outlets, Modifier Groups,
+Products and Settings included.
+
+Two things worth knowing:
+
+- **View without create is a watch-only board.** The queue renders and refreshes, but *Move
+  Order* answers "unauthorized" — right for a wall display, wrong for the counter. Tick both
+  for a working tablet.
+- **The sidebar still shows every menu item.** Menus are not where access is enforced; the
+  refusal comes when a screen is opened. Counter staff clicking Products will simply be told
+  it is not theirs.
+
+Admins lose nothing: anyone who could open the queue before this permission existed still can.
 
 ### When the board is full
 
