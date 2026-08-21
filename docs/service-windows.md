@@ -175,6 +175,16 @@ Worth knowing:
 - **Ready and Out for delivery share one email**, because they are the same message with a
   different phrase in it — editing that template changes both.
 
+### When the board is full
+
+The queue draws **120 orders at a time**. If you have more open than that, the board shows the
+**most recent** 120 and says so above the columns: *"Showing the 120 most recent of 340 open
+orders. 220 older orders are not on this board."*
+
+A shop with hundreds of open orders almost always has old ones nobody closed rather than
+hundreds of meals waiting — the fix is to clear them from **Sales → Orders**, not to scroll.
+New orders always appear and always chime, however full the board is.
+
 ## Things worth knowing
 
 - **These hours are enforced at checkout.** An order placed while you are closed is refused,

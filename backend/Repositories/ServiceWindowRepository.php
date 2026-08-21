@@ -42,6 +42,16 @@ class ServiceWindowRepository
      * collection" versus "with the rider" — the finer state goes in `meta.kitchen_state`,
      * which is what `column` below reads.
      */
+    /**
+     * How many open orders the queue draws at once.
+     *
+     * A board nobody can scroll is not a board, and every ticket carries its lines and their
+     * options. The cap is on *rendering*, never on what the screen reports: `open_total` and
+     * the arrival chime are both counted without it, so a truncated queue says so instead of
+     * reading like a short one. See {@see kitchenData()} and register D-15.
+     */
+    public const QUEUE_LIMIT = 120;
+
     public const KITCHEN_STATES = [
         'new' => [
             'label'              => 'New',
@@ -291,14 +301,33 @@ class ServiceWindowRepository
      */
     protected function kitchenData(): array
     {
-        $orders = Order::query()
-            ->whereIn('status', [Order::STATUS_CONFIRMED, Order::STATUS_PROCESSING])
+        $open = Order::query()
+            ->whereIn('status', [Order::STATUS_CONFIRMED, Order::STATUS_PROCESSING]);
+
+        // **The cap takes the NEWEST, and it used to take the oldest** — register D-15.
+        //
+        // `orderBy('created_at')->limit(120)` reads as "the first 120 to arrive", which is the
+        // wrong 120 by definition: an arrival is the newest order there is, so once a shop was
+        // holding 120 open orders **a new one never appeared on the counter's screen at all**.
+        // Found by accident — a probe order created for an unrelated check simply was not
+        // there, and this dev database happens to sit on exactly 120 stale open orders.
+        //
+        // Newest-first for the cut, then re-sorted oldest-first for display, because the board
+        // reads as a queue: the ticket that has waited longest is the one to cook next.
+        $orders = (clone $open)
             // The relation is `customer`, not `user` — Order has a `user_id` column but names
             // the belongsTo after the role, and a guest order has none.
             ->with(['items', 'customer'])
-            ->orderBy('created_at')
-            ->limit(120)
-            ->get();
+            ->orderByDesc('created_at')
+            ->limit(self::QUEUE_LIMIT)
+            ->get()
+            ->sortBy('created_at')
+            ->values();
+
+        // What the cap hid, counted rather than guessed. One extra scalar, and only it can say
+        // "this screen is not showing you everything" — a silently truncated queue reads
+        // exactly like a short one.
+        $openTotal = (clone $open)->count();
 
         $columns = [];
         foreach (self::KITCHEN_STATES as $key => $state) {
@@ -409,6 +438,19 @@ class ServiceWindowRepository
             'upcoming'     => $this->upcomingSummary($upcoming),
             'generated_at' => now()->toDateTimeString(),
             'poll_seconds' => 10,
+            // Every open order there is, counted without the render cap. `total_open` is what
+            // the board is *showing*; when they disagree the screen has to say so, or a
+            // counter reads a truncated queue as a finished one.
+            'open_total'   => (string) $openTotal,
+            'queue_notice' => $openTotal > self::QUEUE_LIMIT
+                ? sprintf(
+                    'Showing the %d most recent of %d open orders. %d older %s not on this board — clear them from Sales → Orders.',
+                    self::QUEUE_LIMIT,
+                    $openTotal,
+                    $openTotal - self::QUEUE_LIMIT,
+                    $openTotal - self::QUEUE_LIMIT === 1 ? 'order is' : 'orders are'
+                )
+                : '',
         ];
 
         foreach ($columns as $key => $column) {
@@ -513,6 +555,15 @@ class ServiceWindowRepository
      * Orders booked for a later date are excluded, for the same reason `total_open` excludes
      * them: the kitchen bell means "cook this now", and a wedding in October is not that. It
      * rings on the morning the booking joins the queue, which is when it becomes today's work.
+     *
+     * **This reads the drawn rows, and that is only safe because the cap takes the newest.**
+     * Under D-15's `orderBy('created_at')->limit(120)` it was not: a saturated queue bounded
+     * this number, so it could not rise however many orders arrived and the screen whose whole
+     * purpose is announcing an arrival went silent exactly when the kitchen was busiest. The
+     * fix belongs in the query, not here — taking an uncapped `MAX(id)` instead would also
+     * work, and would quietly drop the forward-booking exclusion above, which is a decision
+     * rather than an implementation detail. `KitchenQueueCapTest` pins the behaviour so the
+     * two cannot drift back apart.
      *
      * The wording is rebuilt on every poll, so the message carries the live figure rather than
      * core inventing one — core cannot phrase a queue it does not know it is looking at.

@@ -86,6 +86,17 @@
       {
         "ui": {
           "type": "field",
+          "cols": { "cols": 12 },
+          "icon": "tabler-alert-triangle",
+          "color": "warning"
+        },
+        "type": "display",
+        "key": "queue_notice",
+        "label": "Not everything is on this board"
+      },
+      {
+        "ui": {
+          "type": "field",
           "cols": {
             "cols": 12,
             "sm": 6,
