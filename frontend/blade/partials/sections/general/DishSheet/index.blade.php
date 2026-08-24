@@ -7,16 +7,91 @@
         </section>
     @endif
 @else
-<section id="{{ $uid }}" class="saffron-dish-sheet">
-    <div class="saffron-container">
+{{-- `id` is the operator's Custom CSS ID when they set one; `data-dish-sheet` is what the Vue
+     app mounts on. They are deliberately two attributes: an id an operator can retype at any
+     time must not be the selector the ordering form depends on. --}}
+<section id="{{ $cssId }}" data-dish-sheet="{{ $uid }}"
+         class="saffron-dish-sheet saffron-dish-sheet--{{ $layout }} {{ $cssClass }}">
+    <div class="{{ $containerClass }}">
         <div class="row g-4 g-lg-5">
-            <div class="col-12 col-lg-6">
+            @if($hasSidebar && $sidebarSide === 'left')
+                {{-- `v-pre` so Vue leaves the rail alone: it is server-rendered, holds no
+                     directives, and its dish titles are content that must never be read as
+                     interpolation. --}}
+                <div class="col-12 col-lg-3" v-pre>
+                    <x-theme.component name="DishSidebar" :data="array_merge($sidebarProps, ['current_id' => $dishId])" />
+                </div>
+            @endif
+
+            <div class="{{ $mainColClass }}">
+            <div class="row g-4 g-lg-5">
+            <div class="{{ $mediaColClass }}">
                 {{-- Photo and thumbnails stick together. The media alone used to carry
                      `position: sticky`, so once the thumbnails were added below it they
                      scrolled up underneath the pinned image and collided with it. One sticky
                      wrapper round both is the fix; a z-index on the strip would only have
                      hidden the overlap. --}}
                 <div class="saffron-dish-sheet__gallery">
+
+                @if($layout === 'grid' && count($images) > 0)
+                    {{-- Layout 03 — Lookbook. Every photograph at once, each its own lightbox
+                         trigger, and no thumbnail strip: a grid that shows all of them has
+                         nothing left for a strip to select. --}}
+                    <div class="saffron-dish-sheet__grid">
+                        @foreach($images as $index => $src)
+                            <button type="button" class="saffron-dish-sheet__grid-item"
+                                    @click="openLightbox({{ $index }})"
+                                    :aria-label="zoomLabel" :title="zoomLabel">
+                                <img src="{{ $src }}" alt="{{ $heading }}"
+                                     loading="{{ $loop->first ? 'eager' : 'lazy' }}">
+                            </button>
+                        @endforeach
+                    </div>
+
+                @elseif($layout === 'slider' && count($images) > 0)
+                    {{-- Layout 04 — one photograph at a time on a track the arrows and dots
+                         move. It shares `activeImage` with the lightbox, so whichever slide is
+                         showing is the one that opens full size. --}}
+                    <div class="saffron-dish-sheet__slider">
+                        <div class="saffron-dish-sheet__slider-viewport">
+                            <div class="saffron-dish-sheet__slider-track"
+                                 :style="{ transform: 'translateX(-' + (activeImage * 100) + '%)' }">
+                                <button type="button" v-for="(src, i) in images" :key="src"
+                                        class="saffron-dish-sheet__slide" @click="openLightbox(i)"
+                                        :aria-hidden="i === activeImage ? 'false' : 'true'"
+                                        :tabindex="i === activeImage ? 0 : -1"
+                                        :aria-label="zoomLabel" :title="zoomLabel">
+                                    <img :src="src" alt="{{ $heading }}">
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="button" class="saffron-dish-sheet__slider-nav saffron-dish-sheet__slider-nav--prev"
+                                v-if="images.length > 1" @click="stepImage(-1)" :aria-label="labels.prevPhoto">
+                            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2"
+                                 fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M15 18l-6-6 6-6"></path>
+                            </svg>
+                        </button>
+
+                        <button type="button" class="saffron-dish-sheet__slider-nav saffron-dish-sheet__slider-nav--next"
+                                v-if="images.length > 1" @click="stepImage(1)" :aria-label="labels.nextPhoto">
+                            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2"
+                                 fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M9 18l6-6-6-6"></path>
+                            </svg>
+                        </button>
+
+                        <div class="saffron-dish-sheet__dots" v-if="images.length > 1">
+                            <button type="button" v-for="(src, i) in images" :key="'dot-' + src"
+                                    class="saffron-dish-sheet__dot" :class="{ 'is-active': i === activeImage }"
+                                    @click="activeImage = i"
+                                    :aria-current="i === activeImage ? 'true' : 'false'"
+                                    :aria-label="thumbLabel.replace(':n', i + 1)"></button>
+                        </div>
+                    </div>
+
+                @else
                 <div class="saffron-dish-sheet__media">
                     @if($imageUrl)
                         <button type="button" class="saffron-dish-sheet__zoom" @click="openLightbox(activeImage)"
@@ -41,7 +116,9 @@
                 </div>
 
                 {{-- Thumbnails. Rendered only when there is more than one photograph — a strip
-                     of one is a control that cannot do anything. --}}
+                     of one is a control that cannot do anything. Layouts 06 and 07 stand the
+                     same strip on its side beside the photo; the CSS does that, not a second
+                     copy of the markup. --}}
                 <div class="saffron-dish-sheet__thumbs" v-if="images.length > 1">
                     <button type="button" v-for="(src, i) in images" :key="src"
                             class="saffron-dish-sheet__thumb" :class="{ 'is-active': i === activeImage }"
@@ -51,10 +128,12 @@
                         <img :src="src" alt="" loading="lazy">
                     </button>
                 </div>
+                @endif
+
                 </div>
             </div>
 
-            <div class="col-12 col-lg-6">
+            <div class="{{ $infoColClass }}">
                 <div class="saffron-dish-sheet__head">
                     <h1 class="saffron-dish-sheet__title">{{ $heading }}</h1>
                     @if($showWishlist)
@@ -261,6 +340,14 @@
 
                 @endif
             </div>
+            </div>
+            </div>
+
+            @if($hasSidebar && $sidebarSide === 'right')
+                <div class="col-12 col-lg-3" v-pre>
+                    <x-theme.component name="DishSidebar" :data="array_merge($sidebarProps, ['current_id' => $dishId])" />
+                </div>
+            @endif
         </div>
     </div>
 
@@ -694,7 +781,7 @@
                 shareRoot, shareTrigger,
             };
         },
-    }).mount('#{{ $uid }}');
+    }).mount('[data-dish-sheet="{{ $uid }}"]');
 })();
 </script>
 @endif

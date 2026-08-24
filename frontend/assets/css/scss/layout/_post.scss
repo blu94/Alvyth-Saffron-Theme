@@ -4,13 +4,14 @@
 
 // ─── Single post (pages/blog.blade.php, pages/post.blade.php) ─────────────────
 // The furniture a post needs and a builder-row page already has: hero image, date and
-// author, a readable measure for the body, and Previous / Next at the foot. Ported from
-// Ella's post template (audit A16, B7) at the size a restaurant story wants — no sidebar,
-// no comments.
-.saffron-post {
-  max-width: 760px;
-  margin-inline: auto;
-}
+// author, and Previous / Next at the foot. Ported from Ella's post template (audit A16,
+// B7) at the size a restaurant story wants — no sidebar.
+//
+// The article carries no measure of its own: it fills `.saffron-container`, the same box
+// the header, breadcrumbs, comments and footer sit in, so every edge on the page lines up.
+// It used to cap itself at 760px for reading comfort and the cost was an inset column
+// floating inside a page whose every other edge was a gutter further out — one width, one
+// edge. `.saffron-post` stays as the markup hook the `__` elements below are named from.
 
 .saffron-post__head {
   margin-bottom: 1.5rem;

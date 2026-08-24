@@ -73,7 +73,10 @@ class DishSheet
         protected ApplicationInterface $appSettingsRepo,
         // The review aggregate for the summary beside the dish title. Ella's ProductDetails
         // injects the same repository for the same purpose.
-        protected \App\Repositories\Interaction\InteractionInterface $interactionRepo
+        protected \App\Repositories\Interaction\InteractionInterface $interactionRepo,
+        // Whether the store has comments switched on at all — the quick-view sheet
+        // shows the same reviews the dish page does, so it answers to the same switch.
+        protected \App\Services\Storefront\InteractionSettings $interactions
     ) {}
 
     /**
@@ -111,6 +114,18 @@ class DishSheet
         }
     }
 
+    /**
+     * The eight layouts core's **Product Details** block offers, in its own vocabulary.
+     *
+     * The keys are core's `layout_style` values verbatim, not a Saffron dialect, because this
+     * sheet is what renders when an operator places core's block — translating them would put a
+     * second name on the same setting and guarantee the two drift.
+     */
+    private const LAYOUTS = [
+        'default', 'full_width', 'grid', 'slider',
+        'left_thumbs', 'right_thumbs', 'left_sidebar', 'right_sidebar',
+    ];
+
     public function render(?array $data, string $locale, string $themeViewPath): string
     {
         $data = $data ?? [];
@@ -119,6 +134,10 @@ class DishSheet
         if (($data['status'] ?? 'active') === 'disabled') {
             return '';
         }
+
+        // Every control the block's panel shows, resolved once for both branches below — the
+        // "no dish" notice is laid out by the same rules as the sheet.
+        $shape = $this->shape($data);
 
         // Theme-wide wording lives on the Restaurant settings tab; a section may override it.
         // The sheet used to read only its own key while the cards read the theme's, so one
@@ -131,9 +150,11 @@ class DishSheet
         $dish = $this->resolveDish($data);
 
         if (!$dish) {
-            return View::make($themeViewPath, [
+            return View::make($themeViewPath, array_merge($shape, [
                 'dish'        => null,
                 'uid'         => 'dish-sheet-empty',
+                'cssId'       => $shape['customId'] ?: 'dish-sheet-empty',
+                'dishId'      => 0,
                 'locale'      => $locale,
                 'data'        => $data,
                 'groups'      => [],
@@ -151,7 +172,7 @@ class DishSheet
                 // undefined variable instead of rendering the "no dish resolved" notice.
                 'categoryLinks' => [],
                 'tags'          => [],
-            ])->render();
+            ]))->render();
         }
 
         $appSettings      = $this->appSettingsRepo->getSettings();
@@ -296,9 +317,17 @@ class DishSheet
             'available' => $isAvailable,
         ];
 
-        return View::make($themeViewPath, [
+        $uid = 'dish-sheet-' . $dish->id . '-' . Str::random(6);
+
+        return View::make($themeViewPath, array_merge($shape, [
             'dish'                 => $dish,
-            'uid'                  => 'dish-sheet-' . $dish->id . '-' . Str::random(6),
+            'uid'                  => $uid,
+            // The operator's Custom CSS ID when they set one, and the generated handle when
+            // they did not. The Vue app deliberately does NOT mount on this — see `$uid` in the
+            // view — because an id an operator can retype is not something the ordering form
+            // may depend on.
+            'cssId'                => $shape['customId'] ?: $uid,
+            'dishId'               => $dish->id,
             'heading'              => $title,
             'description'          => $description,
             'categoryLinks'        => $categoryLinks,
@@ -317,13 +346,78 @@ class DishSheet
             'showWishlist'         => ThemeSettings::bool('wishlist_enabled', true),
             'imageUrl'             => $this->primaryImageUrl($dish),
             'reviewSummary'        => $this->reviewSummary($dish),
-            'showReviews'          => ThemeSettings::bool('reviews_enabled', true),
+            'showReviews'          => $this->interactions->commentsEnabled()
+                && ThemeSettings::bool('reviews_enabled', true),
             // Every photograph, for the gallery and the lightbox. `imageUrl` stays as the
             // first of these because the share card and the JSON-LD want one image, not a set.
             'images'               => $this->galleryUrls($dish),
             'locale'               => $locale,
             'data'                 => $data,
-        ])->render();
+        ]))->render();
+    }
+
+    /**
+     * Everything the block's **layout** panel controls, resolved into the classes the view uses.
+     *
+     * Core's Product Details schema carries `layout_style` and the two sidebar switches, and
+     * until now this theme read none of them: Saffron claims the block's renderer, core's schema
+     * is not overridable by a theme (`SectionController` namespaces theme schemas under
+     * `_THEME_SECTION`), and so the panel an operator sees on a dish page drove nothing at all.
+     * They set Layout 03, saved, reloaded, and got the same page back. This method is the half
+     * that was missing; nothing else about the sheet changed.
+     *
+     * The Dish Sheet block reads the same keys from its own schema, so the two blocks are one
+     * vocabulary rather than a fork.
+     *
+     * @return array<string, mixed>
+     */
+    protected function shape(array $data): array
+    {
+        $layout = (string) ($data['layout_style'] ?? 'default');
+
+        if (! in_array($layout, self::LAYOUTS, true)) {
+            $layout = 'default';
+        }
+
+        $sidebarProps = [
+            'show_categories' => (bool) ($data['sidebar_show_categories'] ?? true),
+            'show_featured'   => (bool) ($data['sidebar_show_featured'] ?? true),
+        ];
+
+        // A sidebar layout with both panels switched off has no sidebar. Rendering the column
+        // anyway would leave a third of the page empty and the sheet squeezed into two-thirds
+        // for no visible reason, so the switches collapse the column rather than its contents.
+        $hasSidebar = in_array($layout, ['left_sidebar', 'right_sidebar'], true)
+            && ($sidebarProps['show_categories'] || $sidebarProps['show_featured']);
+
+        return [
+            'layout'      => $layout,
+            'hasSidebar'  => $hasSidebar,
+            'sidebarSide' => $layout === 'left_sidebar' ? 'left' : 'right',
+            'sidebarProps' => $sidebarProps,
+
+            // Layouts 02, 08 and 09 are wider than the theme's 1240px measure. The modifier
+            // goes on the section's own container AND is what `_helpers.scss` matches with
+            // `:has()` to widen core's `.cms-section-wrapper`, which is the element that
+            // actually caps a builder row on a dish page.
+            'containerClass' => match ($layout) {
+                'full_width'                    => 'saffron-container saffron-container--fluid',
+                'left_sidebar', 'right_sidebar' => 'saffron-container saffron-container--wide',
+                default                         => 'saffron-container',
+            },
+
+            // With a rail the sheet takes nine columns and its two halves split inside them at
+            // md; without one it is the full row and splits at lg, which is what it has always
+            // done.
+            'mainColClass'  => $hasSidebar ? 'col-12 col-lg-9' : 'col-12',
+            'mediaColClass' => $hasSidebar ? 'col-12 col-md-6' : 'col-12 col-lg-6',
+            'infoColClass'  => $hasSidebar ? 'col-12 col-md-6' : 'col-12 col-lg-6',
+
+            // Empty string rather than a generated id: the caller decides what to fall back to,
+            // because the two branches of `render()` have different handles.
+            'customId' => trim((string) ($data['style']['section']['id'] ?? '')),
+            'cssClass' => trim((string) ($data['style']['section']['class'] ?? '')),
+        ];
     }
 
     /**

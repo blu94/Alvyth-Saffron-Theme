@@ -5,8 +5,14 @@
 // mode tiles above it: mode changes what the order *is* and deserves the emphasis, while this
 // changes only when the money moves. Two stacked rows rather than side-by-side tiles, because
 // the labels are sentences ("Pay when it arrives") and would wrap badly in half a card.
+// Divided from the schedule above and spaced off the checkout button below, on the same
+// convention `.saffron-schedule--inline` already uses one row up: a hairline rule, 1.25rem of
+// padding under it, and the section's own air below. Without it this block ran flush into
+// Proceed to Checkout — the radio and the button touched, which read as one control.
 .saffron-payment-choice {
-  margin-block-start: 1rem;
+  margin-block: 1.5rem 1.25rem;
+  padding-block-start: 1.25rem;
+  border-top: 1px solid $color-line;
 }
 
 .saffron-payment-choice__group {
@@ -88,6 +94,10 @@
   border-radius: calc(#{$card-radius} / 2);
 }
 
+// The cash-only shop's lone instructions note. It keeps the rule and the gap above the button
+// — it sits in the same seat, and ran into the button in exactly the same way — but needs less
+// air above itself, being one line rather than a question.
 .saffron-payment-choice--fixed {
   margin-block-start: 1rem;
+  padding-block-start: 1rem;
 }

@@ -1,0 +1,125 @@
+@use "../../../base/colors" as *;
+@use "../../../base/variables" as *;
+@use "../../../mixins/breakpoints" as *;
+
+// ─── Dish rail (components/DishSidebar) ───────────────────────────────────────
+// What the Product Details block's two sidebar switches turn on. Layouts 08 and 09 only —
+// every other variant renders no column at all, so none of this applies there.
+
+.saffron-dish-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+
+  // Below lg the rail sits under the sheet, where it reads as an afterword to the dish rather
+  // than as navigation beside it. A rule keeps that boundary visible.
+  padding-block-start: 1.5rem;
+  border-block-start: 1px solid $color-line;
+
+  @include lg {
+    position: sticky;
+    top: 6rem;
+    padding-block-start: 0;
+    border-block-start: 0;
+  }
+}
+
+.saffron-dish-rail__title {
+  margin: 0 0 0.9rem;
+  font-size: 1.05rem;
+  font-family: $heading-font-family;
+}
+
+.saffron-dish-rail__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.saffron-dish-rail__course {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  // 40px, the tap target every control in this theme holds to.
+  min-block-size: 40px;
+  padding-block: 0.35rem;
+  border-block-end: 1px solid $color-line;
+  color: $color-black;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: color 0.15s ease;
+
+  &:hover,
+  &:focus-visible { color: $color-accent-dark; }
+}
+
+.saffron-dish-rail__count {
+  flex: 0 0 auto;
+  color: $color-muted;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.saffron-dish-rail__list--dishes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.saffron-dish-rail__dish {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: $color-black;
+  text-decoration: none;
+}
+
+.saffron-dish-rail__thumb {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 3.5rem;
+  block-size: 3.5rem;
+  overflow: hidden;
+  border-radius: calc(#{$card-radius} - 6px);
+  background-color: $hex-sand-100;
+  color: $color-muted;
+
+  img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+}
+
+.saffron-dish-rail__dish-body {
+  // Same reason as the reviews body: a flex item keeps `min-width: auto` and a long dish name
+  // with no break opportunity would push the rail wider than its column.
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.saffron-dish-rail__dish-title {
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+
+  .saffron-dish-rail__dish:hover &,
+  .saffron-dish-rail__dish:focus-visible & { color: $color-accent-dark; }
+}
+
+.saffron-dish-rail__dish-price {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $color-accent-dark;
+}
+
+.saffron-dish-rail__empty {
+  margin: 0;
+  color: $color-muted;
+  font-size: 0.9rem;
+}

@@ -3,7 +3,12 @@
 @use "../../mixins/breakpoints" as *;
 
 .saffron-dish-sheet {
-  padding-block: $section-pad-y;
+  // Top and bottom are deliberately unequal. The breadcrumb trail sits directly above the
+  // sheet and already separates it from the header, so a full section pad on top of it read
+  // as a band of empty page between the trail and the photograph. Only the top is trimmed —
+  // what follows the sheet is another section (reviews, related dishes) and still wants the
+  // full measure between them.
+  padding-block: clamp(1.25rem, 2.5vw, 2rem) $section-pad-y;
 }
 
 .saffron-dish-sheet__media {
@@ -143,6 +148,221 @@
   &.is-active {
     border-color: $color-accent;
     opacity: 1;
+  }
+}
+
+// ─── Layout variants — core's `layout_style`, all eight of them ───────────────
+// The Product Details panel has offered eight layouts for as long as this theme has claimed
+// the block, and delivered one of them: Saffron read the renderer's slot and none of the
+// schema's keys, so the select was a control that did nothing. These rules are the other half.
+//
+// Only the gallery and the page measure change between variants. The ordering form is the same
+// form in all eight, deliberately — a customer configuring a dish should not have to relearn
+// the sheet because the shop preferred a different photo arrangement.
+
+// Layouts 06 and 07 — the thumbnail strip stands on its side beside the photo. A flex
+// direction on the wrapper does it, and the strip's markup is untouched, which is why the
+// active state, the keyboard order and the lightbox all keep working in both.
+.saffron-dish-sheet--left_thumbs,
+.saffron-dish-sheet--right_thumbs {
+  .saffron-dish-sheet__gallery {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .saffron-dish-sheet__media {
+    flex: 1 1 auto;
+    // Without this a flex item keeps `min-width: auto` and refuses to shrink below its
+    // image's intrinsic width — the same failure that gave the reviews column a horizontal
+    // scrollbar at 375.
+    min-inline-size: 0;
+  }
+
+  .saffron-dish-sheet__thumbs {
+    flex: 0 0 auto;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    margin-block-start: 0;
+    // A dish with a dozen photographs would otherwise make the strip taller than the photo
+    // it belongs to.
+    max-block-size: 34rem;
+    overflow-y: auto;
+  }
+
+  .saffron-dish-sheet__thumb {
+    inline-size: 3.75rem;
+    block-size: 3.75rem;
+  }
+
+  // On a phone the sheet is one column already, and a vertical strip beside a full-width
+  // photo leaves the photo a sliver. Back to a row below sm.
+  @include sm-down {
+    .saffron-dish-sheet__gallery { display: block; }
+
+    .saffron-dish-sheet__thumbs {
+      flex-direction: row;
+      flex-wrap: wrap;
+      margin-block-start: 0.75rem;
+      max-block-size: none;
+    }
+  }
+}
+
+// Thumbs on the left means the strip comes first visually while the photo stays first in the
+// DOM — reversing the row keeps the reading order (photo, then its thumbnails) intact.
+.saffron-dish-sheet--left_thumbs .saffron-dish-sheet__gallery { flex-direction: row-reverse; }
+
+// Layout 03 — Lookbook. Every photograph at once.
+.saffron-dish-sheet__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.saffron-dish-sheet__grid-item {
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  border-radius: calc(#{$card-radius} - 4px);
+  background-color: $hex-sand-100;
+  aspect-ratio: 1 / 1;
+
+  img {
+    inline-size: 100%;
+    block-size: 100%;
+    // Cropping is right here for the same reason it is right on a thumbnail: a grid wants
+    // even tiles, and the whole photograph is one click away in the lightbox.
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+
+  &:hover img,
+  &:focus-visible img { transform: scale(1.05); }
+
+  @media (prefers-reduced-motion: reduce) {
+    img { transition: none; }
+
+    &:hover img,
+    &:focus-visible img { transform: none; }
+  }
+
+  // A dish with one photograph gets one wide tile rather than a square in a two-column grid
+  // with a hole beside it.
+  &:first-child:last-child {
+    grid-column: 1 / -1;
+    aspect-ratio: 4 / 3;
+  }
+}
+
+// `:not(:disabled)` is not decoration — Bootstrap's `button:not(:disabled)` sets
+// `cursor: pointer` at a specificity that beats a bare class, which is how the magnifier
+// cursor was written, deployed and silently lost once already.
+.saffron-dish-sheet__grid-item:not(:disabled),
+.saffron-dish-sheet__slide:not(:disabled) { cursor: zoom-in; }
+
+// The lookbook and the slider are as tall as the ordering form or taller, so pinning them
+// would pin a column that has nowhere to travel.
+.saffron-dish-sheet--grid .saffron-dish-sheet__gallery,
+.saffron-dish-sheet--slider .saffron-dish-sheet__gallery {
+  @include lg {
+    position: static;
+  }
+}
+
+// Layout 04 — Enhanced Slider.
+.saffron-dish-sheet__slider { position: relative; }
+
+.saffron-dish-sheet__slider-viewport {
+  overflow: hidden;
+  border-radius: $card-radius;
+  background-color: $hex-sand-100;
+}
+
+.saffron-dish-sheet__slider-track {
+  display: flex;
+  transition: transform 0.45s ease;
+
+  @media (prefers-reduced-motion: reduce) { transition: none; }
+}
+
+.saffron-dish-sheet__slide {
+  flex: 0 0 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  block-size: clamp(18rem, 42vw, 30rem);
+
+  img {
+    max-inline-size: 100%;
+    max-block-size: 100%;
+    // `contain` here and `cover` in the lookbook: a slide is showing one photograph as the
+    // photograph, not as a tile in a set.
+    object-fit: contain;
+  }
+}
+
+.saffron-dish-sheet__slider-nav {
+  position: absolute;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: $color-black;
+  box-shadow: $card-shadow;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible { background: $color-white; }
+
+  &--prev { inset-inline-start: 0.75rem; }
+  &--next { inset-inline-end: 0.75rem; }
+}
+
+.saffron-dish-sheet__dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+  margin-block-start: 0.5rem;
+}
+
+// The dot is drawn by the pseudo-element so the button itself can keep a real tap target.
+// A 8px control is not something a thumb can hit.
+.saffron-dish-sheet__dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 28px;
+  block-size: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  &::before {
+    content: "";
+    display: block;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: 999px;
+    background-color: $hex-sand-300;
+    transition: background-color 0.15s ease, inline-size 0.15s ease;
+  }
+
+  &.is-active::before {
+    inline-size: 1.25rem;
+    background-color: $color-accent;
   }
 }
 

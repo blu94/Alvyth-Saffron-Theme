@@ -22,11 +22,16 @@
                     </button>
                 @endif
 
-                <button type="button" class="saffron-btn saffron-btn--dark" @click="showForm = !showForm">
+                <button type="button" class="saffron-btn saffron-btn--dark" @click="toggleForm">
                     @{{ showForm ? labels.cancel : labels.write }}
                 </button>
             </div>
         </header>
+
+        {{-- Outside the form, because posting closes the form. Inside it, the thank-you
+             would be set and hidden in the same tick, and the one thing a held comment's
+             author needs is the sentence telling them it was not swallowed. --}}
+        <p class="saffron-comments__success" v-if="formSuccess">@{{ formSuccess }}</p>
 
         <form class="saffron-comments__form" v-if="showForm" @submit.prevent="submit">
             <div class="saffron-comments__row">
@@ -57,7 +62,6 @@
             <p class="saffron-comments__notice">{{ __('Comments are read before they appear.') }}</p>
 
             <p class="saffron-comments__error" v-if="formError">@{{ formError }}</p>
-            <p class="saffron-comments__success" v-if="formSuccess">@{{ formSuccess }}</p>
 
             <button type="submit" class="saffron-btn saffron-btn--accent" :disabled="submitting">
                 @{{ submitting ? labels.sending : labels.submit }}
@@ -170,6 +174,14 @@
                 }
             };
 
+            // Opening the form clears the last outcome: the thank-you belongs to the comment
+            // that was posted, not to the one being written now.
+            const toggleForm = () => {
+                showForm.value = !showForm.value;
+                formError.value = '';
+                formSuccess.value = '';
+            };
+
             const submit = async () => {
                 formError.value = '';
                 formSuccess.value = '';
@@ -194,10 +206,20 @@
 
                     const data = await res.json();
                     // A held comment will not be in the list that reloads, which is exactly why
-                    // the two outcomes say different things.
-                    const published = (data.comment?.status ?? data.status) === 'published';
-                    formSuccess.value = published ? labels.live : labels.held;
-                    formBody.value = '';
+                    // the two outcomes say different things. Compared against the status the
+                    // API actually returns — `pending` or `active`, never `published`, which
+                    // is why every commenter used to be told their comment was held.
+                    const held = (data.comment?.status ?? data.status) === 'pending';
+                    formSuccess.value = held ? labels.held : labels.live;
+
+                    // Back to how the section started: emptied and closed. Leaving the name and
+                    // email behind reads as a form that did not go through, and invites the
+                    // same person to press Post again.
+                    formBody.value  = '';
+                    formName.value  = '';
+                    formEmail.value = '';
+                    showForm.value  = false;
+
                     await load(1);
                 } catch (e) {
                     formError.value = labels.offline;
@@ -211,7 +233,7 @@
             return {
                 loading, comments, total, currentPage, lastPage, load,
                 likes, liked, toggleLike,
-                showForm, formName, formEmail, formBody, formError, formSuccess, submitting, submit,
+                showForm, toggleForm, formName, formEmail, formBody, formError, formSuccess, submitting, submit,
                 labels,
             };
         },

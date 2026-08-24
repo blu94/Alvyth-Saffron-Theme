@@ -9,6 +9,48 @@
     "contents": {
         "elements": [
             {
+                "ui": { "type": "section", "cols": 12 },
+                "name": "Layout",
+                "elements": [
+                    {
+                        "ui": { "type": "field", "cols": 12 },
+                        "key": "layout_style",
+                        "type": "select",
+                        "label": "Dish Layout Variant",
+                        "hint": "The same eight variants core's Product Details block offers, so a dish page lays out the same way whichever of the two blocks is placed on it",
+                        "options": {
+                            "items": [
+                                { "title": "Layout 01 - Default", "value": "default" },
+                                { "title": "Layout 02 - Full Width", "value": "full_width" },
+                                { "title": "Layout 03 - Grid View (Lookbook)", "value": "grid" },
+                                { "title": "Layout 04 - Enhanced Slider", "value": "slider" },
+                                { "title": "Layout 06 - Left Thumbnails", "value": "left_thumbs" },
+                                { "title": "Layout 07 - Right Thumbnails", "value": "right_thumbs" },
+                                { "title": "Layout 08 - Left Sidebar", "value": "left_sidebar" },
+                                { "title": "Layout 09 - Right Sidebar", "value": "right_sidebar" }
+                            ]
+                        },
+                        "default": "default"
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 6 },
+                        "key": "sidebar_show_categories",
+                        "type": "switch",
+                        "label": "Sidebar: Show Courses",
+                        "hint": "Layouts 08 and 09 only. The courses that hold dishes, each linking to its menu page",
+                        "default": true
+                    },
+                    {
+                        "ui": { "type": "field", "cols": 6 },
+                        "key": "sidebar_show_featured",
+                        "type": "switch",
+                        "label": "Sidebar: Show Dish Mini-List",
+                        "hint": "Layouts 08 and 09 only. The newest dishes on the menu, excluding the one being viewed",
+                        "default": true
+                    }
+                ]
+            },
+            {
                 "ui": { "type": "field", "cols": 12 },
                 "key": "product_id",
                 "type": "number",

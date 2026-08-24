@@ -35,6 +35,37 @@
   padding-inline: 0;
 }
 
+// Layouts 02, 08 and 09 of the Product Details / Dish Sheet block ask for more room than the
+// theme's default measure: full width takes the viewport, and a sheet with a rail beside it
+// needs the extra room the rail costs or the ordering form ends up narrower than it is with
+// no rail at all.
+.saffron-container--wide  { max-width: 1536px; }
+.saffron-container--fluid { max-width: none; }
+
+// On a dish page the measure lives on core's per-section wrapper (see above), so widening the
+// section's own container changes nothing there — the cap is one level up. `:has()` lets the
+// section state its width without a core change and without the driver knowing anything about
+// the page it landed on. A browser without `:has()` keeps the 1240px measure: the layout is
+// narrower than asked for, never broken.
+//
+// The test sits on the **engine**, not on the wrapper that holds the sheet. Asking each
+// wrapper whether it contained the sheet widened exactly one of them: an operator picked
+// Layout 02 and got a full-bleed sheet with the Text Block and slider below it still inset at
+// 1240px — two different left edges down one page. The layout variant is a statement about
+// the page, not about one block, so every section on it takes the measure the sheet asked for
+// and the edges line up again.
+//
+// Sidebar first, full width last: on the odd page carrying two sheets that disagree, the
+// wider request wins rather than whichever happens to be written later.
+.saffron-dish-page .ovynt-builder-engine:has(.saffron-dish-sheet--left_sidebar) .cms-section-wrapper,
+.saffron-dish-page .ovynt-builder-engine:has(.saffron-dish-sheet--right_sidebar) .cms-section-wrapper {
+  max-width: 1536px;
+}
+
+.saffron-dish-page .ovynt-builder-engine:has(.saffron-dish-sheet--full_width) .cms-section-wrapper {
+  max-width: none;
+}
+
 .saffron-stack-sm > * + * { margin-top: 0.5rem; }
 .saffron-stack-md > * + * { margin-top: 1rem; }
 .saffron-stack-lg > * + * { margin-top: 2rem; }

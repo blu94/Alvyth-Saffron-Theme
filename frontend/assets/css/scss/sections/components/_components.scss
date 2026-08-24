@@ -1,7 +1,12 @@
 // Theme component styles. One partial per co-located component directory.
 @use "Breadcrumbs/breadcrumbs";
 @use "DishCard/dish-card";
+@use "DishCard/dish-peek";
 @use "DishReviews/dish-reviews";
+@use "DishSidebar/dish-sidebar";
+@use "GeoAttribution/geo-credit";
+@use "PostComments/post-comments";
 @use "OrderMode/order-mode";
 @use "OrderSchedule/order-schedule";
+@use "PaymentChoice/payment-choice";
 @use "SearchDrawer/search-drawer";

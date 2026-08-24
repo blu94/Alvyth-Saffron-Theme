@@ -23,11 +23,23 @@ use Theme\Sections\General\DishSheet;
  * own template, but this one owns no markup: it renders DishSheet's view. An empty template
  * beside it would be a file that can never be reached.
  *
- * The two schemas do not share keys — core's block carries `layout_style` and sidebar
- * toggles, DishSheet reads `size_key`, `notes_key`, `max_quantity`. Nothing is translated
- * between them: DishSheet falls back to its own defaults, which is the right answer, because
- * a value an operator set for a fashion-grid layout should not silently reconfigure a menu.
- * A dish page that needs those controls gets a **Dish Sheet** block placed explicitly.
+ * **`$data` is handed over whole, and that is now load-bearing.** Claiming the renderer while
+ * ignoring the schema is what made this block lie for as long as it has existed: core's panel
+ * offers *Product Layout Variant* and two sidebar switches, a theme cannot replace core's
+ * schema (`SectionController` namespaces every theme schema under `_THEME_SECTION`, so a
+ * Saffron `ProductDetails.json` would be a *different* block, not an override), and Saffron
+ * read none of the keys. An operator picked Layout 03, saved, reloaded, and got back exactly
+ * the page they started with — no error, no hint, nothing.
+ *
+ * The earlier reasoning here was that a value set for a fashion grid should not silently
+ * reconfigure a menu. That is true of the *wording* and false of the *layout*: where the photo
+ * sits, how wide the page runs, and whether a rail of courses appears are as meaningful on a
+ * dish page as on a catalogue page. So {@see DishSheet} now reads `layout_style`,
+ * `sidebar_show_categories`, `sidebar_show_featured` and `style.section.*` under core's own key
+ * names — one vocabulary, no translation layer to drift — while keys core's panel does not
+ * offer (`size_key`, `notes_key`, `max_quantity`, `notes_max`) keep DishSheet's defaults. A
+ * dish page that needs those gets a **Dish Sheet** block, whose schema carries the layout
+ * control too.
  */
 class ProductDetails
 {
