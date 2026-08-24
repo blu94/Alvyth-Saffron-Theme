@@ -131,6 +131,53 @@
   border-radius: calc(#{$card-radius} / 2);
 }
 
+// 1.5rem, not the panels' usual 0.6rem: this panel answers the tile the customer just
+// pressed, and the other tile's answer — core's Delivery details, led by an `mt-4`
+// heading — opens with 1.5rem of air. Choosing either tile must breathe the same.
+// `--fixed` stays at 0.6rem above: it renders alone, with no tiles over it.
+.saffron-order-mode__pickup {
+  margin-block-start: 1.5rem;
+}
+
+// The table question, now teleported below core's branch list — a table number belongs to a
+// restaurant, so it cannot be asked before the restaurant is chosen. It wears the same panel
+// as the collection block it left, because it is still the theme asking: an unstyled control
+// dropped into core's Bootstrap summary would read as a different shop's form.
+//
+// The trailing margin is the one difference. This panel is followed by whatever core draws
+// next (the address block a diner never sees, then the schedule), so it closes its own gap
+// rather than relying on a sibling to open one.
+// Named `__seating` rather than `__table-slot` on purpose: `saffron-order-mode__table` is
+// the free-text table box, and a wrapper whose name merely EXTENDS that string made a
+// suite assertion — "the free-text box must not render beside the numbered list" — match
+// this panel and fail. A substring is a fragile contract, so the name simply stops
+// colliding.
+.saffron-order-mode__seating {
+  margin-block: 0.75rem 0.6rem;
+  padding: 0.6rem 0.85rem;
+  background-color: $hex-sand-100;
+  border: 1px solid rgba($hex-accent, 0.22);
+  border-radius: calc(#{$card-radius} / 2);
+
+  // Nothing precedes the label inside this panel, so its own leading margin would only
+  // deepen the padding above it.
+  > .saffron-order-mode__outlet-label:first-child {
+    margin-block-start: 0;
+  }
+
+  > .saffron-order-mode__outlet:last-child,
+  > .saffron-order-mode__covers:last-child,
+  > .saffron-order-mode__table:last-child {
+    margin-block-end: 0;
+  }
+
+  // The party-size answer is a smaller thing than the table it narrows, so it does not open
+  // its own gap above the table label that follows.
+  > .saffron-order-mode__covers {
+    margin-block-end: 0.35rem;
+  }
+}
+
 .saffron-order-mode__ready {
   font-size: 0.875rem;
   font-weight: 600;
@@ -150,6 +197,84 @@
   white-space: pre-line;
 }
 
+// ─── The collection address, as a thing you take with you ────────────────────
+// A card inside the sand panel — the same white-on-sand step the select above it takes —
+// because the address is the one line a customer acts on outside this page: pasted into a
+// maps app or a message to whoever is driving. The card marks it as takeable; the button
+// does the taking.
+.saffron-order-mode__collect {
+  margin-block-start: 0.6rem;
+  padding: 0.45rem 0.75rem 0.6rem;
+  background-color: $color-card-surface;
+  border: 1px solid $color-line;
+  border-radius: calc(#{$card-radius} / 2);
+}
+
+// Label left, copy button right, on one row. A row rather than an absolutely-placed button
+// so an address long enough to wrap can never run underneath the control that copies it.
+.saffron-order-mode__collect-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-block-end: 0.15rem;
+
+  > .saffron-order-mode__outlet-label,
+  > .saffron-order-mode__fixed-label {
+    margin-block-start: 0;
+  }
+}
+
+.saffron-order-mode__copy {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 0.3rem;
+  min-height: 30px;
+  padding: 0.2rem 0.6rem;
+  font-family: $body-font-family;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $color-secondary;
+  background-color: transparent;
+  border: 1px solid $color-line;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+
+  // The chip is drawn at 30px so it does not outweigh the label beside it, but the theme's
+  // 40px finger floor still applies — the invisible halo makes up the difference.
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+
+  svg {
+    flex: 0 0 auto;
+  }
+
+  &:hover {
+    color: $color-primary;
+    border-color: $hex-sand-300;
+    background-color: $hex-sand-50;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 1px;
+  }
+
+  // Confirmation is a colour change in place, not a toast: the eye is already on the button
+  // that was just pressed.
+  &.is-copied {
+    color: $color-success;
+    border-color: rgba($hex-success, 0.4);
+    background-color: rgba($hex-success, 0.07);
+  }
+}
+
 // ─── Which branch to collect from (Q5) ────────────────────────────────────────
 // Only rendered when the shop has more than one collecting outlet, so these rules never apply
 // to the single-outlet shop that is every install today.
@@ -162,20 +287,39 @@
   color: $color-muted;
 }
 
-.saffron-order-mode__outlet {
+// `__covers` — how many are dining — rides on the same rule rather than getting a look of its
+// own: it sits directly above the table list it filters, and two selects a centimetre apart that
+// disagreed about their own height would read as controls from two different forms.
+.saffron-order-mode__outlet,
+.saffron-order-mode__covers {
   display: block;
   width: 100%;
   // 40px is the theme's floor for anything a finger has to hit, and a native select on a phone
   // is exactly that.
   min-height: 40px;
-  margin-block-start: 0.3rem;
-  padding: 0.5rem 0.75rem;
+  margin-block: 0.5rem 0.75rem;
+  padding: 0.5rem 2.4rem 0.5rem 0.75rem;
   font-family: $body-font-family;
   font-size: 0.9375rem;
   color: $color-black;
   background-color: $color-card-surface;
   border: 1px solid $color-line;
   border-radius: $card-radius;
+  // The browser draws the native arrow flush against the border and no padding moves it, so
+  // the theme draws its own, inset to match the panel's 0.85rem gutter. A data URI cannot read
+  // a CSS custom property, so the stroke is the compiled-in muted tone ($hex-sand-500) rather
+  // than the runtime token.
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%238E7B63' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 12px 8px;
+
+  // A control that ends the panel hands the closing space to the panel's padding; keeping the
+  // margin too would double it.
+  &:last-child {
+    margin-block-end: 0;
+  }
 
   &:focus-visible {
     outline: 2px solid $color-accent;
@@ -199,7 +343,7 @@
   display: block;
   width: 100%;
   min-height: 40px;
-  margin-block-start: 0.3rem;
+  margin-block: 0.5rem 0.75rem;
   padding: 0.5rem 0.75rem;
   font-family: $body-font-family;
   font-size: 0.9375rem;
@@ -207,6 +351,10 @@
   background-color: $color-card-surface;
   border: 1px solid $color-line;
   border-radius: $card-radius;
+
+  &:last-child {
+    margin-block-end: 0;
+  }
 
   &:focus-visible {
     outline: 2px solid $color-accent;

@@ -7,6 +7,7 @@ use App\Traits\LogsSystemActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Translatable\HasTranslations;
 
@@ -79,6 +80,19 @@ class Outlet extends Model
         return $this->belongsToMany(Product::class, 'outlet_product')
             ->withPivot('price_override')
             ->withTimestamps();
+    }
+
+    /**
+     * The tables in this branch's dining room (register O19).
+     *
+     * A dine-in customer is offered **this outlet's** tables and no others, which is the whole
+     * point: the shop-wide count it replaces gave every branch the same room. An outlet with no
+     * rows here falls back to the old behaviour rather than offering nothing, so a shop that has
+     * not filled its tables in is unchanged.
+     */
+    public function tables(): HasMany
+    {
+        return $this->hasMany(OutletTable::class);
     }
 
     /**

@@ -223,6 +223,19 @@
   color: $color-danger;
 }
 
+// The booking lead, said once above the day row (register O19, phase 2). Deliberately NOT
+// `__note`: that class is the shop refusing a date, in the danger tone the rule beneath `__ok`
+// insists on — "we can do that day" and "we cannot" must never be distinguishable only by
+// reading the sentence. This is neither. It is the reason the row starts on Thursday, and a
+// customer who came to book tonight needs it in the voice of an explanation rather than of an
+// error. Muted, and given the closing space the DAY label below would otherwise sit against.
+.saffron-schedule__rule {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: $color-muted;
+}
+
 // The reassuring counterpart to `__note`: the chosen date is open, and these are its hours.
 // Said in the shop's own colour, because "we can do that day" and "we cannot" must never be
 // distinguishable only by reading the sentence.

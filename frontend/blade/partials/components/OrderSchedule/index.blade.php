@@ -32,6 +32,23 @@
          behind a gesture nobody discovers. A week is as far as chips go — past that they stop
          being a row and become a wall, which is where the calendar below takes over. --}}
     <div class="saffron-schedule__slots" v-if="mode === 'later'">
+        {{-- WHY TODAY IS MISSING (register O19, phase 2).
+
+             A diner booking a table cannot book today: the operator's rule is that everybody
+             dining today is a walk-in, which is what keeps a reservation from ever being in
+             dispute with somebody already sitting at the table. How much further out the first
+             bookable day sits is per branch — "Outlet A only able to book 2 days later, Outlet B
+             1 day later" — so the chips and the calendar below start from the chosen branch's
+             own answer rather than from today.
+
+             Said out loud rather than silently dropping the near dates: a customer who came to
+             book tonight and finds the row starting on Thursday needs to know it is a rule, not
+             a fault. It is the same sentence `TableReservation` refuses with, so meeting it here
+             and meeting it at checkout reads as one system. --}}
+        <p class="saffron-schedule__rule" v-if="bookingLeadApplies">
+            @{{ labels.bookFrom.replace(':date', bookingFloorLabel) }}
+        </p>
+
         <div class="saffron-schedule__field">
             <span class="saffron-schedule__label">@{{ labels.day }}</span>
             <div class="saffron-schedule__days" role="radiogroup" :aria-label="labels.day">
@@ -40,7 +57,7 @@
                      discarded every write and the row stuck on whatever was last chosen,
                      leaving no way back from Another date to Today. --}}
                 <label
-                    v-for="d in days"
+                    v-for="d in offeredDays"
                     :key="d.date"
                     class="saffron-schedule__day"
                     :class="{ 'is-active': dayChoice === d.date }"
@@ -138,13 +155,13 @@
 
     {{-- The whole point of the block: an ordinary checkout field the cart section collects
          into `plugin_fields`. ASAP posts the empty string, which the kitchen reads as ASAP. --}}
-    <input type="hidden" data-checkout-field="scheduled_at" :value="fieldValue">
+    <input type="hidden" data-checkout-field="scheduled_at" :value="fieldValue" ref="scheduleInput">
 </div>
 </div>
 
 <script>
 (function () {
-    const { createApp, ref, computed, watch, onMounted } = Vue;
+    const { createApp, ref, computed, watch, nextTick, onMounted } = Vue;
 
     const root = document.getElementById('saffron-order-schedule');
     if (!root) return;
@@ -219,6 +236,96 @@
             };
             const maxDateLabel = fmtDate(maxDate);
 
+            // ── Whose calendar is this? (register O19, phase 2) ───────────────────────
+            //
+            // A diner reserving a table is not choosing a delivery slot: the operator's rule is
+            // that **today is never bookable**, and how much further out the first bookable day
+            // sits is a per-branch figure. So the two questions this block cannot answer from
+            // its own settings — is this a diner, and at which branch — are read from the DOM,
+            // the same way the dine-in check has always been read here. Neither element belongs
+            // to this component, and a page that has neither is untouched.
+            //
+            // Declared up here, above the calendar, because the floor they resolve decides which
+            // dates the chips and the month grid may offer at all.
+            const diningTick = ref(0);
+
+            const diningIn = computed(() => {
+                void diningTick.value;
+
+                const el = document.querySelector('[data-checkout-field="dining"]');
+
+                return !!el && String(el.value || '') === 'dine_in';
+            });
+
+            // The branch question is CORE's — one pickup-type shipping method per branch — so
+            // the only thing the browser can read is which method radio is checked. The map from
+            // that to an outlet was written by this theme's `ShippingMethodOutlet` handler and is
+            // handed down in the payload; the lead itself was resolved by `BookingWindow`, so
+            // the override-then-default-then-floor precedence is not re-implemented here.
+            const methodId = ref(null);
+
+            const readMethod = () => {
+                const checked = document.querySelector('input[name="cms-co-pickup"]:checked');
+
+                methodId.value = checked ? Number(checked.value) : null;
+            };
+
+            const bookingLeadDays = computed(() => {
+                const outletId = payload.methodOutlets?.[methodId.value];
+
+                return (payload.bookingLead || {})[outletId] || payload.bookingLeadDefault;
+            });
+
+            // Only a genuine reservation is held back. A collection, a delivery, and a walk-in
+            // diner who never opens this row are all untouched.
+            const bookingLeadApplies = computed(() => payload.bookings === true && diningIn.value);
+
+            // The first bookable date, in the SHOP's wall clock (`nowLocal`) rather than the
+            // visitor's — a diner booking from another timezone is held to the restaurant's
+            // calendar, which is the one the table stands in.
+            const bookingFloor = computed(() => {
+                if (!bookingLeadApplies.value) return payload.minDate;
+
+                const [y, m, d] = payload.nowLocal.split(' ')[0].split('-').map(Number);
+
+                // Noon, so a day's arithmetic cannot be undone by a DST shift at midnight.
+                const floor = new Date(y, m - 1, d + bookingLeadDays.value, 12);
+
+                // `pad` below is declared after this block and the watcher on `effectiveMinDate`
+                // runs during setup, so padding is spelled out here rather than borrowed from a
+                // binding that would still be in its temporal dead zone.
+                const two = (n) => String(n).padStart(2, '0');
+
+                return floor.getFullYear() + '-' + two(floor.getMonth() + 1) + '-' + two(floor.getDate());
+            });
+
+            // Never earlier than the schedule's own floor: the booking rule can only push the
+            // first offerable date later, never bring a past date back.
+            const effectiveMinDate = computed(() =>
+                bookingFloor.value > payload.minDate ? bookingFloor.value : payload.minDate
+            );
+
+            const bookingFloorLabel = computed(() => fmtDate(bookingFloor.value));
+
+            // The quick chips, minus the days the branch's lead puts out of reach. A lead longer
+            // than the chip week empties the row entirely and leaves Another date, which is the
+            // honest state rather than a row of buttons that all refuse.
+            const offeredDays = computed(() => days.filter(d => d.date >= effectiveMinDate.value));
+
+            // Switching to Dine in with tomorrow already selected must not leave a date the
+            // branch cannot honour sitting in the field, posted and refused at the button.
+            watch(effectiveMinDate, (floor) => {
+                if (dayChoice.value === '__other') {
+                    if (pickedDate.value && pickedDate.value < floor) pickedDate.value = '';
+
+                    return;
+                }
+
+                if (dayChoice.value && dayChoice.value < floor) {
+                    dayChoice.value = offeredDays.value[0] ? offeredDays.value[0].date : '__other';
+                }
+            }, { immediate: true });
+
             // ── Resolving a named date ───────────────────────────────────────────────
             // The quick days arrive precomputed. Any other date is derived here from the
             // weekly pattern and the dated overrides, applying the same precedence the server
@@ -275,9 +382,16 @@
             const isoOf = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
             const dateOf = (iso) => new Date(iso + 'T12:00:00');
 
-            const calMonth = ref(dateOf(payload.minDate));
+            const calMonth = ref(dateOf(effectiveMinDate.value));
 
             watch(pickedDate, (iso) => { if (iso) calMonth.value = dateOf(iso); });
+
+            // A branch whose lead pushes the first bookable date into next month must open the
+            // grid there, or the customer meets a page of squares that are all disabled and no
+            // indication that scrolling forward would help.
+            watch(effectiveMinDate, (iso) => {
+                if (calMonth.value < firstOfMonth(dateOf(iso))) calMonth.value = firstOfMonth(dateOf(iso));
+            });
 
             const monthLabel = computed(() =>
                 calMonth.value.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
@@ -297,7 +411,7 @@
             const firstOfMonth = (d) => new Date(d.getFullYear(), d.getMonth(), 1, 12);
             const sameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 
-            const canPrev = computed(() => firstOfMonth(calMonth.value) > dateOf(payload.minDate));
+            const canPrev = computed(() => firstOfMonth(calMonth.value) > dateOf(effectiveMinDate.value));
             const canNext = computed(() => {
                 const next = new Date(calMonth.value.getFullYear(), calMonth.value.getMonth() + 1, 1, 12);
                 return next <= dateOf(payload.maxDate);
@@ -327,7 +441,7 @@
                     for (let i = 0; i < 7; i++) {
                         const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + w * 7 + i, 12);
                         const iso = isoOf(d);
-                        const outside = iso < payload.minDate || iso > payload.maxDate || !sameMonth(d, calMonth.value);
+                        const outside = iso < effectiveMinDate.value || iso > payload.maxDate || !sameMonth(d, calMonth.value);
                         const closed = computeSlots(iso).length === 0;
                         const override = payload.overrides[iso];
 
@@ -371,6 +485,26 @@
                 return time.value ? day.value + ' ' + time.value : day.value;
             });
 
+            // **An assigned value fires no event, and the table picker listens for one.**
+            //
+            // The mode picker's table list narrows to the tables free for the chosen time, and a
+            // party-size control appears with it — both of which it can only do once it knows
+            // what the time IS. It reads this input, because the two blocks share the page rather
+            // than a wire. But `:value` writes the DOM without dispatching anything, so without
+            // the line below the customer picks 19:30 and the list above keeps offering a table
+            // somebody else has held since Tuesday.
+            //
+            // Exactly the bug the mode picker's own `modeInput` dispatch fixes, arriving from the
+            // other direction. Dispatched after the DOM has the new value, so the listener reads
+            // what it expects; there is no loop, because nothing here listens for this event.
+            const scheduleInput = ref(null);
+
+            watch(fieldValue, () => {
+                nextTick(() => {
+                    scheduleInput.value?.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            });
+
             // `OvyntStore` is a shared Vue.reactive object, so once it exists its cart
             // mutations re-run this computed. Until it exists nothing is tracked, so a
             // short poll bumps `storeTick` to force one re-read — the same script-order
@@ -382,10 +516,48 @@
                 return window.OvyntStore.cartList.length;
             });
 
-            const visible = computed(() => mounted.value && cartCount.value > 0);
+            // ── A diner is not scheduling anything (register O19) ───────────────────
+            //
+            // Dine-in means the customer is already at a table. Unless the shop actually takes
+            // table bookings, there is nothing for them to schedule — and offering "choose a
+            // time" there was the system presenting a reservation it never records: two parties
+            // could both be confirmed for the same table at the same hour, and the kitchen filed
+            // each under "Booked Ahead".
+            //
+            // Read from the DOM, because `dining` is a checkout field the mode picker renders
+            // only while Dine in is chosen — its presence IS the answer, and a theme that never
+            // offers dine-in has no such element and is untouched. `diningIn` itself is declared
+            // beside the calendar above, because the booking floor needs it before this does.
+            const scheduleAllowed = computed(() => payload.bookings || !diningIn.value);
+
+            // **Forced back to ASAP rather than merely hidden**, and that is the load-bearing
+            // half. `fieldValue` returns '' unless the mode is `later`, so resetting the mode is
+            // what actually stops a future `scheduled_at` being posted — a hidden field keeps
+            // its value and would have sent a customer who picked tomorrow 11:00 and then
+            // switched to Dine in straight into the kitchen's Booked Ahead column.
+            watch(scheduleAllowed, (allowed) => {
+                if (!allowed) mode.value = 'asap';
+            }, { immediate: true });
+
+            const visible = computed(() => mounted.value && cartCount.value > 0 && scheduleAllowed.value);
 
             onMounted(() => {
                 mounted.value = true;
+
+                // The mode picker dispatches a bubbling `change` on its `[data-checkout-mode]`
+                // input whenever the customer switches tile — the same event core re-renders
+                // its summary from. Re-reading the DOM on it is what makes `diningIn` reactive
+                // to an element this component does not own. Core's branch radios bubble the
+                // same event, and the branch decides the booking lead, so both are read here.
+                document.addEventListener('change', (e) => {
+                    diningTick.value++;
+
+                    if (e.target && e.target.name === 'cms-co-pickup') readMethod();
+                });
+
+                // And once at mount: core auto-selects the only branch when a shop has one,
+                // which fires no event because nobody clicked it.
+                nextTick(readMethod);
 
                 let tries = 0;
                 const timer = setInterval(() => {
@@ -397,7 +569,8 @@
             return {
                 days, labels, open, mode, day, time, slotsForDay, fieldValue, visible,
                 dayChoice, pickedDate, picking, minDate, maxDate, maxDateLabel,
-                closedThatDay, overrideReason,
+                closedThatDay, overrideReason, scheduleInput,
+                offeredDays, bookingLeadApplies, bookingFloorLabel,
                 monthLabel, dowLabels, calendarCells, canPrev, canNext, shiftMonth,
             };
         },

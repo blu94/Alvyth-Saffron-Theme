@@ -79,13 +79,14 @@
                 {
                     "ui": {
                         "type": "field",
-                        "cols": 12
+                        "cols": 12,
+                        "show_if": "restricts_menu,true"
                     },
                     "key": "product_ids",
                     "type": "autocomplete",
                     "label": "Dishes This Outlet Serves",
                     "placeholder": "Search the menu",
-                    "hint": "Only consulted while the switch above is on",
+                    "hint": "Leave empty and the branch serves nothing until you pick — the switch above is what restricts it",
                     "multiple": true,
                     "options": {
                         "url": "/admin/products/options",
@@ -138,6 +139,79 @@
                 }
             ],
             "subtitle": "Whether customers can collect from here, have it delivered from here, or both. A branch that offers neither takes no orders at all, so leave at least one on."
+        },
+        {
+            "ui": {
+                "type": "section",
+                "cols": 12,
+                "icon": "tabler-armchair"
+            },
+            "name": "The dining room",
+            "subtitle": "The tables in THIS branch, listed the way you would walk the room. A dine-in customer who picks this branch is offered these tables and no others. Leave it empty and the branch falls back to the shop-wide table count under Themes → Saffron → Restaurant, which gives every branch the same room — fine for one restaurant, wrong the moment two of them differ.",
+            "elements": [
+                {
+                    "ui": { "type": "field", "cols": 12 },
+                    "key": "tables",
+                    "type": "repeater",
+                    "label": "Tables",
+                    "itemLabel": "Table",
+                    "columns": [
+                        { "label": "Table", "key": "label" },
+                        { "label": "Seats", "key": "seats" },
+                        { "label": "Status", "key": "status", "type": "status" }
+                    ],
+                    "dialog": {
+                        "width": 600,
+                        "create": {
+                            "title": "Add Table",
+                            "subtitle": "Name it exactly as your staff say it out loud — this is what prints on the kitchen ticket."
+                        },
+                        "update": { "title": "Edit Table" }
+                    },
+                    "elements": [
+                        {
+                            "ui": { "type": "field", "cols": 12 },
+                            "key": "label",
+                            "type": "text",
+                            "label": "Table",
+                            "placeholder": "e.g. 7, A1, Terrace 2",
+                            "hint": "Not translatable on purpose: one table, one name. If the kitchen and the customer called it different things the food would go to the wrong room",
+                            "rules": ["required", "max:40"]
+                        },
+                        {
+                            "ui": { "type": "field", "cols": 4 },
+                            "key": "seats",
+                            "type": "number",
+                            "label": "Seats",
+                            "placeholder": "e.g. 4",
+                            "hint": "How many people it holds. Nothing uses this yet — it is what a future booking would check before offering the table to a party of six",
+                            "rules": ["nullable", "integer", "min:1", "max:200"]
+                        },
+                        {
+                            "ui": { "type": "field", "cols": 4 },
+                            "key": "status",
+                            "type": "select",
+                            "label": "Status",
+                            "items": [
+                                { "title": "Active", "value": "active" },
+                                { "title": "Out of service", "value": "draft" }
+                            ],
+                            "default": "active",
+                            "hint": "Out of service stops it being offered without deleting it",
+                            "rules": ["nullable"]
+                        },
+                        {
+                            "ui": { "type": "field", "cols": 4 },
+                            "key": "orders",
+                            "type": "number",
+                            "label": "Display Order",
+                            "placeholder": "e.g. 1",
+                            "hint": "Lower first. Leave empty and it falls to the end",
+                            "rules": ["nullable", "integer", "min:0"]
+                        }
+                    ]
+                }
+            ]
         },
         {
             "ui": {

@@ -4,7 +4,9 @@ namespace Theme\Components;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\View;
+use Theme\Backend\Handlers\ShippingMethodOutlet;
 use Theme\Backend\Repositories\ServiceWindowRepository;
+use Theme\Backend\Support\BookingWindow;
 use Theme\Backend\Support\ThemeSettings;
 
 /**
@@ -121,6 +123,32 @@ class OrderSchedule
                 // asks; the block decides on the value it was rendered with, and the server
                 // decides again at checkout, which is the one that counts.
                 'open'   => $open,
+
+                // Whether the shop takes table bookings (register O19). A dine-in customer is
+                // somebody already sitting down, so unless the shop reserves tables there is
+                // nothing for them to schedule — and offering a time there was the system
+                // promising a reservation it does not record. Read here, from the same setting
+                // the mode picker reads, rather than passed between components: two blocks
+                // asking the shop the same question is one source, two blocks asking each
+                // other is a wire that breaks when either is not on the page.
+                'bookings' => (bool) ($settings['accept_table_bookings'] ?? false),
+
+                // ── The booking lead, per branch (register O19, phase 2) ─────────────
+                //
+                // **Today is never bookable**, and how much further out the first bookable day
+                // sits is the operator's per-branch answer: "Outlet A only able to book 2 days
+                // later, Outlet B 1 day later". The picker has to honour it, or a diner chooses
+                // tomorrow at a branch that needs three days' notice and meets the refusal at
+                // the payment button.
+                //
+                // Which branch is only known once the customer picks one, and that question is
+                // core's — a pickup-type shipping method per branch — so the browser is handed
+                // the method→outlet map and resolves the lead itself when the radio changes.
+                // Both figures come from `BookingWindow`, the one place the override, the shop
+                // default and the floor of 1 live.
+                'methodOutlets'     => ShippingMethodOutlet::map(),
+                'bookingLead'       => $this->bookingLead($settings),
+                'bookingLeadDefault' => BookingWindow::daysAheadFor(null, $settings),
                 'labels' => [
                     'asap'      => __('As soon as possible'),
                     'schedule'  => __('Choose a time'),
@@ -138,9 +166,34 @@ class OrderSchedule
                     'openThat'  => __('Open that day'),
                     'prevMonth' => __('Previous month'),
                     'nextMonth' => __('Next month'),
+                    // Deliberately the same sentence `TableReservation` refuses with, so the
+                    // page and the server say one thing rather than two.
+                    'bookFrom'  => __('Tables can be booked from :date onwards. Today is for walk-in guests.'),
+                    'noBookingDays' => __('There are no bookable dates left — please call us instead.'),
                 ],
             ],
         ])->render();
+    }
+
+    /**
+     * How many days ahead the first bookable table sits, at each branch.
+     *
+     * Keyed by outlet id so the browser can answer the question the moment a branch radio moves.
+     * Only the branches a customer can actually choose are listed — an outlet with no pickup
+     * method is unreachable from the cart — and every figure comes from {@see BookingWindow},
+     * never from a second reading of the settings array.
+     *
+     * @return array<int,int> outlet id => days ahead
+     */
+    protected function bookingLead(array $settings): array
+    {
+        $lead = [];
+
+        foreach (array_unique(ShippingMethodOutlet::map()) as $outletId) {
+            $lead[(int) $outletId] = BookingWindow::daysAheadFor((int) $outletId, $settings);
+        }
+
+        return $lead;
     }
 
     /**

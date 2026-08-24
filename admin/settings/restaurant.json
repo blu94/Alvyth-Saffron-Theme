@@ -165,26 +165,8 @@
         "icon": "tabler-moped"
       },
       "name": "Ordering Modes",
-      "subtitle": "Whether customers have their order delivered, collect it themselves, or choose. The choice decides whether an address is asked for and whether a delivery fee is charged.",
+      "subtitle": "What you offer is configured in core now — Sales → Shipping. Create a Pickup-type shipping method per branch to offer collection; delivery zones and their methods price the delivery leg. The settings below shape how ordering behaves once offered.",
       "elements": [
-        {
-          "ui": {
-            "type": "field",
-            "cols": 6
-          },
-          "key": "ordering_modes",
-          "type": "select",
-          "label": "What You Offer",
-          "hint": "Offering both puts a Delivery / Pickup choice on the cart. Offering one skips the choice entirely and every order is that mode",
-          "options": {
-            "items": [
-              { "title": "Delivery and pickup", "value": "both" },
-              { "title": "Delivery only", "value": "delivery" },
-              { "title": "Pickup only", "value": "pickup" }
-            ]
-          },
-          "default": "both"
-        },
         {
           "ui": {
             "type": "field",
@@ -257,7 +239,7 @@
           "type": "number",
           "label": "How Many Tables",
           "placeholder": "e.g. 12",
-          "hint": "Turns the table question into a list of 1 to this number, which is harder to get wrong than typing. Leave empty and the customer types whatever your tables are called",
+          "hint": "The FALLBACK, used only by a branch that has listed no tables of its own. List the tables on the branch instead (Saffron → Outlets → the branch → The dining room): this one number gives every branch the same room, so a shop whose branches differ will offer tables that do not exist at one of them. Leave both empty and the customer types whatever their table is called",
           "rules": ["nullable", "integer", "min:1", "max:200"],
           "default": null
         },
@@ -271,6 +253,97 @@
           "label": "Ask About Cutlery",
           "hint": "Puts an opt-out on the cart — the customer says they do not need it, and the kitchen sees NO CUTLERY on the ticket. Off by default: a shop that always packs cutlery should not ask a question it will ignore",
           "default": false
+        }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-calendar-clock"
+      },
+      "name": "Table Bookings",
+      "subtitle": "Everything about reserving a table lives here — how long a booking holds its table, and how far ahead one may be made. Set the shop's defaults below and override them per branch only where a branch genuinely differs; these figures are configured nowhere else. Today is never bookable: a table booked for later can never be in dispute with somebody who has just sat down, which is what keeps the floor manageable.",
+      "elements": [
+        {
+          "ui": { "type": "field", "cols": 12 },
+          "key": "accept_table_bookings",
+          "type": "switch",
+          "label": "Accept Table Bookings",
+          "hint": "OFF (the default) means dine-in is for customers already sitting down: they are not offered a time at all, because a table nobody has reserved can be taken by the next party through the door. Turn it ON only once bookings are enforced — while they are not, offering a time promises a reservation nothing records",
+          "default": false
+        },
+        {
+          "ui": { "type": "field", "cols": 6 },
+          "key": "booking_duration_minutes",
+          "type": "number",
+          "label": "How Long A Booking Holds A Table",
+          "placeholder": "60",
+          "hint": "Minutes, counted from the booked time. The table is unavailable to anyone else for this long, so this decides how many sittings an evening holds: 60 turns a table twice between 7 and 9, 120 once",
+          "rules": ["nullable", "integer", "min:15", "max:480"],
+          "default": 60
+        },
+        {
+          "ui": { "type": "field", "cols": 6 },
+          "key": "booking_min_days_ahead",
+          "type": "number",
+          "label": "Earliest A Table Can Be Booked",
+          "placeholder": "1",
+          "hint": "Days ahead. 1 means the soonest bookable table is tomorrow — today is never bookable, so everyone dining today is a walk-in and the floor is never juggling reservations against people already sitting down. 2 gives the kitchen a day's notice",
+          "rules": ["nullable", "integer", "min:1", "max:365"],
+          "default": 1
+        },
+        {
+          "ui": { "type": "field", "cols": 12 },
+          "key": "booking_duration_overrides",
+          "type": "repeater",
+          "label": "Different At A Particular Branch",
+          "itemLabel": "Branch",
+          "columns": [
+            { "label": "Branch", "key": "outlet_id" },
+            { "label": "Holds For", "key": "minutes" },
+            { "label": "Earliest", "key": "min_days_ahead" }
+          ],
+          "dialog": {
+            "width": 600,
+            "create": {
+              "title": "Branch Booking Length",
+              "subtitle": "Only for a branch that genuinely differs — a dining room that turns once an evening beside a café that turns three times. Every other branch uses the default above."
+            },
+            "update": { "title": "Branch Booking Length" }
+          },
+          "elements": [
+            {
+              "ui": { "type": "field", "cols": 6 },
+              "key": "outlet_id",
+              "type": "select",
+              "label": "Branch",
+              "placeholder": "Choose a branch",
+              "options": {
+                "url": "/admin/modules/outlets/options",
+                "master": "outlets"
+              },
+              "rules": ["required"]
+            },
+            {
+              "ui": { "type": "field", "cols": 6 },
+              "key": "minutes",
+              "type": "number",
+              "label": "Holds The Table For (Minutes)",
+              "placeholder": "90",
+              "hint": "Leave empty to use the shop default above",
+              "rules": ["nullable", "integer", "min:15", "max:480"]
+            },
+            {
+              "ui": { "type": "field", "cols": 6 },
+              "key": "min_days_ahead",
+              "type": "number",
+              "label": "Earliest Booking (Days Ahead)",
+              "placeholder": "2",
+              "hint": "This branch alone — a kitchen that preps a day earlier than the others needs 2 where the shop says 1. Leave empty to use the shop default above",
+              "rules": ["nullable", "integer", "min:1", "max:365"]
+            }
+          ]
         }
       ]
     },

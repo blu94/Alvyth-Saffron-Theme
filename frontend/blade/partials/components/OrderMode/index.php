@@ -2,8 +2,13 @@
 
 namespace Theme\Components;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\View;
+use Theme\Backend\Handlers\ShippingMethodOutlet;
 use Theme\Backend\Models\Outlet;
+use Theme\Backend\Models\TableBooking;
+use Theme\Backend\Repositories\ServiceWindowRepository;
+use Theme\Backend\Support\BookingWindow;
 use Theme\Backend\Support\ThemeSettings;
 
 /**
@@ -28,12 +33,42 @@ use Theme\Backend\Support\ThemeSettings;
  */
 class OrderMode
 {
+    /**
+     * How many held spans the page will carry at most.
+     *
+     * Far above what a restaurant's online bookings produce over a month — a twenty-table shop
+     * turning every table twice a night reaches this only after a fortnight fully booked — and
+     * low enough that no shop ever ships a megabyte of occupancy to a cart page. See
+     * {@see self::heldSpans()} for what happens past it.
+     */
+    protected const HELD_LIMIT = 1000;
+
     public function render(array $data, string $locale, string $themeViewPath): string
     {
         $settings = ThemeSettings::all();
 
-        $offered = (string) ($settings['ordering_modes'] ?? 'both');
-        $offered = in_array($offered, ['both', 'delivery', 'pickup'], true) ? $offered : 'both';
+        // What the shop offers comes from CORE's shipping methods now, not from a theme
+        // setting — the `ordering_modes` select is retired. Pickup is offered when the shop
+        // has created pickup-type methods (its branches); delivery per core's rule (always,
+        // until pickup methods exist; then only when a delivery-capable zone does). This is
+        // what makes the offering identical on every theme: switching themes must never
+        // change what a shop sells, only how the choice is drawn.
+        //
+        // Fails open to delivery-only — the storefront's pre-methods behaviour — rather
+        // than taking the cart page down on a service that cannot answer.
+        try {
+            $shipping = app(\App\Services\Shipping\ShippingService::class);
+
+            $offersPickup   = $shipping->offersPickup();
+            $offersDelivery = $shipping->offersDelivery();
+        } catch (\Throwable $e) {
+            report($e);
+
+            $offersPickup   = false;
+            $offersDelivery = true;
+        }
+
+        $offered = $offersPickup && $offersDelivery ? 'both' : ($offersPickup ? 'pickup' : 'delivery');
 
         // The collection address falls back to the footer's, because a shop that filled in one
         // address should not have to fill it in twice to turn pickup on.
@@ -101,20 +136,51 @@ class OrderMode
                 'pickupHint'   => __('Collect it from us'),
                 'dineInHint'   => __('Eat with us'),
                 'collectFrom'  => __('Collect from'),
+                'copy'         => __('Copy'),
+                'copied'       => __('Copied'),
                 'chooseOutlet' => __('Which branch?'),
                 'chooseTable'  => __('Which table?'),
                 'tablePlaceholder' => __('e.g. 12'),
+                'branchFirst'  => __('Choose your branch above, then pick your table'),
                 'tableOption'  => __('Table :number'),
                 'noCutlery'    => __('I do not need cutlery'),
                 'noCutleryHint' => __('Helps us cut down on waste'),
+                'party'        => __('How many of you?'),
+                'partyOption'  => __(':count people'),
+                'partyOne'     => __('Just me'),
+                'seatsHint'    => __('seats :count'),
+                'noneFree'     => __('No table at that branch is free then. Try another time, or a smaller party.'),
+                'someTaken'    => __('Tables already booked at that time are not listed.'),
                 'ready'    => $this->translate($settings['pickup_ready_label'] ?? '', $locale)
                     ?: __('Ready to collect in about 20 minutes'),
             ],
             'pickupAddress' => $pickupAddress,
             'outlets'       => $outlets,
             'dineIn'        => $dineIn,
+            // The shop-wide count, kept as the FALLBACK for a branch that has listed no tables
+            // of its own — which is every branch until an operator fills the dining room in, so
+            // this is also the upgrade path. A shop whose branches differ should stop using it;
+            // the setting's own hint says so.
             'tables'        => $tables,
+            'methodOutlets' => $this->methodOutlets(),
+            'bookings'      => $this->bool($settings['accept_table_bookings'] ?? false),
             'askCutlery'    => $askCutlery,
+            // How long a booking at each branch holds its table, so the browser can work out
+            // the span a chosen time would occupy and compare it with the ones already held.
+            // Resolved HERE rather than in JavaScript because `BookingWindow` is the one place
+            // the shop default, the per-branch override and the clamp live — re-deriving that
+            // precedence in the browser is how the page and the server come to disagree.
+            'bookingMinutes' => $this->bookingMinutes($outlets, $settings),
+            // The shop-wide answer, for the moment before a branch is chosen and for a shop
+            // that has no branches at all. Passed rather than repeated as a literal in the
+            // browser: `BookingWindow::DEFAULT_MINUTES` is the only place 60 is written down.
+            'bookingMinutesDefault' => BookingWindow::minutesFor(null, $settings),
+            // The tables already spoken for, by branch and by label. A convenience: the page
+            // stops offering a table it can see is taken, and `TableReservation` re-reads the
+            // overlap behind a row lock at checkout, which is the answer that counts. A booking
+            // made in the seconds after this page rendered costs a refusal, never a double
+            // booking.
+            'held'           => $this->heldSpans($settings),
         ];
 
         return View::make($themeViewPath, [
@@ -129,6 +195,7 @@ class OrderMode
             'askCutlery'    => $askCutlery,
             'modes'         => $modes,
             'tables'        => $tables,
+            'bookings'      => $this->bool($settings['accept_table_bookings'] ?? false),
             'uid'           => 'saffron-order-mode',
         ])->render();
     }
@@ -159,15 +226,170 @@ class OrderMode
                 // operator's own arrangement.
                 ->orderByDesc('is_default')
                 ->ordered()
+                // The dining room travels with the branch. Eager-loaded — BEFORE `get()`, which
+                // is where this sat wrongly for one deploy: `with()` on the returned Collection
+                // is not a method, the try/catch below swallowed the BadMethodCallException, and
+                // the storefront silently fell all the way back to no outlets at all. Loaded
+                // rather than fetched when the customer picks a branch, because the whole set is
+                // a handful of short strings and a round trip mid-checkout is one that can fail.
+                ->with(['tables' => fn ($q) => $q->active()->ordered()])
                 ->get()
                 ->map(fn (Outlet $outlet) => [
                     'id'      => $outlet->id,
                     'title'   => $this->translate($outlet->title, $locale) ?: $outlet->slug,
                     'address' => trim((string) $outlet->address),
                     'phone'   => trim((string) $outlet->phone),
+                    // Labels and seats. The **label** is still what `table_number` posts, exactly
+                    // as it has always done — sending ids would change the checkout-field
+                    // contract and orphan every order already carrying a label. `seats` rides
+                    // alongside because the writer refuses a party larger than the table
+                    // (`TableReservation::write()`), and a picker that offers a two-seater to a
+                    // party of eight is a refusal the customer meets at the payment button
+                    // instead of at the question.
+                    'tables'  => $outlet->tables
+                        ->map(fn ($table) => [
+                            'label' => (string) $table->label,
+                            // 0 means "not recorded", which reads as "fits anybody" rather than
+                            // as "seats nobody": a shop that never filled the column in must not
+                            // have every one of its tables filtered away.
+                            'seats' => (int) ($table->seats ?? 0),
+                        ])
+                        ->values()
+                        ->all(),
                 ])
                 ->all();
         } catch (\Throwable $e) {
+            report($e);
+
+            return [];
+        }
+    }
+
+    /**
+     * Which outlet each pickup-type shipping method stands for.
+     *
+     * The branch question is **core's** now — one pickup method per branch — so the only thing
+     * the browser learns when a customer picks one is a method id. The link from that to an
+     * outlet lives in the method's own `meta.checkout_fields.outlet_id`, written by this
+     * theme's `ShippingMethodOutlet` handler and normally read server-side at checkout. The
+     * table list has to resolve it *before* the order exists, so the map is handed to the page.
+     *
+     * Ids only, and nothing else about the method: this is a lookup, not a second branch picker.
+     *
+     * Delegated to the handler that WRITES the key, so the meta path is spelled once. The
+     * schedule block needs the same map — a per-branch booking lead is unresolvable without it —
+     * and two components spelling out `meta.checkout_fields.outlet_id` is how one of them keeps
+     * the old spelling after the other moves. It fails open there for the reason it does here: a
+     * storefront rendering against a half-deployed import falls back to the shop-wide table list
+     * rather than taking the cart page down.
+     *
+     * @return array<int, int> method id => outlet id
+     */
+    protected function methodOutlets(): array
+    {
+        return ShippingMethodOutlet::map();
+    }
+
+    /**
+     * How long a booking holds a table, at each branch the customer can choose.
+     *
+     * Keyed by outlet id so the browser can look the answer up the moment a branch is picked.
+     * Every value comes from {@see BookingWindow}, never from a second reading of the settings
+     * array — the branch override, the shop default and the clamp are one rule, and a copy of
+     * that rule in JavaScript is a copy that drifts.
+     *
+     * @param  array<int,array{id:int}>  $outlets
+     * @return array<int,int> outlet id => minutes
+     */
+    protected function bookingMinutes(array $outlets, array $settings): array
+    {
+        $map = [];
+
+        foreach ($outlets as $outlet) {
+            $map[(int) $outlet['id']] = BookingWindow::minutesFor((int) $outlet['id'], $settings);
+        }
+
+        return $map;
+    }
+
+    /**
+     * The spans already held, by branch and by table label.
+     *
+     * **Why this rides on the page rather than being asked for.** A theme registers no routes —
+     * core's storefront API is a fixed list — so the only way the picker can know a table is
+     * taken is to be told at render time. That is the same arrangement the schedule block uses
+     * for the shop's hours, and it carries the same contract: the page is a convenience and
+     * `TableReservation` is the truth.
+     *
+     * Bounded three ways, because this is a public payload on a page a shop serves to everybody:
+     * only bookings still holding a table, only those overlapping the window the schedule picker
+     * can actually reach, and never more than {@see self::HELD_LIMIT} rows. A shop busy enough to
+     * exceed that keeps a complete list for the nearest dates — the rows are taken in start
+     * order — and falls back to a checkout refusal for the far ones, which is the same outcome
+     * the picker already relies on for a booking made a second ago.
+     *
+     * Times are formatted without a timezone conversion on purpose: `TableReservation` writes
+     * the shop's own wall clock into these columns, so reading the digits straight back is what
+     * keeps the browser comparing like with like.
+     *
+     * @return array<int, array<string, array<int, array<int, string>>>> outlet id => label => spans
+     */
+    protected function heldSpans(array $settings): array
+    {
+        if (! $this->bool($settings['accept_table_bookings'] ?? false)) {
+            return [];
+        }
+
+        try {
+            $timezone = app(ServiceWindowRepository::class)->timezone();
+            $horizon  = app(ServiceWindowRepository::class)->schedulingHorizon();
+
+            $now   = Carbon::now($timezone);
+            $until = $now->copy()->addDays($horizon);
+
+            $rows = TableBooking::query()
+                // Written out rather than reached through `TableBooking::scopeHolding()`, which
+                // filters on a bare `status`. Both tables in the join below have that column, so
+                // the scope's unqualified clause is ambiguous — MySQL refuses the query, the
+                // catch below turns the refusal into an empty map, and the picker silently
+                // offers every table as free. Caught by the test that asserts a held span
+                // reaches the page; nothing about the page looked wrong.
+                ->where('table_bookings.status', TableBooking::STATUS_BOOKED)
+                ->join('outlet_tables', 'outlet_tables.id', '=', 'table_bookings.outlet_table_id')
+                ->whereNull('outlet_tables.deleted_at')
+                ->where('outlet_tables.status', 'active')
+                // A booking that has already finished holds nothing, and one starting past the
+                // horizon is one the picker cannot offer a time inside anyway.
+                ->where('table_bookings.ends_at', '>', $now->format('Y-m-d H:i:s'))
+                ->where('table_bookings.starts_at', '<', $until->format('Y-m-d H:i:s'))
+                ->orderBy('table_bookings.starts_at')
+                ->limit(self::HELD_LIMIT)
+                ->get([
+                    'outlet_tables.outlet_id',
+                    'outlet_tables.label',
+                    'table_bookings.starts_at',
+                    'table_bookings.ends_at',
+                ]);
+
+            $held = [];
+
+            foreach ($rows as $row) {
+                // Lower-cased, because the label is what the customer picks and
+                // `TableReservation::tableFor()` matches it case-insensitively. Keying on the
+                // raw label would let "Window" and "window" hold the same table twice over.
+                $key = mb_strtolower(trim((string) $row->label));
+
+                $held[(int) $row->outlet_id][$key][] = [
+                    Carbon::parse($row->starts_at)->format('Y-m-d H:i'),
+                    Carbon::parse($row->ends_at)->format('Y-m-d H:i'),
+                ];
+            }
+
+            return $held;
+        } catch (\Throwable $e) {
+            // The same failing-open rule the rest of this driver follows: a storefront rendering
+            // against a half-deployed import offers every table and lets the writer refuse,
+            // rather than taking the cart page down over a convenience.
             report($e);
 
             return [];

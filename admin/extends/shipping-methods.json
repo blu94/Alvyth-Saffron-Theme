@@ -1,0 +1,33 @@
+{
+  "extends": "shipping-methods",
+  "owns": ["outlet_id"],
+  "handler": "Theme\\Backend\\Handlers\\ShippingMethodOutlet",
+  "tabs": [
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-building-store",
+        "show_if": "type,pickup"
+      },
+      "name": "Branch (Pickup methods)",
+      "subtitle": "Only for Pickup methods: link the branch this method represents. The link is what puts the branch name on kitchen tickets — the method's own name is what the customer reads at checkout.",
+      "elements": [
+        {
+          "ui": { "type": "field", "cols": 12 },
+          "key": "outlet_id",
+          "type": "select",
+          "label": "Outlet",
+          "placeholder": "No linked branch",
+          "hint": "The chosen branch's id travels onto every order that selects this method (as the outlet_id checkout field), so the Kitchen Queue and tickets keep saying which branch is cooking.",
+          "visibleWhen": { "field": "type", "equals": "pickup" },
+          "options": {
+            "url": "/admin/modules/outlets/options",
+            "master": "outlets"
+          },
+          "rules": ["nullable", "integer"]
+        }
+      ]
+    }
+  ]
+}

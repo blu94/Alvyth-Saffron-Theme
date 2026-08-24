@@ -54,7 +54,10 @@ class OutletRepository
 
     public function find($id)
     {
-        return Outlet::with(['products:id,title'])->findOrFail($id);
+        // `tables` is eager-loaded in the operator's own order so the repeater draws the room
+        // the way it is walked, not the way the ids happen to fall.
+        return Outlet::with(['products:id,title', 'tables' => fn ($q) => $q->ordered()])
+            ->findOrFail($id);
     }
 
     public function create(array $data)
@@ -63,6 +66,7 @@ class OutletRepository
             $outlet = Outlet::create($this->normalise($data));
 
             $this->syncProducts($outlet, $data);
+            $this->writeTables($outlet, $data);
             $this->enforceSingleDefault($outlet);
 
             return $outlet->fresh();
@@ -81,6 +85,12 @@ class OutletRepository
             // showed it.
             if (array_key_exists('product_ids', $data)) {
                 $this->syncProducts($outlet, $data);
+            }
+
+            // Same guard, same reason: a partial update that never showed the dining room must
+            // not be read as "this branch has no tables".
+            if (array_key_exists('tables', $data)) {
+                $this->writeTables($outlet, $data);
             }
 
             $this->enforceSingleDefault($outlet);
@@ -149,6 +159,84 @@ class OutletRepository
         }
 
         return $out;
+    }
+
+    /**
+     * Replace this branch's tables with what the dining-room repeater submitted.
+     *
+     * Rows carrying an `id` are updated in place so their keys survive an edit — the same rule
+     * the modifier repeater follows, and it matters more here: phase 2's bookings will point at
+     * a table id, and a room that renumbered itself on every save would move a booking to a
+     * different table.
+     *
+     * Three rules, each enforced here rather than in the browser, because the storefront reads
+     * these rows directly and a hand-crafted request meets the same schema:
+     *
+     * - **A row with no label is dropped.** The repeater submits an empty row for one the
+     *   operator opened and abandoned, and an unnamed table would reach the customer's list as
+     *   a blank line they could select.
+     * - **A duplicate label within one branch is dropped**, keeping the first. Two tables named
+     *   7 in one room is an operator slip whose symptom is a plate carried to the wrong party,
+     *   and it cannot be caught downstream — the ticket prints a name, not an id. It is not a
+     *   database constraint because these rows soft-delete, and a unique index would let a
+     *   deleted "7" block the operator from ever creating "7" again.
+     * - **A table the form no longer lists is deleted**, softly, so an order that already named
+     *   it still resolves.
+     */
+    protected function writeTables(Outlet $outlet, array $data): void
+    {
+        $rows = $data['tables'] ?? [];
+
+        if (! is_array($rows)) {
+            return;
+        }
+
+        $keptIds = [];
+        $seen    = [];
+
+        foreach (array_values($rows) as $index => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $label = trim((string) ($row['label'] ?? ''));
+
+            if ($label === '') {
+                continue;
+            }
+
+            // Case-insensitively, because "table 7" and "Table 7" are one table to everybody
+            // except a string comparison.
+            $key = mb_strtolower($label);
+
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+
+            $seats = $row['seats'] ?? null;
+
+            $payload = [
+                'label'  => $label,
+                'seats'  => ($seats === null || $seats === '') ? null : max(1, (int) $seats),
+                'status' => $row['status'] ?? 'active',
+                'orders' => isset($row['orders']) && $row['orders'] !== '' ? (int) $row['orders'] : $index,
+            ];
+
+            $existingId = ! empty($row['id']) ? (int) $row['id'] : null;
+            $table      = $existingId ? $outlet->tables()->whereKey($existingId)->first() : null;
+
+            if ($table) {
+                $table->update($payload);
+            } else {
+                $table = $outlet->tables()->create($payload);
+            }
+
+            $keptIds[] = $table->id;
+        }
+
+        $outlet->tables()->whereNotIn('id', $keptIds ?: [0])->delete();
     }
 
     protected function syncProducts(Outlet $outlet, array $data): void

@@ -28,6 +28,9 @@
     "guards": [
       "Theme\\Backend\\Guards\\ServiceWindowGuard",
       "Theme\\Backend\\Guards\\MinimumOrderGuard"
+    ],
+    "writers": [
+      "Theme\\Backend\\Writers\\TableReservation"
     ]
   },
   "cart": {
