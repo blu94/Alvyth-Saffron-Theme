@@ -41,6 +41,7 @@ class Outlet extends Model
         'longitude',
         'offers_pickup',
         'offers_delivery',
+        'offers_dine_in',
         'restricts_menu',
         'is_default',
         'timezone',
@@ -64,6 +65,7 @@ class Outlet extends Model
         'longitude'       => 'float',
         'offers_pickup'   => 'boolean',
         'offers_delivery' => 'boolean',
+        'offers_dine_in'  => 'boolean',
         'restricts_menu'  => 'boolean',
         'is_default'      => 'boolean',
         'orders'          => 'integer',
@@ -134,6 +136,32 @@ class Outlet extends Model
     public function scopeDelivery(Builder $query): Builder
     {
         return $query->where('offers_delivery', true);
+    }
+
+    /**
+     * Outlets with a dining room.
+     *
+     * **Collection is part of the answer, not a separate check a caller may forget.** A dine-in
+     * order is recorded as `fulfillment_type = pickup` — a diner needs no address and pays no
+     * delivery fee — and the branch is chosen from core's pickup-method list, so a branch that
+     * does not collect cannot seat anybody however this column is set. Composing the two here is
+     * the same decision {@see self::serves()} makes about `restricts_menu`: put the rule where it
+     * cannot be half-remembered.
+     */
+    public function scopeDineIn(Builder $query): Builder
+    {
+        return $query->where('offers_dine_in', true)->where('offers_pickup', true);
+    }
+
+    /**
+     * Does this branch seat diners?
+     *
+     * The row-level twin of {@see self::scopeDineIn()}, for a caller that already holds the
+     * outlet and must not pay for a second query to ask one boolean.
+     */
+    public function dinesIn(): bool
+    {
+        return (bool) $this->offers_dine_in && (bool) $this->offers_pickup;
     }
 
     /**

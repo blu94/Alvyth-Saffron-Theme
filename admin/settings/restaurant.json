@@ -227,7 +227,7 @@
           "key": "offer_dine_in",
           "type": "switch",
           "label": "Offer Dine In",
-          "hint": "Adds a third choice beside Delivery and Pickup, and asks which table. The order is still handled as a collection — no address, no delivery fee — so the kitchen sees DINE IN and the table instead of PICKUP",
+          "hint": "Adds a third choice beside Delivery and Pickup, and asks which table. The order is still handled as a collection — no address, no delivery fee — so the kitchen sees DINE IN and the table instead of PICKUP. This is the shop-wide switch and it is no longer the whole answer: each branch also has its own Offers Dine In (Saffron → Outlets → the branch → The dining room), which starts OFF. With branches, this switch permits dining and each branch decides whether it seats anybody",
           "default": false
         },
         {

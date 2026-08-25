@@ -49,6 +49,43 @@ thing.
 > You cannot end up with no default. Create the first branch and it becomes the default whether
 > or not you ticked it, because the storefront needs somewhere to fall back to.
 
+### The dining room
+
+Whether people eat in **at this branch**, and which tables they sit at.
+
+| Field | What it is for |
+|---|---|
+| **Offers Dine In** | Off by default. On, a customer who picks this branch is offered *Dine in* beside Collection and Delivery, and is asked which table |
+| **Tables** | One row per table, listed the way you would walk the room. **Table** is what prints on the kitchen ticket, so write it exactly as your staff say it out loud. **Seats** decides which tables a party is offered; leave it empty and the table fits anybody. **Out of service** parks a table without deleting it |
+
+> **Dine In starts OFF at every branch, including the ones you already have.** It used to be a
+> single shop-wide switch (*Themes → Saffron → Restaurant → Offer Dine In*) that rode on
+> collection, so a takeaway kiosk with a counter and no seating was offered *Dine in* too. It is
+> per branch now. **If your shop was already offering dine-in, tick the branches that seat
+> people** — until you do, no branch offers it. Nothing was deleted: the shop-wide switch is
+> untouched and every table you had listed is still there.
+
+Two things have to be true before a customer is offered *Dine in* at all:
+
+1. **Offer Dine In** is on for the shop, under *Themes → Saffron → Restaurant*. That switch now
+   permits dining; each branch decides whether it actually seats anybody.
+2. This branch has **Offers Collection** on. A diner is recorded as collecting — they need no
+   address and pay no delivery fee — so a branch that has stopped collecting cannot seat a
+   diner however this switch is set.
+
+If nobody at the shop dines in, the *Dine in* tile is not drawn at all rather than drawn and
+then withdrawn when a branch is picked. A control that appears and vanishes reads as a fault.
+
+A customer who chooses a branch with no dining room is told so and offered the way out, and an
+order that reaches the till as a diner at such a branch is refused outright — the same shape
+the menu restriction uses: the hiding is what the customer sees, the refusal is what holds.
+
+**Leave Tables empty** and the branch falls back to the shop-wide *How Many Tables* count under
+*Themes → Saffron → Restaurant*, which gives every branch the same room. That is the upgrade
+path, not a setting to keep: it is fine for one restaurant and wrong the moment two of them
+differ, because a diner would be offered Table 15 in a room with eight tables. With neither, the
+customer types whatever their table is called.
+
 ### Where it is
 
 Latitude and longitude for the branch. Right-click the shop in Google Maps and copy the two

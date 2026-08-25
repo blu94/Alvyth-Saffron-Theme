@@ -596,6 +596,18 @@ Verified against core, not assumed. Each is a limit on what this theme can promi
   **operator's** choice per zone — state, a postcode list, or a distance radius from the outlet,
   mixable within one shop — rather than this project picking one delivery model on their behalf.
   Not built (register O7b).
+- **Dine in is per branch** (2026-08-25). `outlets.offers_dine_in` decides whether a branch seats
+  anybody, because collection and delivery had been per branch since outlets existed and dining
+  was one shop-wide switch riding on collection — so a takeaway kiosk with a counter and no
+  seating was offered *Dine in*, while the dining-room repeater on that same branch's form was
+  already asking it for its tables. It **defaults to off**, deliberately: a shop already running
+  with *Offer Dine In* on loses the tile at every branch until each is ticked, and the Outlets
+  form and `docs/outlets.md` both say so rather than letting it be silent. Nothing is deleted.
+  Two switches must agree — the shop-wide one permits dining, the branch decides — and collection
+  is composed into the answer by `Outlet::dinesIn()`, because a diner is recorded as collecting.
+  `BranchDineInGuard` refuses a diner at a branch with no dining room, since the cart's tiles
+  narrow to the branch chosen at the **gate** while the branch is chosen again from core's
+  pickup-method list further down the same page.
 - **Dine in and the cutlery prompt are built** (O2, 2026-08-19), both off by default. Turning
   *Offer Dine In* on adds a third tile beside Delivery and Pickup and asks which table — a list
   of 1..N when the shop says how many tables it has, free text otherwise. **Core is still told

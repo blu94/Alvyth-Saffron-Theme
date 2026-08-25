@@ -46,6 +46,30 @@ return new class extends Migration
             $table->boolean('offers_pickup')->default(true);
             $table->boolean('offers_delivery')->default(true);
 
+            // Whether this branch has a dining room.
+            //
+            // Collection and delivery have been per branch since this table existed; dine-in was
+            // shop-wide (*Restaurant → Offer Dine In*) and simply rode on collection, so a
+            // takeaway kiosk with a counter and no seating was offered *Dine in* anyway — while
+            // the dining-room repeater right beside this column was already asking that same
+            // branch for its tables. One shop-wide switch could not answer a per-branch question.
+            //
+            // **Defaults to `false`, and that is a deliberate ruling rather than a safe-looking
+            // default.** It is the opposite of `restricts_menu`, which defaults to the permissive
+            // answer so a half-configured branch keeps working. Here the permissive answer is a
+            // branch claiming seating it may not have, and a diner sent to a table that does not
+            // exist is a worse failure than a dine-in tile an operator has to switch on. The
+            // consequence is stated plainly on the form and in `docs/outlets.md`: a shop already
+            // running with *Offer Dine In* on loses the tile at every branch until each branch is
+            // ticked. Nothing is deleted — the shop-wide switch and every table row are untouched.
+            //
+            // It narrows within collection rather than beside it: a dine-in order is recorded as
+            // `fulfillment_type = pickup` (a diner needs no address and pays no delivery fee), and
+            // the branch itself is chosen from core's pickup-method list. So a branch with no
+            // collection cannot offer dine-in whatever this column says, and the readers compose
+            // the two rather than treating this one as the whole answer.
+            $table->boolean('offers_dine_in')->default(false);
+
             // "Admin can decide with branch having which catalogue." A null value here means
             // this outlet serves the whole menu, which is what a single-outlet shop and a newly
             // created branch both want — the operator opts INTO restricting, never out of it.
