@@ -19,13 +19,17 @@ use Theme\Backend\Models\Outlet;
  * The customer chooses it at the gate, which stores it in `localStorage` and mirrors it into a
  * plain `ovynt_branch` cookie so a normal page load carries it.
  *
- * **Read from `$_COOKIE` rather than the request's cookie bag, deliberately.** Laravel's
- * `EncryptCookies` middleware decrypts every incoming cookie and *drops* the ones it cannot —
- * so a cookie the browser set arrives as `null` through `request()->cookie()`, silently. The
- * clean fix is one entry in core's `encryptCookies(except: [...])`, and that is worth doing; it
- * is not done here because `bootstrap/app.php` is core, is shared, and this theme can answer the
- * question without it. `$_COOKIE` is PHP's own parse of the request header and is untouched by
- * the middleware.
+ * **Read through `request()->cookie()`, which works because core exempts this cookie from
+ * encryption.** `EncryptCookies` decrypts every incoming cookie and silently *drops* the ones it
+ * cannot, so a value written by `document.cookie` used to arrive as `null` here — no error, no
+ * log. This class therefore read the `$_COOKIE` superglobal instead, which worked but stepped
+ * around the framework and was invisible to anything mocking the request.
+ *
+ * The real fix is one entry in `bootstrap/app.php` — `encryptCookies(except: ['ovynt_branch'])` —
+ * and it is now there, so the superglobal read is gone rather than left standing beside it. If
+ * that exemption is ever removed, this returns `null` for every visitor and every shop silently
+ * shows its whole menu again; {@see tests/Feature/Storefront/Restaurant/BranchMenuTest} is what
+ * says so out loud.
  *
  * The value is a customer-supplied integer and is treated as one: it selects an outlet or it
  * selects nothing. There is no trust placed in it — naming a branch can only *narrow* what is
@@ -68,7 +72,12 @@ class BranchScope
         static::$outlet   = null;
 
         try {
-            $id = (int) ($_COOKIE[self::COOKIE] ?? 0);
+            // `(int)` on purpose, and it has to survive rubbish rather than merely absence. A
+            // browser that still holds an ENCRYPTED value from before the exemption hands back
+            // raw ciphertext, not null — so the two failure modes are "missing" and "nonsense",
+            // and only the first is an empty string. `(int) 'eyJpdiI6...'` is `0`, which falls
+            // through to "no branch chosen" and shows the whole menu, exactly as absence does.
+            $id = (int) request()->cookie(self::COOKIE);
 
             if ($id > 0) {
                 static::$outlet = Outlet::query()->active()->find($id);

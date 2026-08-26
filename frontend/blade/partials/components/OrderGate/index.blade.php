@@ -219,7 +219,9 @@
 
                 return labels.dropBody
                     .replace(':dishes', list)
-                    .replace(':branch', branchOf(draftBranch.value)?.title || '');
+                    .replace(':branch', branchOf(draftBranch.value)?.title || '')
+                    // The branch they are on now, which is where cancelling leaves them.
+                    .replace(':current', branchLabel.value);
             });
 
             // ── Scoping what is on the page ─────────────────────────────────────────

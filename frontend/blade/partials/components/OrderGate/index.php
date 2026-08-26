@@ -68,7 +68,13 @@ class OrderGate
                 'minDelivery' => __('Delivery from :amount'),
                 'minPickup'   => __('Collection from :amount'),
                 'dropTitle' => __('Some dishes are not served there'),
-                'dropBody'  => __(':dishes cannot come with you to :branch. Remove them and carry on, or keep your basket and choose a different branch.'),
+                // Two outcomes, named the way the two buttons under it are named. This used to
+                // end "…or keep your basket and choose a different branch", which had the same
+                // fault as the old button label and one of its own: it promised a choice the
+                // cancel button does not offer. Cancelling does not open a branch picker, it
+                // closes the panel and leaves the customer where they already were. `:current`
+                // is that branch; `:branch` is the one they were considering.
+                'dropBody'  => __(':dishes cannot come with you to :branch. Remove them and carry on, or stay at :current and keep them.'),
                 'dropGo'    => __('Remove them and switch'),
                 // **Name the branch you stay at, not the basket you keep.** This read
                 // "Keep my basket", which describes the side effect and hides the decision: a
