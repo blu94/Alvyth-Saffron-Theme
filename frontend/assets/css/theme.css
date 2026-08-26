@@ -2426,6 +2426,209 @@ textarea.saffron-reviews__input {
   color: var(--color-muted);
 }
 
+[v-cloak] {
+  display: none;
+}
+
+.saffron-gate__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.75rem;
+  padding: 0.45rem 1rem;
+  background-color: #F5EEE3;
+  border-bottom: 1px solid rgba(232, 163, 61, 0.22);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.saffron-gate__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.saffron-gate__mark {
+  color: var(--color-accent);
+  flex: none;
+}
+
+.saffron-gate__cost {
+  color: var(--color-muted);
+}
+@media (max-width: 480px) {
+  .saffron-gate__cost {
+    display: none;
+  }
+}
+
+.saffron-gate__sep {
+  color: var(--color-muted);
+}
+
+.saffron-gate__branch {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saffron-gate__change {
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.saffron-gate__change:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.saffron-gate__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(31, 26, 23, 0.55);
+  overflow-y: auto;
+}
+
+.saffron-gate__panel {
+  width: 100%;
+  max-width: 26rem;
+  padding: 1.4rem 1.35rem 1.2rem;
+  background-color: var(--color-card-surface);
+  border-radius: var(--card-radius);
+  box-shadow: 0 18px 48px rgba(31, 26, 23, 0.28);
+}
+
+.saffron-gate__title {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.3;
+}
+
+.saffron-gate__sub {
+  margin: 0.35rem 0 1.1rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--color-muted);
+}
+
+.saffron-gate__branches {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.saffron-gate__branch-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.8rem;
+  background-color: var(--color-card-surface);
+  border: 1px solid var(--color-line);
+  border-radius: calc(var(--card-radius) / 1.5);
+  cursor: pointer;
+}
+.saffron-gate__branch-option input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.saffron-gate__branch-option.is-active {
+  border-color: var(--color-accent);
+  background-color: #F5EEE3;
+}
+.saffron-gate__branch-option:has(input:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.saffron-gate__branch-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.saffron-gate__branch-address {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--color-muted);
+}
+
+.saffron-gate__drop {
+  margin-top: 1.1rem;
+  padding: 0.7rem 0.85rem;
+  background-color: rgba(192, 54, 44, 0.06);
+  border: 1px solid rgba(192, 54, 44, 0.22);
+  border-radius: calc(var(--card-radius) / 2);
+}
+
+.saffron-gate__drop-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.saffron-gate__drop-body {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.saffron-gate__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.2rem;
+}
+
+.saffron-gate__confirm,
+.saffron-gate__cancel {
+  flex: 1 1 8rem;
+  min-height: 44px;
+  padding: 0.55rem 1rem;
+  font-family: var(--font-family);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border-radius: calc(var(--card-radius) / 1.5);
+  cursor: pointer;
+}
+.saffron-gate__confirm:focus-visible,
+.saffron-gate__cancel:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.saffron-gate__confirm {
+  color: var(--color-white);
+  background-color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+
+.saffron-gate__cancel {
+  color: var(--color-black);
+  background-color: var(--color-card-surface);
+  border: 1px solid var(--color-line);
+}
+
+.saffron-dish--offsite {
+  display: none !important;
+}
+
 .saffron-order-mode {
   margin-block-end: 1.25rem;
 }
@@ -4289,6 +4492,16 @@ body.saffron-search-open {
   color: var(--color-white);
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+.saffron-dish-sheet__offsite {
+  padding: 0.6rem 0.85rem;
+  margin-block-end: 0.75rem;
+  border: 1px solid rgba(232, 163, 61, 0.28);
+  border-radius: calc(var(--card-radius) / 2);
+  background-color: #F5EEE3;
+  font-size: 0.875rem;
+  line-height: 1.45;
 }
 
 .saffron-dish-sheet__group {

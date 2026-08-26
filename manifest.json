@@ -27,7 +27,9 @@
   "checkout": {
     "guards": [
       "Theme\\Backend\\Guards\\ServiceWindowGuard",
-      "Theme\\Backend\\Guards\\MinimumOrderGuard"
+      "Theme\\Backend\\Guards\\MinimumOrderGuard",
+      "Theme\\Backend\\Guards\\BranchMenuGuard",
+      "Theme\\Backend\\Guards\\BranchDineInGuard"
     ],
     "writers": [
       "Theme\\Backend\\Writers\\TableReservation"

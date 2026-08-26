@@ -1,0 +1,233 @@
+@use "../../../base/colors" as *;
+@use "../../../base/variables" as *;
+
+// ─── The order gate (register D-3, O18a) ──────────────────────────────────────
+// WHICH BRANCH, asked before the menu — one question, because only one of them decides what
+// can be cooked. Two pieces: a slim bar that states the answer on every page, and a panel that
+// asks it. Delivery-or-pickup stayed at the cart, where the fee and the address panel it
+// governs already live; the bar carries the minimums so the cost still arrives before the food.
+//
+// The bar is deliberately quiet. It is not a promotion and not a call to action — it is the
+// standing answer to a question already settled, and it earns its permanent place by being
+// small. A sand strip under the header, the same tone the cart's own panels use, so it reads
+// as part of the shop rather than as a notification.
+
+[v-cloak] { display: none; }
+
+.saffron-gate__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.75rem;
+  padding: 0.45rem 1rem;
+  background-color: $hex-sand-100;
+  border-bottom: 1px solid rgba($hex-accent, 0.22);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.saffron-gate__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.saffron-gate__mark { color: $color-accent; flex: none; }
+
+// The minimums, quieter than the branch: the branch is the answer, the cost is its footnote.
+.saffron-gate__cost {
+  color: $color-muted;
+
+  // First to go on a phone. The branch is what the bar is for, and the minimums are repeated
+  // at the cart by the guard that enforces them.
+  @media (max-width: 480px) {
+    display: none;
+  }
+}
+
+.saffron-gate__sep { color: $color-muted; }
+
+.saffron-gate__branch {
+  // A long branch name truncates rather than wrapping the bar onto a second line on a phone —
+  // the bar's whole claim to a permanent place is that it costs one line.
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// A link rather than a button in appearance, because it changes a setting rather than
+// performing an action — but a real <button>, since it opens a dialog.
+.saffron-gate__change {
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: $color-accent;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+// ─── The panel ────────────────────────────────────────────────────────────────
+.saffron-gate__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba($hex-black, 0.55);
+  // The panel can be taller than a phone once a shop has six branches, so the scrim scrolls
+  // rather than the panel being clipped by it.
+  overflow-y: auto;
+}
+
+.saffron-gate__panel {
+  width: 100%;
+  max-width: 26rem;
+  padding: 1.4rem 1.35rem 1.2rem;
+  background-color: $color-card-surface;
+  border-radius: $card-radius;
+  box-shadow: 0 18px 48px rgba($hex-black, 0.28);
+}
+
+.saffron-gate__title {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.3;
+}
+
+.saffron-gate__sub {
+  margin: 0.35rem 0 1.1rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: $color-muted;
+}
+
+// One question, so one option treatment. Branches stack rather than sitting side by side,
+// because each carries an address underneath its name and a row of them would truncate the
+// thing that tells them apart.
+.saffron-gate__branches {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.saffron-gate__branch-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.8rem;
+  background-color: $color-card-surface;
+  border: 1px solid $color-line;
+  border-radius: calc(#{$card-radius} / 1.5);
+  cursor: pointer;
+
+  input {
+    // Off-screen rather than display:none — a hidden input is unreachable by a keyboard, and
+    // the whole control is a radio group.
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  &.is-active {
+    border-color: $color-accent;
+    background-color: $hex-sand-100;
+  }
+
+  &:has(input:focus-visible) {
+    outline: 2px solid $color-accent;
+    outline-offset: 1px;
+  }
+}
+
+.saffron-gate__branch-name { font-size: 0.9375rem; font-weight: 600; }
+
+.saffron-gate__branch-address {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: $color-muted;
+}
+
+// ─── What the basket would lose ───────────────────────────────────────────────
+// A warning tone, because something is about to be taken away. It appears before the switch is
+// applied and never after: a basket emptied silently on a branch change is work thrown away
+// without being mentioned.
+.saffron-gate__drop {
+  margin-top: 1.1rem;
+  padding: 0.7rem 0.85rem;
+  background-color: rgba($hex-danger, 0.06);
+  border: 1px solid rgba($hex-danger, 0.22);
+  border-radius: calc(#{$card-radius} / 2);
+}
+
+.saffron-gate__drop-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $color-danger;
+}
+
+.saffron-gate__drop-body {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.saffron-gate__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.2rem;
+}
+
+.saffron-gate__confirm,
+.saffron-gate__cancel {
+  flex: 1 1 8rem;
+  min-height: 44px;
+  padding: 0.55rem 1rem;
+  font-family: $body-font-family;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border-radius: calc(#{$card-radius} / 1.5);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+}
+
+.saffron-gate__confirm {
+  color: $color-white;
+  background-color: $color-accent;
+  border: 1px solid $color-accent;
+}
+
+.saffron-gate__cancel {
+  color: $color-black;
+  background-color: $color-card-surface;
+  border: 1px solid $color-line;
+}
+
+// ─── A dish this branch does not serve ────────────────────────────────────────
+// Hidden rather than greyed. A greyed dish is an invitation to ask why, and the answer — "not
+// at this branch" — is one the customer already gave. `display: none` on the card's own
+// element, so a grid closes the gap rather than leaving a hole where it was.
+//
+// Presentation only. `BranchMenuGuard` is what refuses server-side, and this class is what
+// stops the customer meeting that refusal at the payment button.
+.saffron-dish--offsite { display: none !important; }

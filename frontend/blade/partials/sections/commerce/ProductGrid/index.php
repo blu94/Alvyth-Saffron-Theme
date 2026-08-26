@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Page;
 use App\Models\Product;
 use Illuminate\Support\Facades\View;
+use Theme\Backend\Support\BranchScope;
 use Theme\Backend\Support\SectionSetting;
 use Theme\Backend\Support\ThemeSettings;
 
@@ -49,6 +50,11 @@ class ProductGrid
             // slug that does not resolve.
             ->whereNull('productable_id')
             ->with(['variants', 'tags', 'assets']);
+
+        // The branch narrows the query itself — see `BranchScope::constrain()`. Applied before the
+        // filters below so a filtered listing narrows within what this branch serves rather than
+        // across the whole catalogue and then hides the difference.
+        BranchScope::constrain($query);
 
         // On a category page this grid is that category's dishes; the page narrows it.
         $page = View::shared('page');
@@ -147,9 +153,13 @@ class ProductGrid
      */
     protected function categories(string $locale): array
     {
+        // A filter option that can only ever return nothing is worse than an absent one: the
+        // customer picks it, the grid empties, and the shop looks broken rather than narrowed.
         return Category::query()
             ->where('status', 'active')
-            ->has('products')
+            ->whereHas('products', fn ($q) => BranchScope::constrain(
+                $q->where('products.status', 'active')->whereNull('products.productable_id')
+            ))
             ->orderBy('orders')
             ->get(['id', 'title'])
             ->map(fn (Category $category) => [

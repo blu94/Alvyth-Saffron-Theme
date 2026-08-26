@@ -1,346 +1,398 @@
 {
-    "elements": [
+  "elements": [
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12
+      },
+      "name": "The outlet",
+      "elements": [
         {
-            "ui": {
-                "type": "section",
-                "cols": 12
-            },
-            "name": "The outlet",
-            "elements": [
-                {
-                    "ui": {
-                        "type": "field",
-                        "cols": 12
-                    },
-                    "key": "title",
-                    "type": "text",
-                    "label": "Outlet Name",
-                    "placeholder": "e.g. Bangsar",
-                    "hint": "What a customer picking a branch will see. Translatable, so use the locale switcher above to add other languages",
-                    "translatable": true,
-                    "rules": [
-                        "required"
-                    ]
-                },
-                {
-                    "ui": {
-                        "type": "field",
-                        "cols": 12
-                    },
-                    "key": "address",
-                    "type": "textarea",
-                    "label": "Collection Address",
-                    "placeholder": "e.g. 12 Jalan Telawi, Bangsar, 59100 Kuala Lumpur",
-                    "hint": "Shown to a customer collecting from here. Leave empty to fall back to the footer address"
-                },
-                {
-                    "ui": {
-                        "type": "field",
-                        "cols": 6
-                    },
-                    "key": "phone",
-                    "type": "text",
-                    "label": "Phone",
-                    "placeholder": "e.g. +60 3 1234 5678",
-                    "hint": "Shown with the collection address. Include the country code so a customer can tap to call from a phone"
-                },
-                {
-                    "ui": {
-                        "type": "field",
-                        "cols": 6
-                    },
-                    "key": "timezone",
-                    "type": "text",
-                    "label": "Timezone",
-                    "placeholder": "e.g. Asia/Kuala_Lumpur",
-                    "hint": "Recorded against the branch. Opening hours and order times are still judged in the shop's own timezone, set under Settings, so this changes nothing until per-branch hours ship"
-                }
-            ],
-            "subtitle": "Who this branch is and how to reach it. The name is what a customer sees when they choose where to collect from, so use the name locals use — the district or mall, not the company's internal branch code."
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "title",
+          "type": "text",
+          "label": "Outlet Name",
+          "placeholder": "e.g. Bangsar",
+          "hint": "What a customer picking a branch will see. Translatable, so use the locale switcher above to add other languages",
+          "translatable": true,
+          "rules": [
+            "required"
+          ]
         },
         {
-            "ui": {
-                "type": "section",
-                "cols": 12
-            },
-            "name": "What this outlet serves",
-            "elements": [
-                {
-                    "ui": {
-                        "type": "field",
-                        "cols": 12
-                    },
-                    "key": "restricts_menu",
-                    "type": "switch",
-                    "label": "This Outlet Serves Only Selected Dishes",
-                    "hint": "Recorded for this branch, but the online menu does not filter by branch yet — a customer chooses where to collect from at the cart, after browsing. Set it now and it will apply when per-branch menus ship",
-                    "default": false
-                },
-                {
-                    "ui": {
-                        "type": "field",
-                        "cols": 12,
-                        "show_if": "restricts_menu,true"
-                    },
-                    "key": "product_ids",
-                    "type": "autocomplete",
-                    "label": "Dishes This Outlet Serves",
-                    "placeholder": "Search the menu",
-                    "hint": "Leave empty and the branch serves nothing until you pick — the switch above is what restricts it",
-                    "multiple": true,
-                    "options": {
-                        "url": "/admin/products/options",
-                        "itemTitle": "title",
-                        "itemValue": "id"
-                    }
-                }
-            ],
-            "subtitle": "By default every branch serves the whole menu, which is what most shops want. Restrict it only when a branch genuinely cannot make everything — a kiosk without a fryer, or a site that does drinks only. Note that the storefront menu does not yet vary by branch; this records the intent."
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "address",
+          "type": "textarea",
+          "label": "Collection Address",
+          "placeholder": "e.g. 12 Jalan Telawi, Bangsar, 59100 Kuala Lumpur",
+          "hint": "Shown to a customer collecting from here. Leave empty to fall back to the footer address"
         },
         {
-            "ui": {
-                "type": "section",
-                "cols": 12
-            },
-            "name": "How it takes orders",
-            "elements": [
-                {
-                    "ui": {
-                        "type": "field",
-                        "cols": 12
-                    },
-                    "key": "offers_pickup",
-                    "type": "switch",
-                    "label": "Offers Collection",
-                    "hint": "Customers may choose to collect from here",
-                    "default": true
-                },
-                {
-                    "ui": {
-                        "type": "field",
-                        "cols": 12
-                    },
-                    "key": "offers_delivery",
-                    "type": "switch",
-                    "label": "Offers Delivery",
-                    "hint": "This outlet delivers to its own zones",
-                    "default": true
-                },
-                {
-                    "ui": {
-                        "type": "field",
-                        "cols": 12
-                    },
-                    "key": "is_default",
-                    "type": "switch",
-                    "label": "Default Outlet",
-                    "hint": "The branch used for a customer who has not chosen one. Setting this here clears it from whichever outlet held it before",
-                    "default": false
-                }
-            ],
-            "subtitle": "Whether customers can collect from here, have it delivered from here, or both. A branch that offers neither takes no orders at all, so leave at least one on."
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "phone",
+          "type": "text",
+          "label": "Phone",
+          "placeholder": "e.g. +60 3 1234 5678",
+          "hint": "Shown with the collection address. Include the country code so a customer can tap to call from a phone"
         },
         {
-            "ui": {
-                "type": "section",
-                "cols": 12,
-                "icon": "tabler-armchair"
-            },
-            "name": "The dining room",
-            "subtitle": "The tables in THIS branch, listed the way you would walk the room. A dine-in customer who picks this branch is offered these tables and no others. Leave it empty and the branch falls back to the shop-wide table count under Themes → Saffron → Restaurant, which gives every branch the same room — fine for one restaurant, wrong the moment two of them differ.",
-            "elements": [
-                {
-                    "ui": { "type": "field", "cols": 12 },
-                    "key": "tables",
-                    "type": "repeater",
-                    "label": "Tables",
-                    "itemLabel": "Table",
-                    "columns": [
-                        { "label": "Table", "key": "label" },
-                        { "label": "Seats", "key": "seats" },
-                        { "label": "Status", "key": "status", "type": "status" }
-                    ],
-                    "dialog": {
-                        "width": 600,
-                        "create": {
-                            "title": "Add Table",
-                            "subtitle": "Name it exactly as your staff say it out loud — this is what prints on the kitchen ticket."
-                        },
-                        "update": { "title": "Edit Table" }
-                    },
-                    "elements": [
-                        {
-                            "ui": { "type": "field", "cols": 12 },
-                            "key": "label",
-                            "type": "text",
-                            "label": "Table",
-                            "placeholder": "e.g. 7, A1, Terrace 2",
-                            "hint": "Not translatable on purpose: one table, one name. If the kitchen and the customer called it different things the food would go to the wrong room",
-                            "rules": ["required", "max:40"]
-                        },
-                        {
-                            "ui": { "type": "field", "cols": 4 },
-                            "key": "seats",
-                            "type": "number",
-                            "label": "Seats",
-                            "placeholder": "e.g. 4",
-                            "hint": "How many people it holds. Nothing uses this yet — it is what a future booking would check before offering the table to a party of six",
-                            "rules": ["nullable", "integer", "min:1", "max:200"]
-                        },
-                        {
-                            "ui": { "type": "field", "cols": 4 },
-                            "key": "status",
-                            "type": "select",
-                            "label": "Status",
-                            "items": [
-                                { "title": "Active", "value": "active" },
-                                { "title": "Out of service", "value": "draft" }
-                            ],
-                            "default": "active",
-                            "hint": "Out of service stops it being offered without deleting it",
-                            "rules": ["nullable"]
-                        },
-                        {
-                            "ui": { "type": "field", "cols": 4 },
-                            "key": "orders",
-                            "type": "number",
-                            "label": "Display Order",
-                            "placeholder": "e.g. 1",
-                            "hint": "Lower first. Leave empty and it falls to the end",
-                            "rules": ["nullable", "integer", "min:0"]
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "ui": {
-                "type": "section",
-                "cols": 12
-            },
-            "name": "Where it is",
-            "elements": [
-                {
-                    "ui": {
-                        "type": "field",
-                        "cols": 6
-                    },
-                    "key": "latitude",
-                    "type": "text",
-                    "label": "Latitude",
-                    "placeholder": "e.g. 3.1279",
-                    "hint": "Between -90 and 90. Find it by right-clicking the branch in Google Maps and copying the first number"
-                },
-                {
-                    "ui": {
-                        "type": "field",
-                        "cols": 6
-                    },
-                    "key": "longitude",
-                    "type": "text",
-                    "label": "Longitude",
-                    "placeholder": "e.g. 101.6708",
-                    "hint": "Between -180 and 180. The second of the two numbers Google Maps copies"
-                }
-            ],
-            "subtitle": "Where this branch sits on the map, kept on the branch's own record. A delivery zone drawn by radius carries its own centre point, typed on the zone under Shipping — it does not read these, so filling them in changes no delivery charge today."
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "timezone",
+          "type": "autocomplete",
+          "label": "Timezone",
+          "placeholder": "e.g. Asia/Kuala_Lumpur",
+          "clearable": true,
+          "options": {
+            "$ref": "../../shared/timezones.json"
+          },
+          "hint": "Recorded against the branch. Opening hours and order times are still judged in the shop's own timezone, set under Settings, so this changes nothing until per-branch hours ship"
         }
-    ],
-    "sidebar": {
+      ],
+      "subtitle": "Who this branch is and how to reach it. The name is what a customer sees when they choose where to collect from, so use the name locals use — the district or mall, not the company's internal branch code."
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12
+      },
+      "name": "What is exclusive to this branch",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "exclusive_products_summary",
+          "type": "display",
+          "label": "Dishes Exclusive To This Branch"
+        }
+      ],
+      "subtitle": "Every branch serves the whole menu. Listed here are the dishes exclusive to THIS branch and hidden from the others — a regional special, or something only this kitchen can make. Most branches list nothing, which is correct. This is a read-out, not a control: exclusivity belongs to the dish and is set on the dish, under Store → Products → the dish → Availability → Exclusive To Branches."
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12
+      },
+      "name": "How it takes orders",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "offers_pickup",
+          "type": "switch",
+          "label": "Offers Collection",
+          "hint": "Customers may choose to collect from here. Switched off, Collection is not offered to a customer who picks this branch",
+          "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "offers_delivery",
+          "type": "switch",
+          "label": "Offers Delivery",
+          "hint": "This outlet delivers to its own zones. Switched off, Delivery is not offered to a customer who picks this branch",
+          "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "is_default",
+          "type": "switch",
+          "label": "Default Outlet",
+          "hint": "The branch used for a customer who has not chosen one. Setting this here clears it from whichever outlet held it before",
+          "default": false
+        }
+      ],
+      "subtitle": "Whether customers can collect from here, have it delivered from here, or both. These decide which doors the customer is shown once they pick this branch, so a branch with neither is left out of the branch list altogether — it never becomes a choice rather than becoming a dead end. Leave at least one on. Dine in is the third door and it is set below, with the dining room it belongs to."
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12,
+        "icon": "tabler-armchair"
+      },
+      "name": "The dining room",
+      "subtitle": "Whether people eat in at THIS branch, and which tables they sit at. It starts OFF: a branch offers dining only once you switch it on here, even where Themes → Saffron → Restaurant → Offer Dine In is already on, and its tables are only reached while it is on. On, a customer who picks this branch is offered Dine in beside Collection and Delivery and is asked which table — as long as that shop-wide Offer Dine In is on and this branch offers Collection above, because a diner is recorded as collecting: they need no address and pay no delivery fee.",
+      "header": {
         "elements": [
-            {
-                "ui": {
-                    "type": "row",
-                    "dense": true
-                },
-                "elements": [
-                    {
-                        "ui": {
-                            "type": "locale-switcher"
-                        }
-                    },
-                    {
-                        "ui": {
-                            "type": "field"
-                        },
-                        "key": "slug",
-                        "type": "text",
-                        "label": "Slug",
-                        "placeholder": "Leave empty and it is made from the name",
-                        "rules": [
-                            "nullable",
-                            "string",
-                            "max:255"
-                        ],
-                        "hint": "Used in links and kept unique automatically"
-                    },
-                    {
-                        "ui": {
-                            "type": "field"
-                        },
-                        "key": "status",
-                        "type": "select",
-                        "label": "Status",
-                        "default": "active",
-                        "options": {
-                            "items": [
-                                {
-                                    "title": "Active",
-                                    "value": "active"
-                                },
-                                {
-                                    "title": "Inactive",
-                                    "value": "inactive"
-                                }
-                            ]
-                        },
-                        "hint": "Inactive hides the branch from customers immediately but keeps it, and its orders, intact"
-                    },
-                    {
-                        "ui": {
-                            "type": "field"
-                        },
-                        "key": "orders",
-                        "type": "number",
-                        "label": "Display Order",
-                        "placeholder": "e.g. 10",
-                        "hint": "Lower sorts first, in the admin list and the customer's branch picker"
-                    }
-                ]
-            }
-        ],
-        "footer": {
-            "elements": [
-                {
-                    "ui": {
-                        "type": "row",
-                        "dense": true
-                    },
-                    "elements": [
-                        {
-                            "ui": {
-                                "type": "button",
-                                "color": "primary",
-                                "icon": "tabler-checkbox"
-                            },
-                            "action": "save",
-                            "label": "Save Changes",
-                            "redirect": false
-                        },
-                        {
-                            "ui": {
-                                "type": "button",
-                                "color": "secondary",
-                                "variant": "tonal",
-                                "icon": "tabler-arrow-left"
-                            },
-                            "action": "cancel",
-                            "label": "Cancel",
-                            "redirect": "/module/outlets"
-                        }
-                    ]
-                }
+          {
+            "ui": {
+              "type": "field"
+            },
+            "key": "offers_dine_in",
+            "type": "switch",
+            "label": "",
+            "default": false,
+            "isSectionToggle": true,
+            "rules": [
+              "nullable",
+              "boolean"
             ]
+          }
+        ]
+      },
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12
+          },
+          "key": "tables",
+          "type": "repeater",
+          "label": "Tables",
+          "itemLabel": "Table",
+          "hint": "Only reached while Offers Dine In is on. Leave it empty and the branch falls back to the shop-wide table count under Themes → Saffron → Restaurant, which gives every branch the same room — fine for one restaurant, wrong the moment two of them differ",
+          "columns": [
+            {
+              "label": "Table",
+              "key": "label"
+            },
+            {
+              "label": "Seats",
+              "key": "seats"
+            },
+            {
+              "label": "Status",
+              "key": "status",
+              "type": "status"
+            }
+          ],
+          "dialog": {
+            "width": 600,
+            "create": {
+              "title": "Add Table",
+              "subtitle": "Name it exactly as your staff say it out loud — this is what prints on the kitchen ticket."
+            },
+            "update": {
+              "title": "Edit Table"
+            }
+          },
+          "elements": [
+            {
+              "ui": {
+                "type": "field",
+                "cols": 8
+              },
+              "key": "label",
+              "type": "text",
+              "label": "Table",
+              "placeholder": "e.g. 7, A1, Terrace 2",
+              "hint": "Not translatable on purpose: one table, one name. If the kitchen and the customer called it different things the food would go to the wrong room",
+              "rules": [
+                "required",
+                "max:40"
+              ]
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 4
+              },
+              "key": "status",
+              "type": "select",
+              "label": "Status",
+              "default": "active",
+              "options": {
+                "items": [
+                  {
+                    "title": "Active",
+                    "value": "active"
+                  },
+                  {
+                    "title": "Out of service",
+                    "value": "draft"
+                  }
+                ]
+              },
+              "hint": "Out of service stops it being offered without deleting it",
+              "rules": [
+                "nullable"
+              ]
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 6
+              },
+              "key": "seats",
+              "type": "number",
+              "label": "Seats",
+              "placeholder": "e.g. 4",
+              "hint": "How many people it holds. A larger party is not offered this table, and is refused if it asks for one anyway. Leave it empty and the table fits any party",
+              "rules": [
+                "nullable",
+                "integer",
+                "min:1",
+                "max:200"
+              ]
+            },
+            {
+              "ui": {
+                "type": "field",
+                "cols": 6
+              },
+              "key": "orders",
+              "type": "number",
+              "label": "Display Order",
+              "placeholder": "e.g. 1",
+              "hint": "Lower first. Leave empty and it falls to the end",
+              "rules": [
+                "nullable",
+                "integer",
+                "min:0"
+              ]
+            }
+          ]
         }
+      ]
+    },
+    {
+      "ui": {
+        "type": "section",
+        "cols": 12
+      },
+      "name": "Where it is",
+      "elements": [
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "latitude",
+          "type": "text",
+          "label": "Latitude",
+          "placeholder": "e.g. 3.1279",
+          "hint": "Between -90 and 90. Find it by right-clicking the branch in Google Maps and copying the first number"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
+          "key": "longitude",
+          "type": "text",
+          "label": "Longitude",
+          "placeholder": "e.g. 101.6708",
+          "hint": "Between -180 and 180. The second of the two numbers Google Maps copies"
+        }
+      ],
+      "subtitle": "Where this branch sits on the map, kept on the branch's own record. A delivery zone drawn by radius carries its own centre point, typed on the zone under Shipping — it does not read these, so filling them in changes no delivery charge today."
     }
+  ],
+  "sidebar": {
+    "elements": [
+      {
+        "ui": {
+          "type": "row",
+          "dense": true
+        },
+        "elements": [
+          {
+            "ui": {
+              "type": "locale-switcher"
+            }
+          },
+          {
+            "ui": {
+              "type": "field"
+            },
+            "key": "slug",
+            "type": "text",
+            "label": "Slug",
+            "placeholder": "Leave empty and it is made from the name",
+            "rules": [
+              "nullable",
+              "string",
+              "max:255"
+            ],
+            "hint": "Used in links and kept unique automatically"
+          },
+          {
+            "ui": {
+              "type": "field"
+            },
+            "key": "status",
+            "type": "select",
+            "label": "Status",
+            "default": "active",
+            "options": {
+              "items": [
+                {
+                  "title": "Active",
+                  "value": "active"
+                },
+                {
+                  "title": "Inactive",
+                  "value": "inactive"
+                }
+              ]
+            },
+            "hint": "Inactive hides the branch from customers immediately but keeps it, and its orders, intact"
+          },
+          {
+            "ui": {
+              "type": "field"
+            },
+            "key": "orders",
+            "type": "number",
+            "label": "Display Order",
+            "placeholder": "e.g. 10",
+            "hint": "Lower sorts first, in the admin list and the customer's branch picker"
+          }
+        ]
+      }
+    ],
+    "footer": {
+      "elements": [
+        {
+          "ui": {
+            "type": "row",
+            "dense": true
+          },
+          "elements": [
+            {
+              "ui": {
+                "type": "button",
+                "color": "primary",
+                "icon": "tabler-checkbox"
+              },
+              "action": "save",
+              "label": "Save Changes",
+              "redirect": false
+            },
+            {
+              "ui": {
+                "type": "button",
+                "color": "secondary",
+                "variant": "tonal",
+                "icon": "tabler-arrow-left"
+              },
+              "action": "cancel",
+              "label": "Cancel",
+              "redirect": "/module/outlets"
+            }
+          ]
+        }
+      ]
+    }
+  }
 }

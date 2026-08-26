@@ -9,8 +9,14 @@
 @else
 {{-- `id` is the operator's Custom CSS ID when they set one; `data-dish-sheet` is what the Vue
      app mounts on. They are deliberately two attributes: an id an operator can retype at any
-     time must not be the selector the ordering form depends on. --}}
-<section id="{{ $cssId }}" data-dish-sheet="{{ $uid }}"
+     time must not be the selector the ordering form depends on.
+
+     `data-dish-sheet-id` names the DISH, which the order gate needs: whether this page may sell
+     anything is a question about the branch, and the branch can change after the server has
+     already rendered the answer. Deliberately not `data-dish-id` — that attribute means "a card
+     the gate may hide outright", and hiding a whole dish page rather than refusing to sell from
+     it would leave a customer staring at a blank screen. --}}
+<section id="{{ $cssId }}" data-dish-sheet="{{ $uid }}" data-dish-sheet-id="{{ $dish->id }}"
          class="saffron-dish-sheet saffron-dish-sheet--{{ $layout }} {{ $cssClass }}">
     <div class="{{ $containerClass }}">
         <div class="row g-4 g-lg-5">
@@ -247,11 +253,25 @@
                     </div>
                 @endif
 
+                {{-- NOT SERVED AT THIS BRANCH (register O18a, phase 3). Distinct from sold out,
+                     and the distinction matters to the customer: sold out is "come back later",
+                     this is "come back at a different branch". So it names the branch and says
+                     what to do, rather than borrowing the sold-out wording. --}}
+                @unless($servedHere)
+                    <p class="saffron-dish-sheet__offsite">
+                        @if($branchName)
+                            {{ __('Not served at :branch. Change your branch above to order it.', ['branch' => $branchName]) }}
+                        @else
+                            {{ __('Not served at the branch you chose. Change your branch above to order it.') }}
+                        @endif
+                    </p>
+                @endunless
+
                 @unless($isAvailable)
                     <p class="saffron-dish-sheet__soldout">{{ $soldOutLabel }}</p>
                 @endunless
 
-                @if($isAvailable)
+                @if($isAvailable && $servedHere)
                 <form class="saffron-dish-sheet__form" @submit.prevent="addToCart">
                     @if(count($variants) > 1)
                         <fieldset class="saffron-dish-sheet__group">

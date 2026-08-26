@@ -7,6 +7,7 @@ use App\Repositories\Setting\Application\ApplicationInterface;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 use Theme\Backend\Models\ModifierGroup;
+use Theme\Backend\Support\BranchScope;
 use Theme\Backend\Support\ThemeSettings;
 
 /**
@@ -152,6 +153,8 @@ class DishSheet
         if (!$dish) {
             return View::make($themeViewPath, array_merge($shape, [
                 'dish'        => null,
+                'servedHere'  => true,
+                'branchName'  => '',
                 'uid'         => 'dish-sheet-empty',
                 'cssId'       => $shape['customId'] ?: 'dish-sheet-empty',
                 'dishId'      => 0,
@@ -321,6 +324,19 @@ class DishSheet
 
         return View::make($themeViewPath, array_merge($shape, [
             'dish'                 => $dish,
+            // **Does the branch this customer is browsing actually serve this dish?**
+            // (register O18a, phase 3.) Phase 2 hid the card on the menu and stopped there, so
+            // this page still offered an Add button for a dish the branch cannot make — reachable
+            // by link, by search, or by anyone who had the page open before switching branch. The
+            // refusal at checkout then arrived at the payment button, which is the experience the
+            // whole feature exists to prevent.
+            //
+            // Decided server-side, because this is a decision rather than a presentation: a
+            // hidden control is still a control, and the sheet must not offer what the shop will
+            // refuse. True when no branch is chosen, which is every visitor before the gate is
+            // answered and every shop that has never used Outlets.
+            'servedHere'           => BranchScope::serves($dish->id),
+            'branchName'           => BranchScope::name($locale),
             'uid'                  => $uid,
             // The operator's Custom CSS ID when they set one, and the generated handle when
             // they did not. The Vue app deliberately does NOT mount on this — see `$uid` in the

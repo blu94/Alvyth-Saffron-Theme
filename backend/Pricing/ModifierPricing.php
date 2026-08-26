@@ -7,6 +7,7 @@ use App\Contracts\Storefront\CartLinePricer;
 use App\Models\Product;
 use Theme\Backend\Models\Modifier;
 use Theme\Backend\Models\ModifierGroup;
+use Theme\Backend\Support\BranchScope;
 
 /**
  * What a dish's answers cost, and whether they are answers the dish actually offers.
@@ -45,6 +46,35 @@ class ModifierPricing implements CartLinePricer
     private const ANSWER_SEPARATOR = ', ';
 
     /**
+     * The sentence a customer reads when their basket outlived the branch that built it.
+     *
+     * Names the dish and the branch, because those are the two things they can act on — the same
+     * rule {@see \Theme\Backend\Guards\BranchMenuGuard} follows, and worth keeping consistent:
+     * a customer who meets both should not be told two different stories about one problem.
+     *
+     * The branch may be unnameable (a title saved empty, a locale with no translation), in which
+     * case the sentence drops the name rather than printing a blank where a place should be.
+     */
+    private function notServedHere(Product $product): string
+    {
+        $dish = $product->getTranslation('title', app()->getLocale(), false);
+        $dish = trim((string) (is_array($dish) ? reset($dish) : $dish)) ?: __('This dish');
+
+        $branch = BranchScope::name(app()->getLocale());
+
+        if ($branch === '') {
+            return __(':dish is not served at the branch you chose. Please remove it, or choose another branch.', [
+                'dish' => $dish,
+            ]);
+        }
+
+        return __(':dish is not served at :branch. Please remove it, or choose another branch.', [
+            'dish'   => $dish,
+            'branch' => $branch,
+        ]);
+    }
+
+    /**
      * Groups per dish for this request. `validateCart` calls the pricer once per cart line and
      * a cart of six dishes would otherwise be six of these queries; the pricer is resolved once
      * per request, so an instance cache is enough.
@@ -55,6 +85,31 @@ class ModifierPricing implements CartLinePricer
 
     public function priceOptions(Product $product, array $options): CartLinePrice
     {
+        // ── Can the branch being browsed even make this dish? ───────────────────────
+        //
+        // **Checked before anything is priced, because a dish the branch cannot cook has no
+        // price here at all.** This is the layer that actually holds against a cart that
+        // outlives the choice which built it: a basket lives in `localStorage`, so it survives a
+        // branch switch, a reload, a shared link and a visit a week later. Hiding the dish on
+        // the menu does nothing for a line that is already in the basket.
+        //
+        // `validateCart` is the single chokepoint — the cart page, `POST /storefront/checkout`
+        // and the checkout preview all pass through it — so one refusal here closes the total
+        // the customer is shown, the order they try to place, and a request typed by hand.
+        //
+        // It sits in the pricer rather than in a second seam because core takes exactly **one**
+        // line pricer per theme, deliberately: two of them returning surcharges for one line
+        // could not be combined without silently charging twice. A theme with several rules
+        // composes them in its own class, which is what this is.
+        //
+        // `BranchScope` fails open — no branch, an unreadable cookie, a missing table, and it
+        // answers "served". So does this. `BranchMenuGuard` re-checks the whole basket at
+        // checkout against the outlet the **order** names rather than the one the browser
+        // claims, and that is the backstop behind this one.
+        if (! BranchScope::serves($product->id)) {
+            return CartLinePrice::refuse($this->notServedHere($product));
+        }
+
         $groups = $this->groupsFor($product);
 
         // No questions on this dish, or the tables are not there. Either way nothing to price

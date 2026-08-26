@@ -79,6 +79,12 @@
         setup() {
             const query    = ref('');
             const results  = ref([]);
+
+            // The ids this branch serves, or null for "everything". Null and an empty array are
+            // opposite answers and must not be collapsed: null shows the whole menu, empty shows
+            // nothing, and reading them as one would blank the search of every shop that has
+            // never restricted a branch.
+            const branchMenu = @json($branchMenu);
             const loading  = ref(false);
             const inputRef = ref(null);
             let debounce   = null;
@@ -91,7 +97,28 @@
                 }
                 loading.value = true;
                 window.ThemeApi.search.query(q)
-                    .then(data => { results.value = Array.isArray(data) ? data : []; })
+                    // Narrowed to the branch being browsed (register O18a, phase 3). Core's
+                    // search endpoint serves every theme and knows nothing about outlets, so the
+                    // filter belongs here — and `branchMenu` is null unless this branch actually
+                    // restricts, so an ordinary shop's results are untouched.
+                    .then(data => {
+                        const all = Array.isArray(data) ? data : [];
+
+                        // The gate publishes the current branch's menu when a customer switches
+                        // without navigating; `branchMenu` is what this page was rendered with.
+                        // Live answer first, baked answer second, "everything" last.
+                        // Exclusions, not a menu. `undefined` means the gate has not published
+                        // anything on this page, so fall back to what the server rendered with;
+                        // `null` from the server means "no branch chosen", and both are treated
+                        // as "exclude nothing" below rather than as "show nothing".
+                        const hidden = window.__saffronBranchHidden !== undefined
+                            ? window.__saffronBranchHidden
+                            : branchMenu;
+
+                        results.value = ! Array.isArray(hidden) || hidden.length === 0
+                            ? all
+                            : all.filter(item => ! hidden.includes(Number(item.id)));
+                    })
                     .catch(() => { results.value = []; })
                     .finally(() => { loading.value = false; });
             };

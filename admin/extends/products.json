@@ -1,8 +1,49 @@
 {
   "extends": "products",
-  "owns": ["modifier_groups"],
-  "handler": "Theme\\Backend\\Handlers\\ProductModifierGroups",
+  "owns": ["modifier_groups", "exclusive_outlet_ids"],
+  "handler": "Theme\\Backend\\Handlers\\ProductContributions",
   "tabs": [
+    {
+      "name": "Availability",
+      "ui": {
+        "type": "tab",
+        "icon": "tabler-building-store"
+      },
+      "elements": [
+        {
+          "ui": {
+            "type": "section",
+            "cols": 12,
+            "icon": "tabler-building-store"
+          },
+          "name": "Where This Dish Is Available",
+          "subtitle": "Leave this empty and the dish is on the menu at every branch, which is what almost every dish wants. Name branches only to make it exclusive to them — a regional special, a dish only one kitchen has the equipment for. It is stated once, here, and stays true as you open more branches. It covers the whole dish, every size and variant with it.",
+          "elements": [
+            {
+              "ui": {
+                "type": "field",
+                "cols": 12,
+                "multiple": true,
+                "chips": true,
+                "closableChips": true,
+                "clearable": true,
+                "autoSelectSingle": false
+              },
+              "key": "exclusive_outlet_ids",
+              "type": "autocomplete",
+              "label": "Exclusive To Branches",
+              "placeholder": "Every branch",
+              "hint": "Empty means every branch serves it. Name one branch and only that branch shows it; name two and it shows at those two and nowhere else. Setting this on a dish nobody else sells is how you say 'KLCC only' — you never have to touch the other branches. Set it on the dish itself: the whole dish moves together, so you cannot offer Large at one branch and Regular at another, and this tab reads the same on every variant's own form",
+              "options": {
+                "url": "/admin/modules/outlets/options",
+                "master": "outlets"
+              },
+              "rules": ["nullable", "array"]
+            }
+          ]
+        }
+      ]
+    },
     {
       "name": "Modifiers",
       "ui": {

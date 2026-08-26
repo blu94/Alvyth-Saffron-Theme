@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Page;
 use App\Models\Product;
 use Illuminate\Support\Facades\View;
+use Theme\Backend\Support\BranchScope;
 use Theme\Backend\Support\SectionSetting;
 use Theme\Backend\Support\ThemeSettings;
 
@@ -61,6 +62,13 @@ class CollectionGrid
         // Variants are Products with a parent. Listing them puts "Large" beside the dish it
         // belongs to, at a slug that does not resolve.
         $query->whereNull('productable_id')->with(['variants', 'tags', 'assets']);
+
+        // **The branch narrows the QUERY, not just the cards.** Hiding unserved dishes in the
+        // browser left this grid rendering their columns anyway — empty slots that pushed the
+        // surviving dishes out of line — while `total()` below still counted the whole catalogue,
+        // so the page said "Showing 1-5 of 5" above three dishes. Constraining here makes the
+        // grid, the count and the pager one answer instead of three.
+        BranchScope::constrain($query);
 
         $query = match (request()->query('sort')) {
             'price_asc'  => $query->orderBy('price'),
@@ -132,9 +140,14 @@ class CollectionGrid
      */
     protected function collections(string $locale): array
     {
+        // A category this branch serves nothing from is not a destination — it is a link to an
+        // empty page. `has('products')` asks whether the CATALOGUE has any; the branch decides
+        // whether this customer can order any.
         return Category::query()
             ->where('status', 'active')
-            ->has('products')
+            ->whereHas('products', fn ($q) => BranchScope::constrain(
+                $q->where('products.status', 'active')->whereNull('products.productable_id')
+            ))
             ->orderBy('orders')
             ->get(['id', 'title', 'slug'])
             ->map(fn (Category $category) => [

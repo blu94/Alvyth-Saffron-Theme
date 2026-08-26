@@ -5,6 +5,7 @@ namespace Theme\Sections\General;
 use App\Repositories\Product\ProductInterface;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Theme\Backend\Support\BranchScope;
 use Theme\Backend\Support\Motion;
 use Theme\Backend\Support\SectionSetting;
 use Theme\Backend\Support\ThemeSettings;
@@ -77,6 +78,11 @@ class DishGrid
                     });
             });
         }
+
+        // The branch narrows the query, so a curated row cannot promote a dish this branch
+        // cannot make. Applied before the limit: filtering after it would silently shorten the
+        // row instead of filling it with dishes that are actually orderable.
+        BranchScope::constrain($query);
 
         $dishes = $query
             ->orderByDesc('products.created_at')

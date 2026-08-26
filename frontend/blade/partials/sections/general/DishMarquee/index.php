@@ -6,6 +6,7 @@ use App\Repositories\Product\ProductInterface;
 use App\Repositories\Setting\Application\ApplicationInterface;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Theme\Backend\Support\BranchScope;
 use Theme\Backend\Support\Motion;
 
 /**
@@ -73,6 +74,10 @@ class DishMarquee
 
         $showPrice       = filter_var($data['show_price'] ?? true, FILTER_VALIDATE_BOOLEAN);
         $showDescription = filter_var($data['show_description'] ?? true, FILTER_VALIDATE_BOOLEAN);
+
+        // The branch narrows the query. A strip that never stops moving is the worst place to
+        // advertise a dish this branch cannot make: it links to a sheet that then refuses to sell.
+        BranchScope::constrain($query);
 
         $dishes = $query
             ->orderByDesc('products.created_at')

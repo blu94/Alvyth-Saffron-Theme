@@ -4,6 +4,7 @@ namespace Theme\Components;
 
 use App\Repositories\Setting\Application\ApplicationInterface;
 use Illuminate\Support\Facades\View;
+use Theme\Backend\Support\BranchScope;
 
 /**
  * The menu search panel behind the header's magnifier.
@@ -41,6 +42,13 @@ class SearchDrawer
             'placeholder'  => $this->translate($settings['header_search_placeholder'] ?? null, $locale)
                 ?: __('Search the menu'),
             'sections'     => $this->sections($locale),
+            // **The branch's menu, so search cannot return what the branch will not cook**
+            // (register O18a, phase 3). Core's search endpoint knows nothing about outlets and
+            // must not — it serves every theme — so the narrowing happens here, against the ids
+            // this branch serves. Null when no branch is chosen or the branch restricts nothing,
+            // which is every shop that has never used Outlets: null means "show everything", and
+            // an empty list means "this branch serves nothing", which are opposite answers.
+            'branchMenu'   => $this->branchMenu(),
             'browseAllUrl' => $this->browseAllUrl(),
             'labels'       => [
                 // Every string the Vue app can show. Held here rather than in the script so a
@@ -98,6 +106,40 @@ class SearchDrawer
             ->first();
 
         return $listing ? url($listing->store_url) : null;
+    }
+
+    /**
+     * The dish ids the branch being browsed serves, or null when everything is served.
+     *
+     * Read from the same `BranchScope` the dish sheet uses, so a dish hidden from the menu, kept
+     * out of search and refused on its own page are three consequences of one answer rather than
+     * three implementations that can drift apart.
+     *
+     * @return array<int,int>|null
+     */
+    protected function branchMenu(): ?array
+    {
+        try {
+            $outlet = BranchScope::outlet();
+
+            if (! $outlet) {
+                return null;
+            }
+
+            // The dishes to hide here — exclusive to some other branch. Delegated to `BranchScope`
+            // so search and the listing grids cannot come to disagree about what this branch
+            // serves; they did disagree once already, when one was scoped and the other was not.
+            //
+            // `null` and `[]` both mean "filter nothing" to the caller, which is safe in a way the
+            // allow-list never was: there, an empty array meant "serve nothing" and blanked search.
+            return BranchScope::hidden();
+        } catch (\Throwable $e) {
+            // Failing open: search returns everything, and the dish page and the checkout guard
+            // still refuse. A broken lookup must not empty a shop's search.
+            report($e);
+
+            return null;
+        }
     }
 
     protected function translate(mixed $value, string $locale): string

@@ -55,10 +55,11 @@ return new class extends Migration
             // branch for its tables. One shop-wide switch could not answer a per-branch question.
             //
             // **Defaults to `false`, and that is a deliberate ruling rather than a safe-looking
-            // default.** It is the opposite of `restricts_menu`, which defaults to the permissive
-            // answer so a half-configured branch keeps working. Here the permissive answer is a
-            // branch claiming seating it may not have, and a diner sent to a table that does not
-            // exist is a worse failure than a dine-in tile an operator has to switch on. The
+            // default.** Everywhere else in this table the permissive answer is the default — a
+            // branch collects, delivers, and serves the whole catalogue unless told otherwise.
+            // Seating is the one exception, because the permissive answer here is a branch
+            // claiming a dining room it may not have, and a diner sent to a table that does not
+            // exist is a worse failure than a tile an operator has to switch on. The
             // consequence is stated plainly on the form and in `docs/outlets.md`: a shop already
             // running with *Offer Dine In* on loses the tile at every branch until each branch is
             // ticked. Nothing is deleted — the shop-wide switch and every table row are untouched.
@@ -69,13 +70,6 @@ return new class extends Migration
             // collection cannot offer dine-in whatever this column says, and the readers compose
             // the two rather than treating this one as the whole answer.
             $table->boolean('offers_dine_in')->default(false);
-
-            // "Admin can decide with branch having which catalogue." A null value here means
-            // this outlet serves the whole menu, which is what a single-outlet shop and a newly
-            // created branch both want — the operator opts INTO restricting, never out of it.
-            // The dish list itself lives on the pivot; this is the switch that says whether the
-            // pivot is consulted at all.
-            $table->boolean('restricts_menu')->default(false);
 
             // The outlet a shop treats as its own default, for a customer who has not chosen.
             // Exactly one row should carry this; the repository enforces it rather than the
@@ -92,10 +86,32 @@ return new class extends Migration
             $table->index(['status', 'orders']);
         });
 
-        // Which dishes an outlet serves, consulted only when `restricts_menu` is true.
+        // Which dishes a branch does **not** serve. An EXCLUSION list, and the direction is the
+        // whole design.
+        //
+        // It was an allow-list until 2026-08-25, gated by a `restricts_menu` switch: on meant the
+        // branch served *only* what was ticked. Three things followed, all of them bad. An
+        // operator who flipped the switch and saved had a branch selling nothing. A branch that
+        // could not make two dishes out of two hundred had to tick a hundred and ninety-eight. And
+        // every dish added to the catalogue afterwards was silently missing from that branch until
+        // somebody remembered to tick it there too — the failure gets worse the longer the shop
+        // runs, which is the worst shape a default can have. Measured on a seeded shop: a branch
+        // whose list held four dishes showed four of eighty-nine, and eight of ten category pages
+        // rendered empty.
+        //
+        // That is not how the trade does it. Toast, Square, Lightspeed and the delivery-platform
+        // merchant portals all default an item to available **everywhere** and let an operator
+        // switch it off at a location. The permissive answer has to be the default, because the
+        // catalogue grows and the exceptions do not.
+        //
+        // So a row here means "this branch cannot make this dish". No rows means no restriction —
+        // which is every branch until an operator says otherwise, and every shop that never opens
+        // the screen. `restricts_menu` went with the allow-list: absence of exclusions **is**
+        // "serves everything", so there was nothing left for a switch to say, and a switch that
+        // says nothing is the dead setting this project has already removed once (audit A8).
         //
         // A pivot rather than a column on `products`, because the relationship is many-to-many:
-        // the same dish is served by several branches, and a column could express only one.
+        // the same dish is unavailable at several branches, and a column could express only one.
         Schema::create('outlet_product', function (Blueprint $table) {
             $table->id();
             $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
@@ -106,9 +122,14 @@ return new class extends Migration
             // product exists instead.
             $table->unsignedBigInteger('product_id')->index();
 
-            // A branch may price a dish differently — the same nasi lemak costs more in KLCC
-            // than in the suburb. Null means "the dish's own price", which is what every row
-            // starts as, so adding an outlet never silently re-prices the menu.
+            // A branch may price a dish differently — the same nasi lemak costs more in KLCC than
+            // in the suburb. Null means "the dish's own price", which is what every row starts as.
+            //
+            // **Note this now sits on an EXCLUSION row, which is a contradiction**: a dish the
+            // branch does not serve cannot also carry that branch's price for it. Left in place
+            // only because nothing reads it yet (register phase 4); whoever builds per-branch
+            // pricing must give it its own pivot rather than overload this one, or the first row
+            // that carries both will mean two opposite things at once.
             $table->decimal('price_override', 12, 2)->nullable();
 
             $table->timestamps();

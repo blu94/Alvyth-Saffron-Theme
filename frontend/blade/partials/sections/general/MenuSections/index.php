@@ -5,6 +5,7 @@ namespace Theme\Sections\General;
 use App\Repositories\Category\CategoryInterface;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Theme\Backend\Support\BranchScope;
 use Theme\Backend\Support\Motion;
 use Theme\Backend\Support\SectionSetting;
 use Theme\Backend\Support\ThemeSettings;
@@ -72,14 +73,23 @@ class MenuSections
         // correctly configured shop exact without leaving a legacy one with a blank menu.
         $categories = $this->categoryRepo
             ->baseIndexQuery(['status' => 'active'])
+            // **Both closures, and they are not the same job.** The first decides whether the
+            // section appears at all — a category this branch serves nothing from is not a menu
+            // section for this customer, it is an empty heading. The second decides which dishes
+            // it holds. Constraining only the second would keep drawing the heading with nothing
+            // under it, which is exactly what a category page did before this.
             ->whereHas('products', function ($query) {
-                $query->where('products.status', 'active')
-                    ->whereNull('products.productable_id');
+                BranchScope::constrain(
+                    $query->where('products.status', 'active')
+                        ->whereNull('products.productable_id')
+                );
             })
             ->with([
                 'products' => function ($query) {
-                    $query->where('products.status', 'active')
-                        ->whereNull('products.productable_id')
+                    BranchScope::constrain(
+                        $query->where('products.status', 'active')
+                            ->whereNull('products.productable_id')
+                    )
                         ->with(['variants', 'tags', 'assets'])
                         ->orderBy('products.orders')
                         ->orderBy('products.id');

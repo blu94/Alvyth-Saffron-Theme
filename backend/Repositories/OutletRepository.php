@@ -56,8 +56,49 @@ class OutletRepository
     {
         // `tables` is eager-loaded in the operator's own order so the repeater draws the room
         // the way it is walked, not the way the ids happen to fall.
-        return Outlet::with(['products:id,title', 'tables' => fn ($q) => $q->ordered()])
+        $outlet = Outlet::with(['exclusiveProducts:id,title', 'tables' => fn ($q) => $q->ordered()])
             ->findOrFail($id);
+
+        // **Read-only, and the branch no longer owns this.** Exclusivity is a property of the
+        // DISH — "this dish is only made at KLCC" — so it is authored on the product form, where
+        // it is one statement instead of one per branch. What the outlet screen can usefully show
+        // is the consequence: which dishes are exclusive to this branch. There is no write path
+        // here on purpose, because two screens writing one pivot with different ideas of what a
+        // row means is precisely how this feature went wrong twice.
+        //
+        // Set here rather than as a model `$appends`, because the index listing loads outlets too
+        // and must not pay for a relation no list column shows.
+        $outlet->setAttribute(
+            'exclusive_product_ids',
+            $outlet->exclusiveProducts->pluck('id')->map(fn ($id) => (int) $id)->values()->all()
+        );
+
+        // **The names, for a `display` field rather than a picker.**
+        //
+        // The first attempt at showing this read-only used an autocomplete with `ui.readonly` —
+        // and `readonly` is not bound on that control, so the field rendered fully editable and an
+        // operator could pick a dish and watch the save discard it. That is precisely the defect
+        // this section was rewritten to remove, reintroduced by the fix for it. Measured in a
+        // browser: `input.readOnly === false`, no attribute. A `display` field has no input at all,
+        // so it cannot be edited by anybody however the engine evolves.
+        //
+        // Titles are translatable JSON and are resolved here rather than in the schema, for the
+        // reason `ModifierGroup::dishes_summary` resolves its own: a form is presentation and has
+        // no locale to resolve against.
+        $outlet->setAttribute(
+            'exclusive_products_summary',
+            $outlet->exclusiveProducts->map(function ($product) {
+                $title = $product->title;
+
+                if (is_array($title)) {
+                    $title = $title[app()->getLocale()] ?? $title['en'] ?? (count($title) ? reset($title) : '');
+                }
+
+                return trim((string) $title);
+            })->filter()->values()->all()
+        );
+
+        return $outlet;
     }
 
     public function create(array $data)
@@ -65,7 +106,6 @@ class OutletRepository
         return DB::transaction(function () use ($data) {
             $outlet = Outlet::create($this->normalise($data));
 
-            $this->syncProducts($outlet, $data);
             $this->writeTables($outlet, $data);
             $this->enforceSingleDefault($outlet);
 
@@ -78,14 +118,6 @@ class OutletRepository
         return DB::transaction(function () use ($id, $data) {
             $outlet = Outlet::findOrFail($id);
             $outlet->update($this->normalise($data, $outlet));
-
-            // Only when the form actually sent the key. A partial update — the status toggle on
-            // the index row, for instance — must not read a missing key as "serve nothing", which
-            // is precisely how a repeater-backed relation gets wiped by a screen that never
-            // showed it.
-            if (array_key_exists('product_ids', $data)) {
-                $this->syncProducts($outlet, $data);
-            }
 
             // Same guard, same reason: a partial update that never showed the dining room must
             // not be read as "this branch has no tables".
@@ -130,9 +162,14 @@ class OutletRepository
      */
     protected function normalise(array $data, ?Outlet $existing = null): array
     {
+        // An allow-list, so a hand-crafted POST cannot write a column the form does not show.
+        // The cost of that shape is that a NEW column is silently dropped until it is added here
+        // — the switch saves, the form redraws it off, and nothing anywhere reports a failure.
+        // `product_ids` was invisible for the opposite reason and it is the same lesson: when a
+        // field key and a column are two lists, adding to one is only ever half the change.
         $out = collect($data)->only([
             'title', 'slug', 'address', 'phone', 'latitude', 'longitude',
-            'offers_pickup', 'offers_delivery', 'restricts_menu', 'is_default',
+            'offers_pickup', 'offers_delivery', 'offers_dine_in', 'is_default',
             'timezone', 'status', 'orders',
         ])->all();
 
@@ -237,18 +274,6 @@ class OutletRepository
         }
 
         $outlet->tables()->whereNotIn('id', $keptIds ?: [0])->delete();
-    }
-
-    protected function syncProducts(Outlet $outlet, array $data): void
-    {
-        $ids = collect($data['product_ids'] ?? [])
-            ->map(fn ($id) => (int) $id)
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
-
-        $outlet->products()->sync($ids);
     }
 
     /**
