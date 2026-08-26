@@ -27,7 +27,7 @@ one **Saffron** group. It has two links:
 | **Outlet Name** | What the customer sees when they choose where to collect from. Use the name locals use — the district or the mall, not your internal branch code. Translatable: switch locale in the sidebar to add other languages |
 | **Collection Address** | Shown to a customer collecting from here. Leave it empty and the footer address is used instead |
 | **Phone** | Shown with the address. Include the country code so a customer can tap to call |
-| **Timezone** | Recorded against the branch. Hours and order times are still judged in the shop's timezone — see [What is recorded but not yet used](#what-is-recorded-but-not-yet-used) |
+| **Timezone** | Used when this branch keeps opening hours of its own — Service Hours entries naming this branch are judged on this clock. A branch without its own hours, or with this left empty, follows the shop's timezone from Settings |
 
 ### What this outlet serves
 
@@ -128,17 +128,20 @@ runs one site sees no such line — it already knows.
 
 ## What is recorded but not yet used
 
-Three fields on this form store what you tell them and nothing reads them yet. They are on the
-form because the branch is where the fact belongs, and filling them in now costs nothing:
+One field on this form stores what you tell it and nothing reads it yet. It is on the form
+because the branch is where the fact belongs, and filling it in now costs nothing:
 
 | Field | Why it does nothing yet |
 |---|---|
-| **This Outlet Serves Only Selected Dishes** + its dish list | The storefront menu does not vary by branch. A customer browses, then chooses where to collect at the cart — so at the moment the menu is drawn, there is no branch to filter by. Per-branch menus need that ordering decided first |
-| **Timezone** | Opening hours, the scheduled-order picker and the checkout guard all read the **shop's** timezone from Settings. A branch in another zone would need Service Hours to become per-branch first |
-| **Latitude / Longitude** | A radius delivery zone measures from an origin typed on the **zone**, under Shipping. Nothing reads the branch's own point |
+| **Latitude / Longitude** | A radius delivery zone measures from an origin typed on the **zone**, under Shipping. Nothing reads the branch's own point yet — per-branch delivery reach is planned, per branch, because some branches run their own riders and some hand off to a courier |
 
-Setting any of them is harmless. None of them is a way to stop a branch selling something
-today — for that, use **Status → Inactive**, or the dish's own **Stock** field.
+Setting it is harmless. It is not a way to stop a branch selling something today — for that,
+use **Status → Inactive**, or the dish's own **Stock** field.
+
+Two rows used to sit beside it, and both became features: the per-branch dish list became the
+dish's own **Availability** tab (this screen now shows a read-only mirror of what is exclusive
+here, and the dish's form is the only place that changes it), and **Timezone** is read whenever
+this branch keeps its own Service Hours (above).
 
 ## Deleting a branch
 

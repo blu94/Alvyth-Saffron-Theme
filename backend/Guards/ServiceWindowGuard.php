@@ -27,11 +27,17 @@ use Theme\Backend\Support\ThemeSettings;
  * banner and the picker read. That is the point: a refusal that disagrees with the page the
  * customer just used would tell them they may order and then turn them away.
  *
+ * Both refusals are judged for the **branch** the order names (`outlet_id`, the same checkout
+ * field the other branch guards read) when that branch keeps hours of its own — and in that
+ * branch's timezone where one is set. An order naming no branch, or a branch with no hours of
+ * its own, is judged on the shop's, which is every order there was before this.
+ *
  * **What it deliberately does not refuse.** A time inside a window but off the picker's
  * half-hour grid (11:07) is accepted — the grid is a convenience, not a rule the kitchen keeps,
- * and refusing it would reject an order the shop can cook. `mode` on a window
- * (delivery/pickup/both) is not consulted either, because the theme has no ordering-mode
- * control yet; that arrives with register O4, and this is where it will be read.
+ * and refusing it would reject an order the shop can cook. A window's `mode` (delivery /
+ * pickup / both) IS consulted, against the fulfilment type core resolves — but only to say
+ * "not for this mode at that hour", never "closed", because the shop is open and saying
+ * otherwise sends the customer hunting for a different hour when they should switch mode.
  *
  * **It never throws to refuse.** Core treats a guard that throws as no opinion and lets the
  * order through, so anything this class wants to stop it must *return* — including a value it
@@ -49,7 +55,14 @@ class ServiceWindowGuard implements CheckoutGuard
 
     public function check(array $cart, array $fields, array $context = []): ?string
     {
-        $timezone = $this->windows->timezone();
+        // Which branch this order is for, read exactly as the sibling branch guards read it:
+        // the `outlet_id` checkout field, `<= 0` meaning no branch and no opinion. A branch
+        // that keeps its own hours is judged on them — and on its own wall clock, when its
+        // timezone column names a real zone; every other order is judged on the shop's, which
+        // is every order there was before branches could keep hours.
+        $outletId = (int) ($fields['outlet_id'] ?? 0) ?: null;
+
+        $timezone = $this->windows->timezone($outletId);
         $now      = Carbon::now($timezone);
 
         // How the order is being fulfilled, so a window marked "delivery only" can actually
@@ -69,20 +82,20 @@ class ServiceWindowGuard implements CheckoutGuard
         }
 
         return $scheduled === ''
-            ? $this->refuseIfClosedNow($timezone, $now, $mode)
-            : $this->refuseIfOutsideHours($scheduled, $timezone, $now, $mode);
+            ? $this->refuseIfClosedNow($timezone, $now, $mode, $outletId)
+            : $this->refuseIfOutsideHours($scheduled, $timezone, $now, $mode, $outletId);
     }
 
     /** An ASAP order the shop cannot start on: judged on now, for this mode. */
-    private function refuseIfClosedNow(string $timezone, Carbon $now, string $mode): ?string
+    private function refuseIfClosedNow(string $timezone, Carbon $now, string $mode, ?int $outletId): ?string
     {
-        $state = $this->windows->openState($timezone, $now);
+        $state = $this->windows->openState($timezone, $now, $outletId);
 
         if ($state['open'] ?? true) {
             // Open — but possibly not for *this* mode. A shop that takes collections all day
             // and delivers only at lunch is one row marked `delivery`, and until the order
             // carried a fulfilment type there was nothing to compare it against.
-            return $this->refuseIfModeNotServedNow($timezone, $now, $mode);
+            return $this->refuseIfModeNotServedNow($timezone, $now, $mode, $outletId);
         }
 
         // The operator's own wording where they wrote one — a holiday's reason is more use
@@ -101,9 +114,9 @@ class ServiceWindowGuard implements CheckoutGuard
      * delivering at this hour" rather than "we are shut" — a different sentence, because a
      * customer told the shop is closed while its lights are on will telephone.
      */
-    private function refuseIfModeNotServedNow(string $timezone, Carbon $now, string $mode): ?string
+    private function refuseIfModeNotServedNow(string $timezone, Carbon $now, string $mode, ?int $outletId): ?string
     {
-        $hours = $this->windows->hoursForDate($now);
+        $hours = $this->windows->hoursForDate($now, $outletId);
 
         // No hours authored is no opinion, exactly as every other reader treats it.
         if ($hours['source'] === 'unconfigured') {
@@ -123,7 +136,7 @@ class ServiceWindowGuard implements CheckoutGuard
     }
 
     /** A slot the shop is not open for: judged on the TARGET day, never today. */
-    private function refuseIfOutsideHours(string $scheduled, string $timezone, Carbon $now, string $mode): ?string
+    private function refuseIfOutsideHours(string $scheduled, string $timezone, Carbon $now, string $mode, ?int $outletId): ?string
     {
         $when = $this->parse($scheduled, $timezone);
 
@@ -153,7 +166,7 @@ class ServiceWindowGuard implements CheckoutGuard
             return __('We only take orders up to :days days ahead.', ['days' => $horizon]);
         }
 
-        $hours = $this->windows->hoursForDate($when);
+        $hours = $this->windows->hoursForDate($when, $outletId);
 
         // No hours authored at all is no opinion, exactly as the banner reads it.
         if ($hours['source'] === 'unconfigured') {

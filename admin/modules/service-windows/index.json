@@ -45,6 +45,18 @@
             },
             {
                 "ui": { "type": "field" },
+                "key": "outlet",
+                "label": "Branch",
+                "placeholder": "All branches and the shop",
+                "type": "select",
+                "options": {
+                    "url": "/admin/modules/service-windows/options",
+                    "master": "outlet",
+                    "params": { "columns[]": "outlet" }
+                }
+            },
+            {
+                "ui": { "type": "field" },
                 "key": "day_of_week",
                 "label": "Day",
                 "placeholder": "Any day",
@@ -96,6 +108,13 @@
             "key": "kind",
             "type": "chip",
             "sortable": true
+        },
+        {
+            "ui": { "type": "display" },
+            "label": "Branch",
+            "key": "branch_label",
+            "sortable": false,
+            "searchable": false
         },
         {
             "ui": { "type": "display" },

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\View;
 use Theme\Backend\Handlers\ShippingMethodOutlet;
 use Theme\Backend\Repositories\ServiceWindowRepository;
 use Theme\Backend\Support\BookingWindow;
+use Theme\Backend\Support\BranchScope;
 use Theme\Backend\Support\ThemeSettings;
 
 /**
@@ -66,7 +67,11 @@ class OrderSchedule
             // The horizon lives on the repository because the checkout guard clamps by the
             // same number: offering a day the server would refuse is the one failure that
             // matters here, and two copies of a default is how it happens.
-            $timezone = $this->windows->timezone();
+            // The gate's branch: a branch keeping its own hours gets its own slots, on
+            // its own clock, and the guard applies the identical precedence at checkout.
+            $outletId = BranchScope::outlet()?->id;
+
+            $timezone = $this->windows->timezone($outletId);
             $horizon  = $this->windows->schedulingHorizon();
             $now      = Carbon::now($timezone);
 
@@ -75,10 +80,10 @@ class OrderSchedule
             // date, resolved in the browser from the pattern below — a horizon of three months
             // is 90 dates, and asking the server per date is neither cheap nor possible (a
             // theme registers no endpoint).
-            $days      = $this->days(min(self::QUICK_DAYS, $horizon), $timezone);
-            $open      = (bool) ($this->windows->openState($timezone)['open'] ?? true);
-            $pattern   = $this->windows->weeklyPattern();
-            $overrides = $this->windows->exceptionsBetween($now, $now->copy()->addDays($horizon - 1));
+            $days      = $this->days(min(self::QUICK_DAYS, $horizon), $timezone, null, $outletId);
+            $open      = (bool) ($this->windows->openState($timezone, null, $outletId)['open'] ?? true);
+            $pattern   = $this->windows->weeklyPattern($outletId);
+            $overrides = $this->windows->exceptionsBetween($now, $now->copy()->addDays($horizon - 1), $outletId);
         } catch (\Throwable $e) {
             report($e);
 
@@ -205,14 +210,14 @@ class OrderSchedule
      *
      * @return array<int, array{date: string, label: string, slots: array<int, string>}>
      */
-    public function days(int $daysAhead, string $timezone, ?Carbon $from = null): array
+    public function days(int $daysAhead, string $timezone, ?Carbon $from = null, ?int $outletId = null): array
     {
         $now = ($from ? $from->copy() : Carbon::now())->setTimezone($timezone);
 
         // No whole-shop weekly hours at all means the shop has not configured them; unlike
         // the Store Status banner (which reports "open" so nothing looks broken), a picker
         // must not invent times nobody entered.
-        if (! $this->windows->hasHours()) {
+        if (! $this->windows->hasHours($outletId)) {
             return [];
         }
 
@@ -222,7 +227,7 @@ class OrderSchedule
             $day   = $now->copy()->addDays($i)->startOfDay();
             $slots = [];
 
-            foreach ($this->windows->hoursForDate($day)['spans'] as $span) {
+            foreach ($this->windows->hoursForDate($day, $outletId)['spans'] as $span) {
                 $slot = Carbon::parse($day->toDateString() . ' ' . $span['opens'], $timezone);
                 $end  = Carbon::parse($day->toDateString() . ' ' . $span['closes'], $timezone);
 

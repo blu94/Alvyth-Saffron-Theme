@@ -31,13 +31,36 @@ ever one thing.
 
 ### Weekly hours
 
+- **Branch** — leave it empty and the entry belongs to the whole shop, which is what a
+  single-site shop always wants. Name a branch and the entry is that branch's alone — see
+  [One branch, its own hours](#one-branch-its-own-hours) below before using it.
 - **Day** — the weekday this span covers.
-- **Opens At / Closes At** — 24-hour, in the **shop's own local time**. A span past midnight
-  needs two rows, one per day.
+- **Opens At / Closes At** — 24-hour, in the **shop's own local time**. For a branch entry
+  whose outlet names a timezone, in **that branch's** local time. A span past midnight needs
+  two rows, one per day.
 - **Applies To** — Delivery and pickup, Delivery only, or Pickup only. Lunch delivery only,
   dine-in all day: that is two rows with different Applies To.
 - **Split service** — add two rows on the same day (11:00–14:30 and 18:00–22:00) and the
   storefront shows both spans.
+
+### One branch, its own hours
+
+Give an entry a **Branch** and three rules apply, in this order:
+
+1. **A branch with any weekly entries of its own keeps its whole week.** A day you do not
+   author for it is a day it is **closed** — it does not borrow the shop's hours for the gaps.
+   So a kiosk open Monday to Friday needs five rows and nothing for the weekend; giving it
+   only a Saturday row makes it a Saturday-only kiosk.
+2. **A dated entry still wins its date — the branch's over the shop's.** A shop-wide holiday
+   closes every branch, including one keeping its own week, unless that branch has its own
+   entry for the same date saying otherwise.
+3. **The branch's clock applies.** If the branch's outlet record names a timezone, its own
+   entries are judged in it; otherwise the shop's timezone from Settings is used, as always.
+
+Customers see the difference wherever hours appear: the Store Status banner, the opening-hours
+table and the order-time picker all follow the branch the customer chose at the top of the
+shop, and checkout refuses an order the chosen branch's hours cannot take even when the shop's
+own hours could.
 
 ### Holidays and closures
 
@@ -51,8 +74,10 @@ ever one thing.
 
 ## The list
 
-Weekly rows sort in week order first, then the dated overrides by date. The **Entry Type**
-filter shows one kind at a time; **Day**, **Mode** and **Status** narrow further.
+Weekly rows sort in week order first, then the dated overrides by date. The **Branch** column
+says whose each row is — *Whole shop*, the branch's name, or *Removed branch* for a row whose
+outlet was deleted (such a row does nothing until the branch is restored). The **Entry Type**
+filter shows one kind at a time; **Branch**, **Day**, **Mode** and **Status** narrow further.
 
 Each row has three actions: the **eye** opens a read-only view of the entry, the **pencil**
 edits it, and the **bin** deletes it after asking.

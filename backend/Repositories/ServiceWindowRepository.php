@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Theme\Backend\Models\Outlet;
 use Theme\Backend\Models\ServiceWindow;
 use Theme\Backend\Support\ThemeSettings;
 
@@ -107,10 +108,19 @@ class ServiceWindowRepository
             $query->where('mode', $filters['mode']);
         }
 
+        // 'shop' is the whole-shop rows alone; a number is one branch's own rows. Distinct
+        // values because "no filter" must keep showing everything, the way it always has.
+        if (!empty($filters['outlet'])) {
+            $filters['outlet'] === 'shop'
+                ? $query->forShop()
+                : $query->forOutlet((int) $filters['outlet']);
+        }
+
         // Weekly rows first and in week order, then the dated overrides in date order. Both
         // sort keys are null for the other kind, so a single `orderBy` pair would interleave
         // holidays through the week at whatever position null happens to sort.
         return $query
+            ->with('scope')
             ->orderBy('kind')
             ->orderByRaw('day_of_week IS NULL, day_of_week')
             ->orderByRaw('date IS NULL, date')
@@ -119,7 +129,15 @@ class ServiceWindowRepository
 
     public function find($id)
     {
-        return ServiceWindow::find($id);
+        $window = ServiceWindow::find($id);
+
+        // The form speaks in `outlet_id`; the row stores a polymorphic scope. Hydrated here so
+        // the Branch autocomplete opens holding the branch the row belongs to.
+        if ($window && $window->scope_type === Outlet::class) {
+            $window->setAttribute('outlet_id', (int) $window->scope_id);
+        }
+
+        return $window;
     }
 
     public function create(array $data)
@@ -179,6 +197,22 @@ class ServiceWindowRepository
                     ['label' => 'Holiday or closure', 'value' => ServiceWindow::KIND_EXCEPTION],
                 ],
 
+                // The list's Branch filter. Every branch, active or not — a deactivated
+                // branch's rows still exist and still need finding, and the outlets screen is
+                // where its status lives.
+                'outlet' => collect([['label' => __('Whole shop'), 'value' => 'shop']])
+                    ->concat(
+                        Outlet::query()->orderBy('id')->get()->map(fn (Outlet $outlet) => [
+                            'label' => trim((string) (
+                                $outlet->getTranslation('title', app()->getLocale(), false)
+                                    ?: $outlet->getTranslation('title', 'en', false)
+                            )) ?: (string) $outlet->slug,
+                            'value' => (string) $outlet->id,
+                        ])
+                    )
+                    ->values()
+                    ->all(),
+
                 'kitchen_state' => collect(self::KITCHEN_STATES)
                     ->map(fn ($state, $key) => ['label' => $state['label'], 'value' => $key])
                     ->values()
@@ -212,7 +246,7 @@ class ServiceWindowRepository
     {
         $out = collect($data)
             ->only([
-                'kind', 'scope_type', 'scope_id', 'day_of_week', 'date',
+                'kind', 'day_of_week', 'date',
                 'opens_at', 'closes_at', 'mode', 'exception_type', 'reason',
                 'status', 'orders', 'data',
             ])
@@ -260,11 +294,20 @@ class ServiceWindowRepository
             }
         }
 
-        // An empty scope means the whole shop. Store both halves as null rather than a
-        // dangling type with no id, which morphTo would try to resolve.
-        if (empty($out['scope_id'])) {
-            $out['scope_id']   = null;
+        // The form speaks in `outlet_id`; the row stores a polymorphic scope. The pair is
+        // derived here and ONLY here — `scope_type` and `scope_id` are no longer accepted from
+        // the payload at all, so a hand-crafted request cannot point the morph at an arbitrary
+        // class. An id naming no outlet collapses to the whole shop rather than saving a
+        // dangling reference: a stale option in a form left open while a branch was deleted
+        // must not scope hours to a place that is gone.
+        $outletId = (int) ($data['outlet_id'] ?? 0);
+
+        if ($outletId > 0 && Outlet::query()->whereKey($outletId)->exists()) {
+            $out['scope_type'] = Outlet::class;
+            $out['scope_id']   = $outletId;
+        } else {
             $out['scope_type'] = null;
+            $out['scope_id']   = null;
         }
 
         return $out;
@@ -1085,8 +1128,21 @@ class ServiceWindowRepository
      * means 09:00 *there*, DST or not: comparisons happen on local wall-clock and only the
      * display is converted.
      */
-    public function timezone(): string
+    public function timezone(?int $outletId = null): string
     {
+        // A branch judging its own hours judges them on its own wall clock. The outlets form
+        // stored this column from the start with a hint promising exactly this the day
+        // per-branch hours shipped — this is that day. Free text, so it is trusted only when
+        // it names a real zone: "GMT+8" typed in good faith must degrade to the shop's clock,
+        // not take checkout down with an InvalidTimeZoneException.
+        if ($outletId) {
+            $tz = trim((string) (Outlet::query()->whereKey($outletId)->value('timezone') ?? ''));
+
+            if ($tz !== '' && in_array($tz, timezone_identifiers_list(), true)) {
+                return $tz;
+            }
+        }
+
         return (string) config('app.timezone', 'UTC');
     }
 
@@ -1107,15 +1163,63 @@ class ServiceWindowRepository
         return min(365, max(1, (int) ThemeSettings::get('scheduling_days_ahead', 30)));
     }
 
-    /** Weekly windows belonging to the shop rather than to one menu section. */
+    /** Weekly windows belonging to the shop rather than to one branch or menu section. */
     protected function shopWindows()
     {
-        return ServiceWindow::recurring()->where('status', 'active')->whereNull('scope_id');
+        return ServiceWindow::recurring()->where('status', 'active')->forShop();
     }
 
-    /** Has the operator authored any whole-shop hours at all? */
-    public function hasHours(): bool
+    /** Weekly windows one branch authored for itself. */
+    protected function branchWindows(int $outletId)
     {
+        return ServiceWindow::recurring()->where('status', 'active')->forOutlet($outletId);
+    }
+
+    /**
+     * Whether this branch keeps its own week — memoised per instance, because `openState()`
+     * walks up to seven days and the picker loops the horizon, and the answer cannot change
+     * mid-request. Tests that write windows between assertions should resolve a fresh
+     * repository rather than reuse one across the write.
+     */
+    private array $branchHasWeek = [];
+
+    protected function branchKeepsOwnWeek(int $outletId): bool
+    {
+        return $this->branchHasWeek[$outletId] ??= $this->branchWindows($outletId)->exists();
+    }
+
+    /**
+     * A branch context that the readers may honour — or null.
+     *
+     * The same principle as the branch-menu readers (and proved there the hard way): scope may
+     * only be granted by a branch a customer could actually choose. A stale cookie or a
+     * hand-crafted field can name a branch that has since been deactivated or deleted, and
+     * honouring its private hours would judge a live order by a dead branch's clock. Such a
+     * context falls back to the shop's own hours instead.
+     */
+    private array $usableOutlet = [];
+
+    protected function resolvedOutletId(?int $outletId): ?int
+    {
+        if (! $outletId) {
+            return null;
+        }
+
+        $usable = $this->usableOutlet[$outletId]
+            ??= Outlet::query()->active()->whereKey($outletId)->exists();
+
+        return $usable ? $outletId : null;
+    }
+
+    /** Has the operator authored any hours this context would read at all? */
+    public function hasHours(?int $outletId = null): bool
+    {
+        $outletId = $this->resolvedOutletId($outletId);
+
+        if ($outletId && $this->branchKeepsOwnWeek($outletId)) {
+            return true;
+        }
+
         return $this->shopWindows()->exists();
     }
 
@@ -1134,18 +1238,40 @@ class ServiceWindowRepository
      * outright, and the weekly windows are consulted only when there is none. Section-scoped
      * rows are not the shop's hours and never appear here.
      *
-     * `source: unconfigured` means no whole-shop hours are authored at all, which is
-     * deliberately **not** the same as closed. A shop that never filled the screen in must not
-     * have every order refused, so every caller reads it as "no opinion".
+     * With a branch in play the same shape repeats one level down. The branch's own dated
+     * entry wins first — then the shop's, because a shop-wide holiday closes every branch
+     * unless that branch says otherwise for that date. For the week itself, **a branch with
+     * any weekly hours of its own keeps its whole week**: a day it does not author is a day
+     * it is closed there, never a day it inherits from the shop. Per-day fallback reads
+     * friendlier right up until a kiosk closed at weekends authors Monday–Friday and silently
+     * inherits the shop's Saturday — the same trap, in miniature, as the outlet_tables
+     * fallback this rule is modelled on avoiding.
+     *
+     * `source: unconfigured` means no hours this context would read are authored at all,
+     * which is deliberately **not** the same as closed. A shop that never filled the screen
+     * in must not have every order refused, so every caller reads it as "no opinion".
      *
      * @return array{spans: array<int,array{opens:string,closes:string,mode:string}>, source: string, reason: ?string}
      */
-    public function hoursForDate(Carbon $date): array
+    public function hoursForDate(Carbon $date, ?int $outletId = null): array
     {
-        // Exceptions and windows share a table, so this is one query narrowed by `kind`
-        // rather than a lookup in a second model.
-        $exception = ServiceWindow::exceptions()
+        $outletId = $this->resolvedOutletId($outletId);
+
+        // Exceptions and windows share a table, so these are queries narrowed by `kind`
+        // rather than lookups in a second model.
+        $exception = null;
+
+        if ($outletId) {
+            $exception = ServiceWindow::exceptions()
+                ->where('status', 'active')
+                ->forOutlet($outletId)
+                ->whereDate('date', $date->toDateString())
+                ->first();
+        }
+
+        $exception ??= ServiceWindow::exceptions()
             ->where('status', 'active')
+            ->forShop()
             ->whereDate('date', $date->toDateString())
             ->first();
 
@@ -1166,7 +1292,11 @@ class ServiceWindowRepository
             ];
         }
 
-        $spans = $this->shopWindows()
+        $weekly = $outletId && $this->branchKeepsOwnWeek($outletId)
+            ? $this->branchWindows($outletId)
+            : $this->shopWindows();
+
+        $spans = $weekly
             ->where('day_of_week', (int) $date->dayOfWeek)
             ->orderBy('opens_at')
             ->get()
@@ -1177,7 +1307,7 @@ class ServiceWindowRepository
             ])
             ->all();
 
-        if ($spans === [] && ! $this->hasHours()) {
+        if ($spans === [] && ! $this->hasHours($outletId)) {
             return ['spans' => [], 'source' => 'unconfigured', 'reason' => null];
         }
 
@@ -1200,11 +1330,17 @@ class ServiceWindowRepository
      *
      * @return array<int, array<int, array{opens:string, closes:string}>>
      */
-    public function weeklyPattern(): array
+    public function weeklyPattern(?int $outletId = null): array
     {
+        $outletId = $this->resolvedOutletId($outletId);
+
+        $windows = $outletId && $this->branchKeepsOwnWeek($outletId)
+            ? $this->branchWindows($outletId)
+            : $this->shopWindows();
+
         $pattern = array_fill(0, 7, []);
 
-        foreach ($this->shopWindows()->orderBy('opens_at')->get() as $window) {
+        foreach ($windows->orderBy('opens_at')->get() as $window) {
             $pattern[(int) $window->day_of_week][] = [
                 'opens'  => substr((string) $window->opens_at, 0, 5),
                 'closes' => substr((string) $window->closes_at, 0, 5),
@@ -1223,26 +1359,38 @@ class ServiceWindowRepository
      *
      * @return array<string, array{spans: array<int, array{opens:string, closes:string}>, reason: ?string}>
      */
-    public function exceptionsBetween(Carbon $from, Carbon $to): array
+    public function exceptionsBetween(Carbon $from, Carbon $to, ?int $outletId = null): array
     {
-        $rows = ServiceWindow::exceptions()
-            ->where('status', 'active')
-            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
-            ->get();
+        $outletId = $this->resolvedOutletId($outletId);
 
         $out = [];
 
-        foreach ($rows as $row) {
-            $reason = $row->getTranslation('reason', app()->getLocale(), false)
-                ?: $row->getTranslation('reason', 'en', false);
+        // Shop-wide overrides first, then the branch's own on top — the same per-date
+        // precedence `hoursForDate()` applies, so the browser's calendar and the server's
+        // refusal cannot disagree about whose holiday a date is.
+        $sets = [ServiceWindow::exceptions()->where('status', 'active')->forShop()];
 
-            $out[Carbon::parse($row->date)->toDateString()] = [
-                'spans'  => $row->closesTheDay() ? [] : [[
-                    'opens'  => substr((string) $row->opens_at, 0, 5),
-                    'closes' => substr((string) $row->closes_at, 0, 5),
-                ]],
-                'reason' => $reason ?: null,
-            ];
+        if ($outletId) {
+            $sets[] = ServiceWindow::exceptions()->where('status', 'active')->forOutlet($outletId);
+        }
+
+        foreach ($sets as $query) {
+            $rows = $query
+                ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+                ->get();
+
+            foreach ($rows as $row) {
+                $reason = $row->getTranslation('reason', app()->getLocale(), false)
+                    ?: $row->getTranslation('reason', 'en', false);
+
+                $out[Carbon::parse($row->date)->toDateString()] = [
+                    'spans'  => $row->closesTheDay() ? [] : [[
+                        'opens'  => substr((string) $row->opens_at, 0, 5),
+                        'closes' => substr((string) $row->closes_at, 0, 5),
+                    ]],
+                    'reason' => $reason ?: null,
+                ];
+            }
         }
 
         return $out;
@@ -1255,12 +1403,14 @@ class ServiceWindowRepository
      * refusal, both through {@see hoursForDate()} so the banner and the refusal cannot say
      * different things.
      */
-    public function openState(?string $timezone = null, ?Carbon $at = null): array
+    public function openState(?string $timezone = null, ?Carbon $at = null, ?int $outletId = null): array
     {
-        $tz  = $timezone ?: $this->timezone();
+        $outletId = $this->resolvedOutletId($outletId);
+
+        $tz  = $timezone ?: $this->timezone($outletId);
         $now = ($at ? $at->copy() : Carbon::now())->setTimezone($tz);
 
-        $today = $this->hoursForDate($now);
+        $today = $this->hoursForDate($now, $outletId);
 
         // The shop has not configured hours. Report open — refusing every order because a
         // screen was never filled in would be worse than the alternative.
@@ -1301,7 +1451,7 @@ class ServiceWindowRepository
         // cancelled — the banner used to answer "closed" with no reopening time at all.
         for ($i = 1; $i <= 7; $i++) {
             $day   = $now->copy()->addDays($i);
-            $hours = $this->hoursForDate($day);
+            $hours = $this->hoursForDate($day, $outletId);
 
             if ($hours['spans'] !== []) {
                 return [

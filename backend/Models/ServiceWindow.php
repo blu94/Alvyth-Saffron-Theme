@@ -60,6 +60,9 @@ class ServiceWindow extends Model
         'data'        => 'array',
     ];
 
+    /** The list's Branch column — see {@see getBranchLabelAttribute()}. */
+    protected $appends = ['branch_label'];
+
     public const DAYS = [
         0 => 'Sunday',
         1 => 'Monday',
@@ -107,9 +110,51 @@ class ServiceWindow extends Model
         return $query->where('kind', self::KIND_EXCEPTION);
     }
 
+    /** Rows belonging to the whole shop — the only rows every reader consulted before branches. */
+    public function scopeForShop(Builder $query): Builder
+    {
+        return $query->whereNull('scope_id');
+    }
+
+    /** Rows one branch authored for itself. */
+    public function scopeForOutlet(Builder $query, int $outletId): Builder
+    {
+        return $query->where('scope_type', Outlet::class)->where('scope_id', $outletId);
+    }
+
     public function isException(): bool
     {
         return $this->kind === self::KIND_EXCEPTION;
+    }
+
+    /**
+     * Whose hours this row is — the branch's name, or "Whole shop".
+     *
+     * Appended so the Hours & Holidays list can carry a Branch column: without one, two
+     * branches keeping different Friday hours render as two identical-looking Friday rows,
+     * and the operator's only way to tell them apart is opening each. A row whose branch has
+     * been deleted says so rather than claiming to be the shop's — the readers ignore it
+     * (a removed branch falls back to shop hours), and a label that said "Whole shop" would
+     * imply it applies everywhere when it applies nowhere.
+     */
+    public function getBranchLabelAttribute(): string
+    {
+        if ($this->scope_type !== Outlet::class || ! $this->scope_id) {
+            return __('Whole shop');
+        }
+
+        $outlet = $this->relationLoaded('scope')
+            ? $this->getRelation('scope')
+            : $this->scope()->first();
+
+        if (! $outlet instanceof Outlet) {
+            return __('Removed branch');
+        }
+
+        $title = $outlet->getTranslation('title', app()->getLocale(), false)
+            ?: $outlet->getTranslation('title', 'en', false);
+
+        return trim((string) $title) ?: (string) $outlet->slug;
     }
 
     /**

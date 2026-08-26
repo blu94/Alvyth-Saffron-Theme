@@ -39,6 +39,26 @@
         {
           "ui": {
             "type": "field",
+            "cols": 12,
+            "clearable": true,
+            "autoSelectSingle": false
+          },
+          "key": "outlet_id",
+          "type": "autocomplete",
+          "label": "Branch",
+          "placeholder": "Whole shop",
+          "hint": "Leave empty and this entry belongs to the whole shop, which is what a single-site shop always wants. Name a branch and it belongs to that branch alone. A branch with any weekly hours of its own keeps its whole week — a day you leave out is a day it is closed, not a day it borrows from the shop — and shop-wide holidays still close it unless the branch has its own entry for that date. Branch entries are judged in the branch's own timezone where one is set on the outlet",
+          "options": {
+            "url": "/admin/modules/outlets/options",
+            "master": "outlets"
+          },
+          "rules": [
+            "nullable"
+          ]
+        },
+        {
+          "ui": {
+            "type": "field",
             "cols": 4,
             "show_if": "kind,recurring"
           },

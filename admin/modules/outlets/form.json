@@ -57,7 +57,7 @@
           "options": {
             "$ref": "../../shared/timezones.json"
           },
-          "hint": "Recorded against the branch. Opening hours and order times are still judged in the shop's own timezone, set under Settings, so this changes nothing until per-branch hours ship"
+          "hint": "Used when this branch keeps opening hours of its own (Service Hours entries naming this branch): those are judged on this clock, so a 09:00 opening is 09:00 here whatever the season. Leave empty — or leave the branch without its own hours — and the shop's timezone under Settings applies, exactly as before"
         }
       ],
       "subtitle": "Who this branch is and how to reach it. The name is what a customer sees when they choose where to collect from, so use the name locals use — the district or mall, not the company's internal branch code."
