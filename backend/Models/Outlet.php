@@ -54,6 +54,8 @@ class Outlet extends Model
         'offers_pickup',
         'offers_delivery',
         'offers_dine_in',
+        'delivers_by_own_riders',
+        'delivery_radius_km',
         'is_default',
         'timezone',
         'status',
@@ -72,13 +74,15 @@ class Outlet extends Model
     // pinned by `tests/Feature/Admin/Module/ModuleSlugPreparationTest`. The cast stays off on
     // its own merits; do not read its absence as the fix.
     protected $casts = [
-        'latitude'        => 'float',
-        'longitude'       => 'float',
-        'offers_pickup'   => 'boolean',
-        'offers_delivery' => 'boolean',
-        'offers_dine_in'  => 'boolean',
-        'is_default'      => 'boolean',
-        'orders'          => 'integer',
+        'latitude'               => 'float',
+        'longitude'              => 'float',
+        'offers_pickup'          => 'boolean',
+        'offers_delivery'        => 'boolean',
+        'offers_dine_in'         => 'boolean',
+        'delivers_by_own_riders' => 'boolean',
+        'delivery_radius_km'     => 'float',
+        'is_default'             => 'boolean',
+        'orders'                 => 'integer',
     ];
 
     /**
@@ -93,7 +97,6 @@ class Outlet extends Model
     public function exclusiveProducts(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'outlet_product')
-            ->withPivot('price_override')
             ->withTimestamps();
     }
 
@@ -178,6 +181,82 @@ class Outlet extends Model
     }
 
     /**
+     * Branches whose own riders deliver, and which have drawn how far they go.
+     *
+     * **Composes `offers_delivery`**, for the reason {@see self::scopeDineIn()} composes
+     * `offers_pickup`: a branch that has stopped delivering does not deliver by its own riders
+     * either, whatever this column says, and putting the rule here is what stops a second caller
+     * half-remembering it. A positive radius is required too — a branch that ticked the switch
+     * and left the distance empty has drawn no circle, and treating that as zero would refuse
+     * every address in the world while looking configured.
+     */
+    public function scopeOwnRiders(Builder $query): Builder
+    {
+        return $query->where('offers_delivery', true)
+            ->where('delivers_by_own_riders', true)
+            ->whereNotNull('delivery_radius_km')
+            ->where('delivery_radius_km', '>', 0);
+    }
+
+    /** The row-level twin of {@see self::scopeOwnRiders()}. */
+    public function ridesItsOwn(): bool
+    {
+        return (bool) $this->offers_delivery
+            && (bool) $this->delivers_by_own_riders
+            && $this->delivery_radius_km !== null
+            && (float) $this->delivery_radius_km > 0;
+    }
+
+    /**
+     * How far this branch is from a point, in kilometres — or null when it cannot say.
+     *
+     * Haversine, matching core's own `MatchesRegions::haversineKm()` to the metre, because the
+     * two answer the same question about the same earth and a shop drawing a ring should not
+     * find that the zone which prices the delivery and the branch which cooks it disagree about
+     * whether an address is inside it. Duplicated rather than shared because that trait is core's
+     * and describes a *zone*; a theme may not widen it, and six lines of arithmetic is a cheaper
+     * coupling than a core change.
+     *
+     * Null when this branch has no point of its own — it has not been geocoded, so it cannot
+     * measure anything, and every caller must read that as "no opinion" rather than "out of
+     * range".
+     */
+    public function distanceKmTo(float $lat, float $lng): ?float
+    {
+        if ($this->latitude === null || $this->longitude === null) {
+            return null;
+        }
+
+        $earthKm = 6371.0088;
+
+        $dLat = deg2rad($lat - (float) $this->latitude);
+        $dLng = deg2rad($lng - (float) $this->longitude);
+
+        $a = sin($dLat / 2) ** 2
+            + cos(deg2rad((float) $this->latitude)) * cos(deg2rad($lat)) * sin($dLng / 2) ** 2;
+
+        return $earthKm * 2 * atan2(sqrt($a), sqrt(1 - $a));
+    }
+
+    /**
+     * Do this branch's own riders reach that point?
+     *
+     * False when the branch cannot say — no radius, or no coordinates of its own. A caller
+     * deciding whether to refuse must ask {@see self::ridesItsOwn()} about the shop as a whole
+     * first, or a shop that has geocoded nothing would refuse every delivery it has.
+     */
+    public function deliversTo(float $lat, float $lng): bool
+    {
+        if (! $this->ridesItsOwn()) {
+            return false;
+        }
+
+        $distance = $this->distanceKmTo($lat, $lng);
+
+        return $distance !== null && $distance <= (float) $this->delivery_radius_km;
+    }
+
+    /**
      * Does this branch serve the given dish?
      *
      * **The question is asked of the DISH first.** A dish nobody has restricted is served
@@ -218,22 +297,10 @@ class Outlet extends Model
         return $branches->contains($this->id);
     }
 
-    /**
-     * What this outlet charges for a dish, or null to use the dish's own price.
-     *
-     * Null rather than the dish's price on purpose: the caller can then tell "this branch has no
-     * opinion" from "this branch charges zero", and only the first should fall through.
-     *
-     * **Reads a row that only exists for an exclusive dish**, so a branch could never price a dish
-     * it shares with the others — which is most of them. That is why nothing calls this. Per-branch
-     * pricing needs its own pivot; see the migration's note.
-     */
-    public function priceFor(int $productId): ?float
-    {
-        $row = $this->exclusiveProducts()->whereKey($productId)->first();
-
-        $override = $row?->pivot?->price_override;
-
-        return $override === null ? null : (float) $override;
-    }
+    // `priceFor()` lived here and is gone. It read `outlet_product.price_override`, a column that
+    // only ever existed on a row meaning "this dish is exclusive to this branch" — so it could
+    // price a branch's specials and never one of the many dishes a branch shares, which is
+    // incoherent as a pricing model rather than merely incomplete. Nothing called it. Per-branch
+    // pricing gets `outlet_product_price`, whose rows mean only what their own name says; see the
+    // migration.
 }

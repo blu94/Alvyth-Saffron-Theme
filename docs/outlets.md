@@ -126,22 +126,42 @@ order belongs.
 A ticket for a branch carries `@ Bangsar` in its header on the **Kitchen Queue**. A shop that
 runs one site sees no such line — it already knows.
 
+## How far this branch delivers
+
+Two fields, both hidden until **Offers Delivery** is on:
+
+| Field | What it does |
+|---|---|
+| **This Branch Delivers With Its Own Riders** | Off (the default) means a courier delivers for this branch, and your **Shipping** zones decide how far it reaches — exactly as before this field existed. On means your own riders serve a circle around this branch |
+| **How Far Your Riders Go (km)** | The radius of that circle, measured in a straight line from this branch's **Latitude / Longitude** |
+
+**You can mix the two, which is the whole point.** One branch on its own riders with an 8 km
+circle, another handing to a courier: both work in the same shop, and each states its reach the
+way that arrangement actually works.
+
+A delivery is turned away at checkout only when **every** branch that delivers runs its own
+riders and the address is outside all their circles. The customer is told which branch is
+nearest, how far it goes and how far away they are, so somebody 500 m outside knows to
+telephone. Leave one branch on a courier and nothing is ever refused this way — the shipping
+zones remain the authority, as they always were.
+
+> **It stays quiet unless it can be sure.** Nothing is refused when: the customer is ordering to
+> an address they have not saved to their account (only a saved address carries the map point
+> this measures against); the branch has the switch on but no distance filled in, or no
+> Latitude / Longitude; or the order is collection or dine-in, where the customer is coming to
+> you and how far away they live is not your business. In every one of those the order goes
+> through.
+
 ## What is recorded but not yet used
 
-One field on this form stores what you tell it and nothing reads it yet. It is on the form
-because the branch is where the fact belongs, and filling it in now costs nothing:
+Nothing on this form is unread any more. Three rows used to sit here and each became a feature:
+the per-branch dish list became the dish's own **Availability** tab (this screen now shows a
+read-only mirror of what is exclusive here, and the dish's form is the only place that changes
+it); **Timezone** is read whenever this branch keeps its own Service Hours (above); and
+**Latitude / Longitude** are the centre of the delivery circle described above.
 
-| Field | Why it does nothing yet |
-|---|---|
-| **Latitude / Longitude** | A radius delivery zone measures from an origin typed on the **zone**, under Shipping. Nothing reads the branch's own point yet — per-branch delivery reach is planned, per branch, because some branches run their own riders and some hand off to a courier |
-
-Setting it is harmless. It is not a way to stop a branch selling something today — for that,
-use **Status → Inactive**, or the dish's own **Stock** field.
-
-Two rows used to sit beside it, and both became features: the per-branch dish list became the
-dish's own **Availability** tab (this screen now shows a read-only mirror of what is exclusive
-here, and the dish's form is the only place that changes it), and **Timezone** is read whenever
-this branch keeps its own Service Hours (above).
+To stop a branch selling something today, use **Status → Inactive**, or the dish's own **Stock**
+field.
 
 ## Deleting a branch
 

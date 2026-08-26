@@ -46,6 +46,24 @@ return new class extends Migration
             $table->boolean('offers_pickup')->default(true);
             $table->boolean('offers_delivery')->default(true);
 
+            // **How** this branch delivers, which the operator ruled is per branch: *"both,
+            // depending on branch"* — some run their own riders, some hand to a courier.
+            //
+            // Off is a courier (or any arrangement whose reach the shop does not define here),
+            // and it is the default because it is what every branch did before this column: the
+            // shipping zones decide, exactly as they always have. On means the branch's own
+            // riders serve a circle around it, and `delivery_radius_km` is how far they go.
+            //
+            // Radius rather than postcodes, because the coordinates are already on this row and
+            // a circle is what a rider's range actually is. It is enforced against the customer's
+            // own point, which core geocodes when an address is SAVED and never during checkout —
+            // so this narrows a delivery for a customer ordering to an address in their book, and
+            // stays silent for a guest who has no point. That is the same reach core's own radius
+            // shipping zones have; this column removes the duplication of typing the branch's
+            // coordinates onto a zone, it does not widen what a radius can see.
+            $table->boolean('delivers_by_own_riders')->default(false);
+            $table->decimal('delivery_radius_km', 6, 2)->nullable();
+
             // Whether this branch has a dining room.
             //
             // Collection and delivery have been per branch since this table existed; dine-in was
@@ -122,24 +140,50 @@ return new class extends Migration
             // product exists instead.
             $table->unsignedBigInteger('product_id')->index();
 
-            // A branch may price a dish differently — the same nasi lemak costs more in KLCC than
-            // in the suburb. Null means "the dish's own price", which is what every row starts as.
-            //
-            // **Note this now sits on an EXCLUSION row, which is a contradiction**: a dish the
-            // branch does not serve cannot also carry that branch's price for it. Left in place
-            // only because nothing reads it yet (register phase 4); whoever builds per-branch
-            // pricing must give it its own pivot rather than overload this one, or the first row
-            // that carries both will mean two opposite things at once.
-            $table->decimal('price_override', 12, 2)->nullable();
+            // `price_override` lived here and is gone. A row in this table means "this dish is
+            // exclusive to this branch", so the column could only ever price a branch's specials
+            // and never one of the many dishes every branch shares — not an unfinished feature
+            // but an incoherent one, and the shape below is what replaces it.
+            $table->timestamps();
+
+            $table->unique(['outlet_id', 'product_id']);
+        });
+
+        // What a branch charges for a dish, when that differs from the dish's own price.
+        //
+        // **Its own table, because meaning is what a row carries.** Folding this into
+        // `outlet_product` would put two unrelated facts on one row — "we are the only branch
+        // that makes this" and "we charge more for this" — and a shop wanting the second for a
+        // dish every branch sells would have had to assert the first to say it. Separate rows
+        // let a branch price anything on the menu and leave exclusivity to mean only itself.
+        //
+        // Absent is "the dish's own price": there is no null-versus-zero question here because
+        // the absence of a row IS the absence of an opinion, and a row saying zero is a branch
+        // deliberately giving something away.
+        //
+        // Nothing reads this yet. It is created rather than deferred so that the incoherent
+        // column can leave in the same change that names its replacement, instead of leaving a
+        // gap for somebody to fill by overloading the pivot again.
+        Schema::create('outlet_product_price', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
+
+            // No foreign key to `products`, for the reason the pivot above gives.
+            $table->unsignedBigInteger('product_id')->index();
+
+            $table->decimal('price', 12, 2);
 
             $table->timestamps();
 
+            // One price per dish per branch. A second row would be a second opinion with no
+            // rule for which wins.
             $table->unique(['outlet_id', 'product_id']);
         });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('outlet_product_price');
         Schema::dropIfExists('outlet_product');
         Schema::dropIfExists('outlets');
     }

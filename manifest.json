@@ -29,7 +29,8 @@
       "Theme\\Backend\\Guards\\ServiceWindowGuard",
       "Theme\\Backend\\Guards\\MinimumOrderGuard",
       "Theme\\Backend\\Guards\\BranchMenuGuard",
-      "Theme\\Backend\\Guards\\BranchDineInGuard"
+      "Theme\\Backend\\Guards\\BranchDineInGuard",
+      "Theme\\Backend\\Guards\\BranchDeliveryRadiusGuard"
     ],
     "writers": [
       "Theme\\Backend\\Writers\\TableReservation"

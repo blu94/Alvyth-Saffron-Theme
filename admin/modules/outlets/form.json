@@ -113,6 +113,32 @@
         {
           "ui": {
             "type": "field",
+            "cols": 12,
+            "show_if": "offers_delivery,true"
+          },
+          "key": "delivers_by_own_riders",
+          "type": "switch",
+          "label": "This Branch Delivers With Its Own Riders",
+          "hint": "Leave this off if a courier delivers for this branch — then your Shipping zones decide how far it reaches, exactly as before. Turn it on and this branch serves a circle around its own address, and you set how wide below. You can mix the two: one branch on its own riders, another on a courier",
+          "default": false,
+          "rules": ["nullable", "boolean"]
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6,
+            "show_if": "delivers_by_own_riders,true"
+          },
+          "key": "delivery_radius_km",
+          "type": "number",
+          "label": "How Far Your Riders Go (km)",
+          "placeholder": "e.g. 8",
+          "hint": "Measured in a straight line from this branch's own coordinates, so fill in Latitude and Longitude below or the circle cannot be drawn and this branch will refuse nothing. A delivery outside every own-rider branch's circle is turned away at checkout with the distance named, so the customer knows whether they are just outside. Leave empty and this branch refuses nothing",
+          "rules": ["nullable", "numeric", "min:0.1", "max:500"]
+        },
+        {
+          "ui": {
+            "type": "field",
             "cols": 12
           },
           "key": "is_default",
@@ -281,7 +307,7 @@
           "type": "text",
           "label": "Latitude",
           "placeholder": "e.g. 3.1279",
-          "hint": "Between -90 and 90. Find it by right-clicking the branch in Google Maps and copying the first number"
+          "hint": "Between -90 and 90. Find it by right-clicking the branch in Google Maps and copying the first number. Required when this branch delivers with its own riders — the circle is measured from here"
         },
         {
           "ui": {
@@ -295,7 +321,7 @@
           "hint": "Between -180 and 180. The second of the two numbers Google Maps copies"
         }
       ],
-      "subtitle": "Where this branch sits on the map, kept on the branch's own record. A delivery zone drawn by radius carries its own centre point, typed on the zone under Shipping — it does not read these, so filling them in changes no delivery charge today."
+      "subtitle": "Where this branch sits on the map. These are read when the branch delivers with its own riders: the circle it serves is measured from this point, so a branch with the switch on and no coordinates draws no circle and turns nobody away. A delivery zone under Shipping still carries its own centre point typed on the zone — that is a separate thing, and it is what prices the delivery."
     }
   ],
   "sidebar": {
