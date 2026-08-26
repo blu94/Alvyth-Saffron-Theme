@@ -53,7 +53,7 @@
                     @{{ dropping.length ? labels.dropGo : labels.confirm }}
                 </button>
                 <button type="button" class="saffron-gate__cancel" v-if="chosen" @click="dismiss">
-                    @{{ dropping.length ? labels.dropStay : labels.close }}
+                    @{{ dropping.length ? stayLabel : labels.close }}
                 </button>
             </div>
         </div>
@@ -85,6 +85,17 @@
             const branchOf = (id) => branches.find(b => Number(b.id) === Number(id)) || null;
 
             const branchLabel = computed(() => branchOf(branch.value)?.title || '');
+
+            // The cancel button's wording while dishes would be dropped. It names the branch the
+            // customer stays on, so the pair reads as one decision with two outcomes — "Remove
+            // them and switch" against "Stay at KLCC" — rather than one about dishes and one
+            // about a basket. Falls back to a branch-less sentence if the title is somehow empty,
+            // because a button reading "Stay at " is worse than a vaguer one.
+            const stayLabel = computed(() => (
+                branchLabel.value
+                    ? labels.dropStay.replace(':branch', branchLabel.value)
+                    : labels.close
+            ));
 
             // The minimums, joined only where they exist. A shop with neither gets no separator
             // and no empty half — the bar is then simply the branch.
@@ -447,7 +458,7 @@
             return {
                 branches, labels,
                 branch, open, chosen, draftBranch,
-                branchLabel, costLine,
+                branchLabel, stayLabel, costLine,
                 dropping, dropMessage,
                 confirm, dismiss,
             };

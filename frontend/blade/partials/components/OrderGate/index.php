@@ -70,7 +70,14 @@ class OrderGate
                 'dropTitle' => __('Some dishes are not served there'),
                 'dropBody'  => __(':dishes cannot come with you to :branch. Remove them and carry on, or keep your basket and choose a different branch.'),
                 'dropGo'    => __('Remove them and switch'),
-                'dropStay'  => __('Keep my basket'),
+                // **Name the branch you stay at, not the basket you keep.** This read
+                // "Keep my basket", which describes the side effect and hides the decision: a
+                // customer reads it beside "Remove them and switch" and cannot tell whether it
+                // also switches — several assumed it kept the basket AND moved them. The button
+                // cancels the switch, so it must say where they end up. `:branch` is the branch
+                // they are on now, filled in by `stayLabel`, because "Stay at KLCC" answers the
+                // question the panel just asked and "Keep my basket" answers a different one.
+                'dropStay'  => __('Stay at :branch'),
                 'and'       => __('and'),
             ],
         ];
