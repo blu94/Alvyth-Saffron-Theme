@@ -126,6 +126,26 @@ order belongs.
 A ticket for a branch carries `@ Bangsar` in its header on the **Kitchen Queue**. A shop that
 runs one site sees no such line — it already knows.
 
+## Charging a different price here
+
+**Prices Charged Here** is a list of dish-and-price rows, and it should be empty for almost
+every branch. Add a row only where this branch charges something different from the rest of the
+shop; every dish you do not list costs what it costs everywhere.
+
+**A price you set here applies to the whole dish, sizes included, and keeps the gaps between
+them.** If a dish is 12.00 for Regular and 15.00 for Large — a 3.00 step — and you price the
+dish at 14.00 here, customers at this branch pay **14.00 and 17.00**. The step survives. You
+cannot price one size differently from another; the list offers dishes, not sizes, and that is
+deliberate — a Large that cost less than a Regular somewhere would be an easy thing to type by
+accident and a confusing thing to meet on a menu.
+
+The price you set is what the customer sees on the menu, what the cart charges, and what the
+receipt and invoice show. Those are the same number by construction, not three copies kept in
+step, so they cannot drift.
+
+Zero is allowed and means you are giving the dish away at this branch. To put a dish back to its
+normal price, **delete the row** — that is the difference between "free here" and "no opinion".
+
 ## Marking a dish sold out at this branch
 
 **Sold Out Here Today** lists what this kitchen has run out of. Type a dish in, save, and at
