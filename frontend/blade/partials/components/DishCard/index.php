@@ -76,6 +76,20 @@ class DishCard
                 || ($basePrice > 0 && abs($basePrice - $displayPrice) > 0.001);
         }
 
+        // What the branch being browsed charges, if it charges its own price for this dish.
+        //
+        // Applied as a shift to whatever figure was resolved above — the parent's price or the
+        // cheapest size — so a "from" price stays a "from" price and every size keeps its own
+        // premium. The same number `ModifierPricing` adds at the cart, from the same resolver,
+        // because a menu that advertises one price and a cart that charges another is the worst
+        // failure this feature could have.
+        $shift = BranchScope::priceShift((int) $dish->id, $basePrice);
+
+        if (abs($shift) > 0.0001) {
+            $displayPrice = max(0.0, $displayPrice + $shift);
+            $basePrice    = max(0.0, $basePrice + $shift);
+        }
+
         $comparePrice = $dish->data['compare_at_price'] ?? null;
         $comparePrice = is_numeric($comparePrice) ? (float) $comparePrice : null;
         $hasDiscount  = $comparePrice !== null && $comparePrice > $displayPrice;

@@ -58,6 +58,11 @@ class BranchScope
 
     protected static bool $soldOutResolved = false;
 
+    /** @var array<int,float>|null */
+    protected static ?array $prices = null;
+
+    protected static bool $pricesResolved = false;
+
     /** The cookie the order gate mirrors its choice into. */
     public const COOKIE = 'ovynt_branch';
 
@@ -256,6 +261,69 @@ class BranchScope
         static::$menuResolved    = false;
         static::$soldOut         = null;
         static::$soldOutResolved = false;
+        static::$prices          = null;
+        static::$pricesResolved  = false;
+    }
+
+    /**
+     * What the branch being browsed charges, keyed by PARENT dish id.
+     *
+     * One query per request, memoised like the other two. Empty with no branch chosen, on any
+     * failure, and for the overwhelming majority of shops, which price one menu everywhere.
+     *
+     * @return array<int,float>
+     */
+    public static function prices(): array
+    {
+        if (static::$pricesResolved) {
+            return static::$prices ?? [];
+        }
+
+        static::$pricesResolved = true;
+        static::$prices         = [];
+
+        try {
+            $outlet = static::outlet();
+
+            if ($outlet) {
+                static::$prices = \Illuminate\Support\Facades\DB::table('outlet_product_price')
+                    ->where('outlet_id', $outlet->id)
+                    ->pluck('price', 'product_id')
+                    ->map(fn ($price) => (float) $price)
+                    ->all();
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return static::$prices ?? [];
+    }
+
+    /**
+     * How much this branch adds to (or takes off) a dish's own price — 0.0 when it agrees.
+     *
+     * **Expressed as a shift rather than a replacement, and that is forced rather than chosen.**
+     * The admin picker offers parent dishes only (`ProductRepository::getOptions()` filters
+     * `whereNull('productable_id')`), while the storefront adds the **variant's** id to the cart
+     * when a size is chosen. So a branch price stored against a parent has to reach that
+     * parent's sizes, or a dish with variants is silently unaffected by the price its operator
+     * set — and replacing a variant's price with the parent's would wipe the size premium
+     * outright, turning a Large into the price of a Regular.
+     *
+     * A shift does the right thing in both cases: the parent lands exactly on the branch price,
+     * and every size keeps its own premium on top of it.
+     *
+     * @param  int|null  $parentId  the dish's own id, or its parent's when it is a variant
+     */
+    public static function priceShift(?int $parentId, ?float $parentBasePrice): float
+    {
+        if (! $parentId || $parentBasePrice === null) {
+            return 0.0;
+        }
+
+        $branchPrice = static::prices()[$parentId] ?? null;
+
+        return $branchPrice === null ? 0.0 : $branchPrice - $parentBasePrice;
     }
 
     /**

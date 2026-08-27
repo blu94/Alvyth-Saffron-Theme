@@ -225,13 +225,19 @@ class DishSheet
         // A sold-out size is different: it stays on the sheet, disabled, because the customer
         // needs to see that Large exists and is gone rather than wonder whether the shop ever
         // sold it. `stock` is null for unlimited, so only a real `0` disables anything.
+        // What this branch adds to (or takes off) the dish's own price. Resolved once and
+        // applied to the parent AND every size, so a Large keeps its premium over a Regular —
+        // see BranchScope::priceShift(). The same number ModifierPricing adds at the cart, so
+        // the sheet and the basket cannot disagree.
+        $branchShift = BranchScope::priceShift((int) $dish->id, (float) ($dish->price ?? 0));
+
         $variants = $dish->variants
             ->where('status', 'active')
-            ->map(function (Product $variant) use ($locale) {
+            ->map(function (Product $variant) use ($locale, $branchShift) {
                 return [
                     'id'        => $variant->id,
                     'label'     => $this->variantLabel($variant, $locale),
-                    'price'     => (float) ($variant->price ?? 0),
+                    'price'     => max(0.0, (float) ($variant->price ?? 0) + $branchShift),
                     'available' => $variant->stock === null || (int) $variant->stock > 0,
                 ];
             })
@@ -271,7 +277,7 @@ class DishSheet
             'dish' => [
                 'id'    => $dish->id,
                 'title' => $title,
-                'price' => (float) ($dish->price ?? 0),
+                'price' => max(0.0, (float) ($dish->price ?? 0) + $branchShift),
                 'image' => $this->primaryImageUrl($dish),
                 // For the saved-dishes list, which renders from localStorage alone and has
                 // no other route back to this sheet.

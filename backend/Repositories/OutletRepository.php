@@ -91,6 +91,23 @@ class OutletRepository
         // catalogue fact about the DISH ("only we make this"), read-only here because the dish
         // owns it; 86'ing is a service fact about the BRANCH ("we ran out"), authored here
         // because nobody else can know it. A picker rather than a display, for that reason.
+        // What this branch charges where it differs. Rows, not a map, because the form draws a
+        // repeater — and a repeater is right here where a multi-select was right for the 86
+        // list: this fact needs a second value per dish, and the price is the whole point.
+        $outlet->setAttribute(
+            'branch_prices',
+            DB::table('outlet_product_price')
+                ->where('outlet_id', $outlet->id)
+                ->orderBy('product_id')
+                ->get(['product_id', 'price'])
+                ->map(fn ($row) => [
+                    'product_id' => (int) $row->product_id,
+                    'price'      => (float) $row->price,
+                ])
+                ->values()
+                ->all()
+        );
+
         $outlet->setAttribute(
             'unavailable_product_ids',
             DB::table('outlet_product_unavailable')
@@ -124,6 +141,7 @@ class OutletRepository
 
             $this->writeTables($outlet, $data);
             $this->writeSoldOut($outlet, $data);
+            $this->writeBranchPrices($outlet, $data);
             $this->enforceSingleDefault($outlet);
 
             return $outlet->fresh();
@@ -148,6 +166,12 @@ class OutletRepository
             // the failure this prevents.
             if (array_key_exists('unavailable_product_ids', $data)) {
                 $this->writeSoldOut($outlet, $data);
+            }
+
+            // Same guard once more: a partial save that never drew the price repeater must not
+            // be read as "this branch charges the shop's prices for everything".
+            if (array_key_exists('branch_prices', $data)) {
+                $this->writeBranchPrices($outlet, $data);
             }
 
             $this->enforceSingleDefault($outlet);
@@ -261,6 +285,79 @@ class OutletRepository
      * The rows carry no reason and no expiry, and both absences are deliberate — see the
      * migration. A dish comes back when somebody says so.
      */
+    /**
+     * What this branch charges where it differs from the dish's own price.
+     *
+     * A full replace, like the repeaters beside it: the control posts every row, so a price the
+     * operator deleted is expressed by its absence and an emptied repeater returns the whole
+     * branch to the shop's prices.
+     *
+     * Three things are dropped rather than saved, each because the row would otherwise mean
+     * something nobody typed: a row naming no dish (the repeater submits one for an entry the
+     * operator opened and abandoned), a row naming a dish that no longer exists, and the second
+     * of two rows naming the same dish — two prices for one dish at one branch is a
+     * contradiction with no rule for which wins, and the unique index would refuse the insert
+     * and take the whole save down with it.
+     *
+     * A price of zero is kept. It is a branch giving something away, which is a real thing to
+     * say; going back to the dish's own price is deleting the row, and the form says so.
+     */
+    protected function writeBranchPrices(Outlet $outlet, array $data): void
+    {
+        $rows = $data['branch_prices'] ?? [];
+
+        if (! is_array($rows)) {
+            return;
+        }
+
+        $seen  = [];
+        $clean = [];
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $productId = (int) ($row['product_id'] ?? 0);
+            $price     = $row['price'] ?? null;
+
+            if ($productId <= 0 || ! is_numeric($price) || isset($seen[$productId])) {
+                continue;
+            }
+
+            $seen[$productId] = true;
+
+            $clean[] = [
+                'outlet_id'  => $outlet->id,
+                'product_id' => $productId,
+                'price'      => round((float) $price, 2),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        // Only dishes that exist. A stale option in a form left open while a dish was deleted
+        // would otherwise price nothing at all.
+        if ($clean !== []) {
+            $live = DB::table('products')
+                ->whereIn('id', array_column($clean, 'product_id'))
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $clean = array_values(array_filter(
+                $clean,
+                fn (array $row) => in_array($row['product_id'], $live, true)
+            ));
+        }
+
+        DB::table('outlet_product_price')->where('outlet_id', $outlet->id)->delete();
+
+        if ($clean !== []) {
+            DB::table('outlet_product_price')->insert($clean);
+        }
+    }
+
     protected function writeSoldOut(Outlet $outlet, array $data): void
     {
         $ids = collect(is_array($data['unavailable_product_ids'] ?? null) ? $data['unavailable_product_ids'] : [])

@@ -87,6 +87,60 @@
             "clearable": true,
             "autoSelectSingle": false
           },
+          "key": "branch_prices",
+          "type": "repeater",
+          "label": "Prices Charged Here",
+          "itemLabel": "Price",
+          "hint": "Only for dishes this branch charges a different price for. Leave it empty — as almost every branch should — and every dish costs what it costs everywhere else. A price set here applies to the whole dish including its sizes: a Large keeps whatever it costs above the Regular, so pricing a dish 2 higher raises every size by 2 rather than flattening them",
+          "columns": [
+            { "label": "Dish", "key": "product_id" },
+            { "label": "Price Here", "key": "price", "type": "currency" }
+          ],
+          "dialog": {
+            "width": 600,
+            "create": {
+              "title": "Price A Dish For This Branch",
+              "subtitle": "The price a customer ordering from this branch pays. Everywhere else the dish keeps its own price."
+            },
+            "update": { "title": "Edit This Branch's Price" }
+          },
+          "elements": [
+            {
+              "ui": { "type": "field", "cols": 8, "autoSelectSingle": false },
+              "key": "product_id",
+              "type": "autocomplete",
+              "label": "Dish",
+              "placeholder": "Search the menu",
+              "options": {
+                "url": "/admin/products/options",
+                "itemTitle": "title",
+                "itemValue": "id"
+              },
+              "rules": ["required", "integer"]
+            },
+            {
+              "ui": { "type": "field", "cols": 4 },
+              "key": "price",
+              "type": "number",
+              "label": "Price Here",
+              "placeholder": "e.g. 14.00",
+              "currency": true,
+              "hint": "What this branch charges. Zero is allowed and means you are giving it away — to go back to the dish's own price, delete the row instead",
+              "rules": ["required", "numeric", "min:0"]
+            }
+          ],
+          "rules": ["nullable", "array"]
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12,
+            "multiple": true,
+            "chips": true,
+            "closableChips": true,
+            "clearable": true,
+            "autoSelectSingle": false
+          },
           "key": "unavailable_product_ids",
           "type": "autocomplete",
           "label": "Sold Out Here Today",

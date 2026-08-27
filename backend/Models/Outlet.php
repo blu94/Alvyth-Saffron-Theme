@@ -298,6 +298,29 @@ class Outlet extends Model
     }
 
     /**
+     * What this branch charges for a dish, when that differs from the dish's own price.
+     *
+     * Null means "no opinion" — the dish's own price stands. That is the absence of a row, not a
+     * stored null, which is why `price` is not nullable: a row saying zero is a branch
+     * deliberately giving something away, and the two must not be confusable.
+     *
+     * **Deliberately not called `priceFor()`**, which existed here and was deleted. That one read
+     * `outlet_product.price_override`, a column on a row meaning "this dish is exclusive to this
+     * branch" — so it could only ever price a branch's specials and never one of the many dishes
+     * every branch sells. The name is left buried so a reader who remembers it comes here and
+     * finds out why.
+     */
+    public function chargesFor(int $productId): ?float
+    {
+        $price = DB::table('outlet_product_price')
+            ->where('outlet_id', $this->id)
+            ->where('product_id', $productId)
+            ->value('price');
+
+        return $price === null ? null : (float) $price;
+    }
+
+    /**
      * The dishes this branch cannot make right now — 86'd, in a kitchen's own word.
      *
      * **Not the same question as {@see self::serves()}, and the two must never be folded.**

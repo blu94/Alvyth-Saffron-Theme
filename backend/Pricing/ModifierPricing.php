@@ -17,6 +17,29 @@ use Theme\Backend\Support\BranchScope;
  * a seam and this class answers it — see `App\Contracts\Storefront\CartLinePricer` for why it
  * is a declared class rather than an event, and `manifest.json` for the declaration itself.
  *
+ * ## Fail-open changed severity when this class started setting a price
+ *
+ * The seam's rule is that a pricer which cannot be constructed, or which throws, is logged and
+ * **skipped** — the line keeps its base price, so the shop undercharges rather than refusing a
+ * customer. `themes.md` states it and warns in the same breath: *never let a pricer be the only
+ * thing between a shop and a loss it cannot absorb.*
+ *
+ * While this class only added modifier surcharges, the worst case was one line missing one
+ * add-on. It now also carries **per-branch pricing**, and that changes what failing open costs:
+ * a branch priced above the shop's base means a throwing pricer silently undercharges *every
+ * line at that branch, on every order, for as long as it throws* — and the only symptom is
+ * revenue, which nobody greps. A missing modifier is visible on a receipt; a whole branch
+ * quietly selling at the wrong price is not.
+ *
+ * It still fails open, because `CartLinePricerRegistry` decides that before any code here runs
+ * and a theme cannot opt out of it. What follows from that is a rule for whoever maintains this:
+ * **the branch-price lookup must not be able to throw.** It reads one memoised map through
+ * {@see BranchScope::prices()}, which catches its own errors and answers `[]`, and
+ * {@see self::branchShift()} returns `0.0` the moment that map is empty — so a missing table or
+ * an unreadable cookie yields the shop's own prices, which is the same answer a shop without
+ * this feature gives. Anything added here that can raise must be given the same treatment, or
+ * the failure stops being a skipped surcharge and becomes a pricing outage.
+ *
  * Two jobs, deliberately one method, because they are one lookup (register O1 and O7):
  *
  * - **Price.** Each chosen answer adds its `price_delta` to the line's unit price. Before this
@@ -72,6 +95,39 @@ class ModifierPricing implements CartLinePricer
             'dish'   => $dish,
             'branch' => $branch,
         ]);
+    }
+
+    /**
+     * How much this branch's own price shifts this line, or 0.0 when it has no opinion.
+     *
+     * The branch prices a **parent dish**, because that is all the admin picker can offer
+     * (`ProductRepository::getOptions()` filters `whereNull('productable_id')`), while a line
+     * that chose a size carries the **variant's** id. So a variant is resolved back to its
+     * parent, the shift is computed from the parent's own price, and the size keeps its premium
+     * on top — see {@see BranchScope::priceShift()} for why a replacement would be wrong.
+     *
+     * The parent row is fetched only for a variant, and only when this branch prices anything
+     * at all, so an ordinary shop pays nothing for a feature it does not use.
+     */
+    private function branchShift(Product $product): float
+    {
+        $prices = BranchScope::prices();
+
+        if ($prices === []) {
+            return 0.0;
+        }
+
+        $parentId = (int) ($product->productable_id ?: $product->id);
+
+        if (! array_key_exists($parentId, $prices)) {
+            return 0.0;
+        }
+
+        $parentBase = $parentId === (int) $product->id
+            ? (float) $product->price
+            : (float) (Product::query()->whereKey($parentId)->value('price') ?? 0);
+
+        return BranchScope::priceShift($parentId, $parentBase);
     }
 
     /**
@@ -135,15 +191,24 @@ class ModifierPricing implements CartLinePricer
             return CartLinePrice::refuse($this->soldOutHere($product));
         }
 
+        // What this branch charges, if it charges its own price for this dish.
+        //
+        // Folded into the same surcharge the modifier answers produce, because core adds ONE
+        // number to the line's unit price and that number reaching `OrderItem.unit_price` is
+        // what makes the receipt agree with the dish sheet. Computed against `$product->price`
+        // — the exact value core used as the base a few lines above — so the result is the
+        // branch's price by construction rather than by arithmetic that has to be kept in step.
+        $surcharge = $this->branchShift($product);
+
         $groups = $this->groupsFor($product);
 
         // No questions on this dish, or the tables are not there. Either way nothing to price
-        // and nothing to refuse — the line stands at its base price.
+        // and nothing to refuse — the line stands at its base price, shifted by whatever this
+        // branch charges. **Returning a bare `allow()` here would drop the branch price for
+        // every dish that asks no questions**, which is most of a menu.
         if ($groups === []) {
-            return CartLinePrice::allow();
+            return CartLinePrice::allow($surcharge);
         }
-
-        $surcharge = 0.0;
 
         foreach ($groups as $group) {
             $raw = $options[$group['key']] ?? null;
