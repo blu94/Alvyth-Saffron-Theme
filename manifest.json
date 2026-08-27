@@ -30,7 +30,8 @@
       "Theme\\Backend\\Guards\\MinimumOrderGuard",
       "Theme\\Backend\\Guards\\BranchMenuGuard",
       "Theme\\Backend\\Guards\\BranchDineInGuard",
-      "Theme\\Backend\\Guards\\BranchDeliveryRadiusGuard"
+      "Theme\\Backend\\Guards\\BranchDeliveryRadiusGuard",
+      "Theme\\Backend\\Guards\\BranchSoldOutGuard"
     ],
     "writers": [
       "Theme\\Backend\\Writers\\TableReservation"

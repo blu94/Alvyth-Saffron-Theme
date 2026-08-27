@@ -149,6 +149,39 @@ return new class extends Migration
             $table->unique(['outlet_id', 'product_id']);
         });
 
+        // Dishes one branch cannot make right now — "86'd", in a kitchen's own word.
+        //
+        // **A different fact from every other branch/dish table here, which is why it is its
+        // own.** `outlet_product` says which branches a dish is *exclusive* to — a catalogue
+        // decision, authored on the dish, changing perhaps monthly. This says "we ran out of
+        // prawns tonight" — a service decision, authored at the branch, changing between
+        // lunch and dinner. They are opposite in owner, in lifetime and in what a customer
+        // sees: an exclusive dish is HIDDEN elsewhere, an 86'd dish stays on the menu greyed
+        // with its sold-out badge, because a customer who came for it deserves to know it
+        // exists and is off rather than to wonder whether they imagined it.
+        //
+        // Folding either into the other is the mistake this theme has already made twice, in
+        // both directions: two writers on one pivot, each with a different idea of what a row
+        // means. Presence here means unavailable; deleting the row puts the dish back on.
+        //
+        // **It does not expire on its own.** A row stays until somebody clears it, which is
+        // how a counter actually works — the kitchen turns a dish back on when it has stock,
+        // not when a clock says so. A shop that wants "everything back at midnight" is asking
+        // for a scheduler this product does not have on shared hosting, and a timer that
+        // silently re-listed a dish nobody could cook would be worse than the manual step.
+        Schema::create('outlet_product_unavailable', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('outlet_id')->constrained('outlets')->cascadeOnDelete();
+
+            // No foreign key to `products`, for the reason the pivot above gives.
+            $table->unsignedBigInteger('product_id')->index();
+
+            $table->timestamps();
+
+            // One row per dish per branch: 86'ing something twice is 86'ing it once.
+            $table->unique(['outlet_id', 'product_id']);
+        });
+
         // What a branch charges for a dish, when that differs from the dish's own price.
         //
         // **Its own table, because meaning is what a row carries.** Folding this into
@@ -183,6 +216,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        Schema::dropIfExists('outlet_product_unavailable');
         Schema::dropIfExists('outlet_product_price');
         Schema::dropIfExists('outlet_product');
         Schema::dropIfExists('outlets');

@@ -297,6 +297,39 @@ class Outlet extends Model
         return $branches->contains($this->id);
     }
 
+    /**
+     * The dishes this branch cannot make right now — 86'd, in a kitchen's own word.
+     *
+     * **Not the same question as {@see self::serves()}, and the two must never be folded.**
+     * `serves()` asks a catalogue question the DISH owns: which branches are allowed to sell
+     * this at all. This asks a service question the BRANCH owns: what did we run out of
+     * tonight. Opposite owners, opposite lifetimes, and opposite answers on screen — an
+     * unserved dish is hidden here, an 86'd one stays on the menu greyed with its sold-out
+     * badge, because somebody who came for it should learn it is off rather than wonder
+     * whether they imagined it.
+     */
+    public function unavailableProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'outlet_product_unavailable')
+            ->withTimestamps();
+    }
+
+    /**
+     * Has this branch 86'd this dish?
+     *
+     * One indexed lookup on the pair, and the common answer is "no" — most dishes are on most
+     * nights. Deliberately does NOT consult the branch's status: unlike exclusivity, a closed
+     * branch's row withholds nothing from anybody, because the only thing that reads this is
+     * a customer already scoped to this branch.
+     */
+    public function hasRunOutOf(int $productId): bool
+    {
+        return DB::table('outlet_product_unavailable')
+            ->where('outlet_id', $this->id)
+            ->where('product_id', $productId)
+            ->exists();
+    }
+
     // `priceFor()` lived here and is gone. It read `outlet_product.price_override`, a column that
     // only ever existed on a row meaning "this dish is exclusive to this branch" — so it could
     // price a branch's specials and never one of the many dishes a branch shares, which is

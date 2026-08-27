@@ -85,6 +85,22 @@ class OutletRepository
         // Titles are translatable JSON and are resolved here rather than in the schema, for the
         // reason `ModifierGroup::dishes_summary` resolves its own: a form is presentation and has
         // no locale to resolve against.
+        // **What this branch has run out of tonight — and unlike the list above, the branch
+        // owns this and writes it here.** The two sit on one screen and mean opposite things,
+        // so the distinction is worth stating where somebody is editing them: exclusivity is a
+        // catalogue fact about the DISH ("only we make this"), read-only here because the dish
+        // owns it; 86'ing is a service fact about the BRANCH ("we ran out"), authored here
+        // because nobody else can know it. A picker rather than a display, for that reason.
+        $outlet->setAttribute(
+            'unavailable_product_ids',
+            DB::table('outlet_product_unavailable')
+                ->where('outlet_id', $outlet->id)
+                ->pluck('product_id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all()
+        );
+
         $outlet->setAttribute(
             'exclusive_products_summary',
             $outlet->exclusiveProducts->map(function ($product) {
@@ -107,6 +123,7 @@ class OutletRepository
             $outlet = Outlet::create($this->normalise($data));
 
             $this->writeTables($outlet, $data);
+            $this->writeSoldOut($outlet, $data);
             $this->enforceSingleDefault($outlet);
 
             return $outlet->fresh();
@@ -123,6 +140,14 @@ class OutletRepository
             // not be read as "this branch has no tables".
             if (array_key_exists('tables', $data)) {
                 $this->writeTables($outlet, $data);
+            }
+
+            // Same guard again, and here it is load-bearing in the other direction: a partial
+            // save that never rendered the 86 list must not be read as "everything is back on".
+            // Putting a whole menu back because somebody toggled Status from the index row is
+            // the failure this prevents.
+            if (array_key_exists('unavailable_product_ids', $data)) {
+                $this->writeSoldOut($outlet, $data);
             }
 
             $this->enforceSingleDefault($outlet);
@@ -220,6 +245,52 @@ class OutletRepository
      * - **A table the form no longer lists is deleted**, softly, so an order that already named
      *   it still resolves.
      */
+    /**
+     * The dishes this branch has 86'd, replaced wholesale from the form's picker.
+     *
+     * A full replace rather than a merge, like the Modifiers repeater: the control posts the
+     * complete list, so a dish the operator un-ticked is expressed only by its absence, and an
+     * emptied picker puts the whole menu back on — which is exactly what "we restocked" means
+     * and must not require clearing rows one at a time at the end of service.
+     *
+     * Ids are intersected with real products before they are written. A stale option in a form
+     * left open while a dish was deleted would otherwise write a row pointing at nothing, and
+     * `BranchSoldOutGuard` would then refuse an order over a dish whose name it cannot even
+     * print.
+     *
+     * The rows carry no reason and no expiry, and both absences are deliberate — see the
+     * migration. A dish comes back when somebody says so.
+     */
+    protected function writeSoldOut(Outlet $outlet, array $data): void
+    {
+        $ids = collect(is_array($data['unavailable_product_ids'] ?? null) ? $data['unavailable_product_ids'] : [])
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        $ids = $ids->intersect(
+            DB::table('products')->whereIn('id', $ids)->pluck('id')->map(fn ($id) => (int) $id)
+        )->values();
+
+        DB::table('outlet_product_unavailable')->where('outlet_id', $outlet->id)->delete();
+
+        if ($ids->isEmpty()) {
+            return;
+        }
+
+        $now = now();
+
+        DB::table('outlet_product_unavailable')->insert(
+            $ids->map(fn (int $productId) => [
+                'outlet_id'  => $outlet->id,
+                'product_id' => $productId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])->all()
+        );
+    }
+
     protected function writeTables(Outlet $outlet, array $data): void
     {
         $rows = $data['tables'] ?? [];

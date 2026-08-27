@@ -67,7 +67,6 @@
         "type": "section",
         "cols": 12
       },
-      "name": "What is exclusive to this branch",
       "elements": [
         {
           "ui": {
@@ -77,9 +76,32 @@
           "key": "exclusive_products_summary",
           "type": "display",
           "label": "Dishes Exclusive To This Branch"
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 12,
+            "multiple": true,
+            "chips": true,
+            "closableChips": true,
+            "clearable": true,
+            "autoSelectSingle": false
+          },
+          "key": "unavailable_product_ids",
+          "type": "autocomplete",
+          "label": "Sold Out Here Today",
+          "placeholder": "Nothing is off",
+          "hint": "The dishes this branch has run out of right now. They stay on the menu wearing a Sold Out badge and cannot be added to a basket at this branch — other branches are unaffected. Clear a dish to put it back on. This does NOT expire on its own: whatever you list here is still off tomorrow until you empty it, which is why the list is one control and not one row per dish",
+          "options": {
+            "url": "/admin/products/options",
+            "itemTitle": "title",
+            "itemValue": "id"
+          },
+          "rules": ["nullable", "array"]
         }
       ],
-      "subtitle": "Every branch serves the whole menu. Listed here are the dishes exclusive to THIS branch and hidden from the others — a regional special, or something only this kitchen can make. Most branches list nothing, which is correct. This is a read-out, not a control: exclusivity belongs to the dish and is set on the dish, under Store → Products → the dish → Availability → Exclusive To Branches."
+      "name": "What this branch serves, and what it has run out of",
+      "subtitle": "Two lists that look alike and mean opposite things. The first is a read-out: the dishes exclusive to THIS branch and hidden from the others, which belongs to the dish and is set under Store → Products → the dish → Availability. Most branches list nothing there, which is correct. The second is yours to edit and belongs to this branch alone — what the kitchen has run out of tonight. An exclusive dish is hidden from other branches; a sold-out one stays on the menu here, greyed, so a customer who came for it learns it is off rather than wondering whether they imagined it."
     },
     {
       "ui": {

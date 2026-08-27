@@ -53,6 +53,11 @@ class BranchScope
 
     protected static bool $menuResolved = false;
 
+    /** @var array<int,int>|null */
+    protected static ?array $soldOut = null;
+
+    protected static bool $soldOutResolved = false;
+
     /** The cookie the order gate mirrors its choice into. */
     public const COOKIE = 'ovynt_branch';
 
@@ -245,9 +250,69 @@ class BranchScope
     /** Only for tests, which need to drive several branches through one process. */
     public static function flush(): void
     {
-        static::$outlet       = null;
-        static::$resolved     = false;
-        static::$menu         = null;
-        static::$menuResolved = false;
+        static::$outlet          = null;
+        static::$resolved        = false;
+        static::$menu            = null;
+        static::$menuResolved    = false;
+        static::$soldOut         = null;
+        static::$soldOutResolved = false;
+    }
+
+    /**
+     * The dishes this branch has run out of — 86'd — as a plain list of ids.
+     *
+     * **Deliberately not part of {@see self::hidden()}, though both are "dishes this customer
+     * cannot order".** `hidden()` feeds `whereNotIn` and removes a dish from the listing
+     * entirely, which is right for a dish this branch is not allowed to sell. An 86'd dish must
+     * stay on the menu wearing its sold-out badge: the customer came for it, and a dish that
+     * silently vanishes reads as a broken site or a bad memory, while a greyed one reads as a
+     * kitchen having a busy night. So this returns a list to grey WITH, never a list to hide BY.
+     *
+     * One query per request, memoised like `hidden()`, so a category page of forty cards asks
+     * once. Fails open — an unreadable cookie or a missing table greys nothing, which shows a
+     * dish that cannot be made rather than hiding food the shop can sell.
+     *
+     * @return array<int,int>
+     */
+    public static function soldOut(): array
+    {
+        if (static::$soldOutResolved) {
+            return static::$soldOut ?? [];
+        }
+
+        static::$soldOutResolved = true;
+        static::$soldOut         = [];
+
+        try {
+            $outlet = static::outlet();
+
+            if ($outlet) {
+                static::$soldOut = \Illuminate\Support\Facades\DB::table('outlet_product_unavailable')
+                    ->where('outlet_id', $outlet->id)
+                    ->pluck('product_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return static::$soldOut ?? [];
+    }
+
+    /**
+     * Can the branch being browsed make this dish right now?
+     *
+     * The row-level twin of {@see self::soldOut()}, for a caller holding one dish. True with no
+     * branch chosen, and true on any failure: the shop's own `stock` column is the shop-wide
+     * answer and is unaffected by this.
+     */
+    public static function inStock(?int $productId): bool
+    {
+        if (! $productId) {
+            return true;
+        }
+
+        return ! in_array((int) $productId, static::soldOut(), true);
     }
 }

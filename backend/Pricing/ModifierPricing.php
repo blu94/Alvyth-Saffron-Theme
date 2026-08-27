@@ -75,6 +75,23 @@ class ModifierPricing implements CartLinePricer
     }
 
     /**
+     * The sentence for a dish this branch has run out of tonight.
+     *
+     * **Deliberately different words from {@see self::notServedHere()}**, because the customer's
+     * options differ. "Not served here" invites them to switch branch and the dish comes back;
+     * "sold out" means it is gone tonight wherever they look, and telling them to try another
+     * branch would send them round the shop for something no branch may have. Naming the branch
+     * matters for the first sentence and would be noise in this one.
+     */
+    private function soldOutHere(Product $product): string
+    {
+        $dish = $product->getTranslation('title', app()->getLocale(), false);
+        $dish = trim((string) (is_array($dish) ? reset($dish) : $dish)) ?: __('This dish');
+
+        return __(':dish has sold out for today. Please remove it to continue.', ['dish' => $dish]);
+    }
+
+    /**
      * Groups per dish for this request. `validateCart` calls the pricer once per cart line and
      * a cart of six dishes would otherwise be six of these queries; the pricer is resolved once
      * per request, so an instance cache is enough.
@@ -108,6 +125,14 @@ class ModifierPricing implements CartLinePricer
         // claims, and that is the backstop behind this one.
         if (! BranchScope::serves($product->id)) {
             return CartLinePrice::refuse($this->notServedHere($product));
+        }
+
+        // Served here, but the kitchen ran out tonight. Checked after the exclusivity question
+        // and not folded into it: a customer whose dish is 86'd should be told it sold out, not
+        // that this branch does not serve it — the second is false and sends them looking for a
+        // branch that does.
+        if (! BranchScope::inStock($product->id)) {
+            return CartLinePrice::refuse($this->soldOutHere($product));
         }
 
         $groups = $this->groupsFor($product);

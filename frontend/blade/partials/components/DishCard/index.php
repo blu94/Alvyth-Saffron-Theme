@@ -6,6 +6,7 @@ use App\Repositories\Setting\Application\ApplicationInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Theme\Backend\Support\BranchScope;
 use Theme\Backend\Support\ThemeSettings;
 
 /**
@@ -125,6 +126,16 @@ class DishCard
 
         if ($dish->variants->where('status', 'active')->isNotEmpty()) {
             $isAvailable = ($dish->status ?? 'active') === 'active' && $sellableVariants->isNotEmpty();
+        }
+
+        // ...and the branch this customer is browsing may have run out tonight, whatever the
+        // shop-wide count says. Applied last and only ever downward: a dish 86'd here is sold
+        // out here, and no amount of stock elsewhere puts it back. The card keeps its place on
+        // the menu and wears the badge — the whole distinction from an exclusive dish, which is
+        // hidden instead, because somebody who came for tonight's special should learn it is off
+        // rather than wonder whether they imagined it.
+        if ($isAvailable && ! BranchScope::inStock((int) $dish->id)) {
+            $isAvailable = false;
         }
 
         // Only a dish the customer has nothing to decide about can be added straight from
