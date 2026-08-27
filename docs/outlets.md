@@ -126,6 +126,27 @@ order belongs.
 A ticket for a branch carries `@ Bangsar` in its header on the **Kitchen Queue**. A shop that
 runs one site sees no such line — it already knows.
 
+## Marking a dish sold out at this branch
+
+**Sold Out Here Today** lists what this kitchen has run out of. Type a dish in, save, and at
+this branch only it goes grey on the menu with a Sold Out badge and cannot be added to a
+basket. Every other branch is unaffected, and the dish's own **Stock** field under Store →
+Products is untouched — that one is shop-wide and is a different question.
+
+Take the dish out of the list and it is back on. There is nothing else to reset.
+
+> **It does not clear itself overnight.** Whatever is in this list is still sold out tomorrow
+> until you empty it. That is deliberate: a dish comes back when the kitchen has stock, which
+> only you know — and a list that quietly emptied itself at midnight would put dishes back on
+> the menu that nobody can cook. Clearing it is one control, not one row per dish, so end of
+> service is a single edit.
+
+Note the difference from the list directly above it, because they look alike and mean opposite
+things. **Dishes Exclusive To This Branch** is a read-out of what only this branch sells and is
+hidden from the others; it belongs to the dish and is set on the dish. **Sold Out Here Today**
+belongs to this branch, is yours to edit, and hides nothing — the dish stays visible and greyed,
+so a customer who came for it can see it exists and is off today.
+
 ## How far this branch delivers
 
 Two fields, both hidden until **Offers Delivery** is on:
