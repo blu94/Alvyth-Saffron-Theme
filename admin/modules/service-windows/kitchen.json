@@ -2,6 +2,51 @@
   {
     "ui": {
       "type": "section",
+      "icon": "tabler-building-store",
+      "cols": 12
+    },
+    "name": "Which Branch",
+    "subtitle": "Narrow this board to the counter you are standing at. This device remembers the choice, so a tablet at one branch stays on that branch while the same login shows the whole shop elsewhere.",
+    "elements": [
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "md": 4
+          }
+        },
+        "key": "branch_id",
+        "type": "select",
+        "label": "Branch",
+        "placeholder": "All branches",
+        "hint": "Collection and dine-in tickets are narrowed to this branch. Delivery orders stay on every board — see the note beside this.",
+        "options": {
+          "url": "/admin/modules/service-windows/options",
+          "master": "kitchen_branch",
+          "params": { "columns[]": "kitchen_branch" }
+        }
+      },
+      {
+        "ui": {
+          "type": "field",
+          "cols": {
+            "cols": 12,
+            "md": 8
+          },
+          "icon": "tabler-info-circle",
+          "color": "info",
+          "valueClass": "text-body-2"
+        },
+        "type": "display",
+        "key": "scope_notice",
+        "label": "What this board is showing"
+      }
+    ]
+  },
+  {
+    "ui": {
+      "type": "section",
       "icon": "tabler-tools-kitchen-3",
       "cols": 12
     },

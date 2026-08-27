@@ -86,6 +86,35 @@ class ServiceWindowRepository
         ],
     ];
 
+    /** The Kitchen Queue's branch picker's "do not narrow this board" value. */
+    public const BRANCH_ALL = 'all';
+
+    /**
+     * Which branch an order names, as SQL — the one expression every branch-aware reader uses.
+     *
+     * Written once because the board and the count that polices the board must not be able to
+     * disagree: if the drawn rows and `open_total` answered this question differently, the
+     * screen would report a truncation that is not there, or hide one that is.
+     *
+     * Three things it has to survive, each measured against this database rather than assumed:
+     *
+     * - **The id is stored as a JSON *string*.** `JSON_EXTRACT` returns `"7"`, not `7`, because
+     *   the value arrives from a `[data-checkout-field]` bag, and every value in that bag is
+     *   text by the time it is persisted. Comparing against an integer matches **nothing** —
+     *   silently, which would have read as "no orders at this branch".
+     * - **The legacy key.** `outletName()` falls back to `meta.outlet_id` for orders written
+     *   before the checkout bag carried it, so the filter reads both or an order the ticket
+     *   labels *Bangsar* would be treated as belonging to no branch at all.
+     * - **A JSON `null` unquotes to the four-character string `'null'`**, and an empty string
+     *   is not an answer either. Both collapse to SQL `NULL`, which is how this expression
+     *   spells "this order names no branch".
+     */
+    protected const BRANCH_SQL =
+        "NULLIF(NULLIF(COALESCE("
+        . "JSON_UNQUOTE(JSON_EXTRACT(orders.meta, '$.checkout_fields.outlet_id')), "
+        . "JSON_UNQUOTE(JSON_EXTRACT(orders.meta, '$.outlet_id'))"
+        . "), 'null'), '')";
+
     // ── CRUD ────────────────────────────────────────────────────────────────────
 
     public function baseIndexQuery(array $filters = [])
@@ -213,6 +242,28 @@ class ServiceWindowRepository
                     ->values()
                     ->all(),
 
+                // The Kitchen Queue's branch picker. **Deliberately not the `outlet` column
+                // above**, though the two look identical apart from their first row, and that
+                // first row is the whole reason they are separate: on Hours & Holidays
+                // *Whole shop* means "entries scoped to no branch", a real and narrow answer,
+                // while here *All branches* means "do not narrow this board at all". Sharing
+                // one column would make one of the two screens lie about what it is offering.
+                //
+                // Every branch, active or not, for the same reason the other list takes them
+                // all: a branch deactivated at lunchtime still has tickets on the pass.
+                'kitchen_branch' => collect([['label' => __('All branches'), 'value' => self::BRANCH_ALL]])
+                    ->concat(
+                        Outlet::query()->orderBy('id')->get()->map(fn (Outlet $outlet) => [
+                            'label' => trim((string) (
+                                $outlet->getTranslation('title', app()->getLocale(), false)
+                                    ?: $outlet->getTranslation('title', 'en', false)
+                            )) ?: (string) $outlet->slug,
+                            'value' => (string) $outlet->id,
+                        ])
+                    )
+                    ->values()
+                    ->all(),
+
                 'kitchen_state' => collect(self::KITCHEN_STATES)
                     ->map(fn ($state, $key) => ['label' => $state['label'], 'value' => $key])
                     ->values()
@@ -315,12 +366,56 @@ class ServiceWindowRepository
 
     // ── Custom admin pages ──────────────────────────────────────────────────────
 
-    public function pageData(string $slug)
+    /**
+     * `$filters` is the page's own query string, handed over by `GenericModuleController`.
+     *
+     * It is **user input** — anyone who can open the Kitchen Queue can craft it — so the
+     * branch is resolved through {@see branchFilter()} rather than trusted, and the second
+     * argument is defaulted so a shop on a core that predates the capability still renders an
+     * unscoped board instead of erroring.
+     */
+    public function pageData(string $slug, array $filters = [])
     {
         return match ($slug) {
-            'kitchen' => $this->kitchenData(),
+            'kitchen' => $this->kitchenData($this->branchFilter($filters)),
             default   => [],
         };
+    }
+
+    /**
+     * The branch the counter has picked, or `null` for "every branch".
+     *
+     * `null` is the answer to every way of not choosing — the picker's own *All branches* row,
+     * an absent parameter, an empty one, a zero, a word, or an id naming a branch that has
+     * since been deleted. That last is the one worth spelling out: a tablet left open on a
+     * branch somebody closed at head office must widen to the whole shop rather than show an
+     * empty board, because an empty board and a quiet night look identical to a counter.
+     */
+    protected function branchFilter(array $filters): ?int
+    {
+        $raw = $filters['branch_id'] ?? null;
+
+        if ($raw === null || $raw === '' || $raw === self::BRANCH_ALL) {
+            return null;
+        }
+
+        $id = (int) $raw;
+
+        if ($id <= 0) {
+            return null;
+        }
+
+        try {
+            // `withTrashed()`, matching `outletName()`: a branch soft-deleted mid-service still
+            // has tickets on the pass, and they are still somebody's job to cook.
+            return Outlet::withTrashed()->whereKey($id)->exists() ? $id : null;
+        } catch (\Throwable $e) {
+            // The table ships with this theme's migrations. A queue rendering against a
+            // half-deployed import shows every branch rather than nothing at all.
+            report($e);
+
+            return null;
+        }
     }
 
     public function savePageData(string $slug, array $data)
@@ -341,11 +436,52 @@ class ServiceWindowRepository
      * and `alert` (see `kitchenAlert()`) is what makes an arrival heard rather than merely
      * drawn. Both are declarative: this repository states what it wants and core does it,
      * because a theme may not ship admin Vue.
+     *
+     * ## Scoped to one branch — and what that deliberately does not do
+     *
+     * `$branchId` is the counter's own branch, from the page's Branch picker (`page_filters`,
+     * the third page capability beside `poll_seconds` and `alert`). A shop that never touches
+     * it, and every single-branch shop, gets exactly the board it had before this existed.
+     *
+     * **A scoped board still shows every order that names no branch, and that is the design
+     * rather than a leak.** Measured on this database before any of it was written: of 498
+     * open orders, all 332 collection and dine-in orders carry
+     * `checkout_fields.outlet_id`, and **none of the 166 delivery orders do** — not one, and
+     * not because they are old, since every recent delivery order carries a checkout bag with
+     * no branch in it. The id reaches an order from the *pickup method's* meta, and a delivery
+     * order chooses a delivery method, which has no outlet.
+     *
+     * So **nothing in this system records which branch cooks a delivery**. Filtering them out
+     * would have taken a third of the board from every counter with nobody left responsible
+     * for it — the exact failure `queue_notice` exists to prevent, because a board missing its
+     * deliveries reads precisely like a quiet night. They stay on every branch's board, and
+     * `scope_notice` says so in words rather than leaving a counter to work it out.
+     *
+     * Closing that honestly means routing a delivery order to a branch at checkout, which is a
+     * decision about who cooks what and not something a queue may invent for itself.
      */
-    protected function kitchenData(): array
+    protected function kitchenData(?int $branchId = null): array
     {
         $open = Order::query()
             ->whereIn('status', [Order::STATUS_CONFIRMED, Order::STATUS_PROCESSING]);
+
+        // **The scope goes in the QUERY, above the cap — never over the rows it returns.**
+        //
+        // This is D-15 wearing a different hat. The cap takes the newest 120 open orders; a
+        // shop holding 498 across three branches would hand this a slice that is mostly other
+        // branches' work, and filtering *afterwards* would leave a counter looking at a
+        // handful of its own tickets while believing it could see 120. The board would thin
+        // out precisely as the shop got busier, which is when it is trusted most.
+        //
+        // Applied to `$open` itself, before either clone below, so the drawn rows and
+        // `open_total` are counted against the same population — see BRANCH_SQL.
+        if ($branchId !== null) {
+            $open->where(function ($query) use ($branchId) {
+                $query
+                    ->whereRaw(self::BRANCH_SQL . ' = ?', [(string) $branchId])
+                    ->orWhereRaw(self::BRANCH_SQL . ' IS NULL');
+            });
+        }
 
         // **The cap takes the NEWEST, and it used to take the oldest** — register D-15.
         //
@@ -481,6 +617,12 @@ class ServiceWindowRepository
             'upcoming'     => $this->upcomingSummary($upcoming),
             'generated_at' => now()->toDateTimeString(),
             'poll_seconds' => 10,
+            // The page's own scope, declared to core's page-filter capability. Core sends
+            // `branch_id` back on the first load and on every poll, and remembers it for this
+            // device; it never learns that the value names a branch.
+            'page_filters' => ['branch_id'],
+            'branch_id'    => $branchId === null ? self::BRANCH_ALL : (string) $branchId,
+            'scope_notice' => $this->scopeNotice($branchId, $columns),
             // Every open order there is, counted without the render cap. `total_open` is what
             // the board is *showing*; when they disagree the screen has to say so, or a
             // counter reads a truncated queue as a finished one.
@@ -579,6 +721,82 @@ class ServiceWindowRepository
         ];
 
         return $flat + $this->kitchenAlert($byWait, (int) $flat['count_new']);
+    }
+
+    /**
+     * What this board is showing, in a sentence, whenever that is not simply "everything".
+     *
+     * The counterpart to `queue_notice`, and it exists for the same reason: a board that is
+     * narrower than it looks is indistinguishable from a slow night, and the only cure is for
+     * the screen to say so. `queue_notice` covers orders the *cap* dropped; this covers orders
+     * the *scope* did — and, more importantly, the ones it deliberately did not.
+     *
+     * The unassigned figure is the part a counter has to be told rather than left to infer. A
+     * branch-scoped board still carries every delivery order in the shop, because nothing
+     * records which branch cooks one; without a sentence saying that, a Bangsar counter
+     * reasonably reads its board as "Bangsar's work" and either cooks another branch's
+     * delivery or assumes somebody else has.
+     */
+    protected function scopeNotice(?int $branchId, array $columns): string
+    {
+        // An empty string renders as a bare "-" in a `display` field, which is the right answer
+        // for a notice that only sometimes applies (`queue_notice`) and the wrong one here: this
+        // field's whole job is to say what the board is showing, and "-" says nothing while
+        // looking like a value that failed to load. So the unscoped case gets a sentence too,
+        // and it is the sentence that tells an operator the control above exists.
+        if ($branchId === null) {
+            return 'Showing every branch. Pick one above to narrow this board to a single counter — this device will remember the choice.';
+        }
+
+        $drawn = collect($columns)->flatMap(fn ($column) => $column['orders']);
+
+        $unassigned = $drawn->filter(fn ($order) => $order['outlet'] === null)->count();
+
+        $branch = $this->outletLabel($branchId);
+
+        if ($unassigned === 0) {
+            return sprintf(
+                'Showing %s only. Orders that name no branch would also appear here; there are none right now.',
+                $branch
+            );
+        }
+
+        return sprintf(
+            'Showing %s, plus %d %s that %s no branch — nothing records which branch cooks a delivery, so %s on every branch\'s board. Switch to All branches to see the whole shop.',
+            $branch,
+            $unassigned,
+            $unassigned === 1 ? 'order' : 'orders',
+            $unassigned === 1 ? 'names' : 'name',
+            $unassigned === 1 ? 'it appears' : 'they appear'
+        );
+    }
+
+    /**
+     * One branch's display name, by id. Shares `outletName()`'s memo so a poll that has
+     * already resolved the branch on a ticket does not ask the database twice.
+     */
+    protected function outletLabel(int $id): string
+    {
+        if (isset($this->outletNames[$id]) && $this->outletNames[$id] !== '') {
+            return $this->outletNames[$id];
+        }
+
+        try {
+            $outlet = Outlet::withTrashed()->find($id);
+
+            $name = $outlet
+                ? ($outlet->getTranslation('title', app()->getLocale(), false) ?: $outlet->slug)
+                : '';
+        } catch (\Throwable $e) {
+            report($e);
+            $name = '';
+        }
+
+        $this->outletNames[$id] = $name;
+
+        // A branch with no readable name still has to be named in the sentence, or the notice
+        // reads "Showing , plus 3 orders" — worse than the id it was hiding.
+        return $name !== '' ? $name : ('branch #' . $id);
     }
 
     /**

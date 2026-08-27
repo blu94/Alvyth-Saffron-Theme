@@ -87,6 +87,27 @@ edits it, and the **bin** deletes it after asking.
 Every open order for today — confirmed or being prepared — oldest first. Orders wanted on a
 later date are listed separately under **Booked Ahead**:
 
+- **Which Branch**: the picker at the top of the screen. Leave it on **All branches** and the
+  board is the whole shop, which is how it has always behaved and what a single-site shop
+  wants. Choose your branch and the board narrows to the counter you are standing at.
+
+  **This device remembers the choice.** The tablet on the Bangsar pass stays on Bangsar when
+  you come in tomorrow; the same login on the office laptop is still showing everything. It is
+  a property of the screen you are looking at, not of your account, so nobody has to be given a
+  second login to sit at a second counter — the same way the sound button is per-device.
+
+  Two things it does **not** do, both worth knowing before you rely on it:
+
+  - **Delivery orders stay on every branch's board.** Nothing in the system records which
+    kitchen cooks a delivery — a customer having food delivered picks an address, not a branch,
+    so there is no branch on the order to filter by. Hiding them would take real work off every
+    board with nobody left holding it, so instead they stay everywhere and the line beside the
+    picker tells you how many of them you are looking at. If more than one of your branches
+    cooks deliveries, agree between yourselves who takes them; the screen cannot decide it.
+  - **Advance An Order still lists every open order**, not only this branch's. It is a
+    deliberate loose end rather than an oversight: that list is a separate lookup that does not
+    know what the board above it is showing. Read the ticket before you move it.
+
 - **At a glance**: tiles for New, Preparing, Ready and Out For Delivery, the number of open
   orders, how many are booked ahead, the single longest-waiting order (as
   `ORD-000320 — 1 h 20 min (Preparing)`), and the time the figures were read. The screen
