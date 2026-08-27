@@ -65,7 +65,7 @@
                 "type": "link",
                 "label": "Footer Link URL",
                 "default": {
-                    "url": "/menu",
+                    "url": "/collections",
                     "type": "internal",
                     "target": "_self"
                 }

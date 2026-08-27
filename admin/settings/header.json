@@ -447,7 +447,7 @@
           "type": "link",
           "label": "Button URL",
           "default": {
-            "url": "/menu",
+            "url": "/collections",
             "type": "internal",
             "target": "_self"
           }
