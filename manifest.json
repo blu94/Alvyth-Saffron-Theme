@@ -34,7 +34,8 @@
       "Theme\\Backend\\Guards\\BranchSoldOutGuard"
     ],
     "writers": [
-      "Theme\\Backend\\Writers\\TableReservation"
+      "Theme\\Backend\\Writers\\TableReservation",
+      "Theme\\Backend\\Writers\\DeliveryKitchenRouting"
     ]
   },
   "cart": {

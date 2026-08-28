@@ -112,6 +112,11 @@ class ServiceWindowRepository
     protected const BRANCH_SQL =
         "NULLIF(NULLIF(COALESCE("
         . "JSON_UNQUOTE(JSON_EXTRACT(orders.meta, '$.checkout_fields.outlet_id')), "
+        // The branch a delivery order was *routed* to, written by
+        // `Writers\DeliveryKitchenRouting`. Read second, so a branch the customer actually
+        // chose always wins — the two keys are different facts and only one of them is an
+        // answer the customer gave.
+        . "JSON_UNQUOTE(JSON_EXTRACT(orders.meta, '$.checkout_fields.kitchen_outlet_id')), "
         . "JSON_UNQUOTE(JSON_EXTRACT(orders.meta, '$.outlet_id'))"
         . "), 'null'), '')";
 
@@ -938,7 +943,13 @@ class ServiceWindowRepository
      */
     protected function outletName($order): ?string
     {
-        $id = $order->meta['checkout_fields']['outlet_id'] ?? $order->meta['outlet_id'] ?? null;
+        // The branch the customer chose, then the branch a delivery order was routed to, then
+        // the legacy key. In that order: a chosen branch is an answer somebody gave, a routed
+        // one is an answer the shop worked out, and the ticket should prefer the former.
+        $id = $order->meta['checkout_fields']['outlet_id']
+            ?? $order->meta['checkout_fields']['kitchen_outlet_id']
+            ?? $order->meta['outlet_id']
+            ?? null;
 
         if (! $id) {
             return null;
