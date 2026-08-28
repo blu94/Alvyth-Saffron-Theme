@@ -98,12 +98,15 @@ later date are listed separately under **Booked Ahead**:
 
   Two things it does **not** do, both worth knowing before you rely on it:
 
-  - **Delivery orders stay on every branch's board.** Nothing in the system records which
-    kitchen cooks a delivery — a customer having food delivered picks an address, not a branch,
-    so there is no branch on the order to filter by. Hiding them would take real work off every
-    board with nobody left holding it, so instead they stay everywhere and the line beside the
-    picker tells you how many of them you are looking at. If more than one of your branches
-    cooks deliveries, agree between yourselves who takes them; the screen cannot decide it.
+  - **A delivery order is given a branch automatically**, since it has no branch of its own to
+    pick — the customer chose an address, not a counter. If only one of your branches delivers,
+    it gets them all. If several do, the order goes to the **nearest** branch when we have the
+    customer's address on the map, and to your **default** branch when we do not (which is most
+    of the time — we only have a point for an address the customer has saved to their account).
+
+    Orders placed before this was switched on carry no branch and still appear on every board,
+    as do any the shop could not decide. The line beside the picker counts them, so you can see
+    at a glance whether anything is unclaimed.
   **Advance An Order follows the picker.** Choose a branch and that list offers only that
   branch's open orders, plus any order naming no branch — the same rule the board uses, so the
   two cannot disagree about what you are looking at.
