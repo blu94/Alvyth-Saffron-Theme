@@ -309,10 +309,13 @@
         "type": "select",
         "label": "Order",
         "placeholder": "Choose an open order",
+        "hint": "Follows the branch chosen above, plus any order that names no branch.",
         "options": {
           "url": "/admin/modules/service-windows/options",
           "master": "open_order",
-          "params": { "columns[]": "open_order" }
+          "params": { "columns[]": "open_order" },
+          "dependsOn": "branch_id",
+          "param": "branch_id"
         }
       },
       {

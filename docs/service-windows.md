@@ -104,9 +104,9 @@ later date are listed separately under **Booked Ahead**:
     board with nobody left holding it, so instead they stay everywhere and the line beside the
     picker tells you how many of them you are looking at. If more than one of your branches
     cooks deliveries, agree between yourselves who takes them; the screen cannot decide it.
-  - **Advance An Order still lists every open order**, not only this branch's. It is a
-    deliberate loose end rather than an oversight: that list is a separate lookup that does not
-    know what the board above it is showing. Read the ticket before you move it.
+  **Advance An Order follows the picker.** Choose a branch and that list offers only that
+  branch's open orders, plus any order naming no branch — the same rule the board uses, so the
+  two cannot disagree about what you are looking at.
 
 - **At a glance**: tiles for New, Preparing, Ready and Out For Delivery, the number of open
   orders, how many are booked ahead, the single longest-waiting order (as

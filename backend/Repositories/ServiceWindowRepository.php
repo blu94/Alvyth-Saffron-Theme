@@ -200,7 +200,15 @@ class ServiceWindowRepository
      * picker. It went with the page: the dish's own Stock field is where availability is set
      * now, so nothing needs a second list of dishes to point at.
      */
-    public function getOptions(array $columns = [])
+    /**
+     * `$filters` is the request's other query parameters, and declaring it is how this
+     * repository opts in to receiving them — core checks the signature, not a list of names.
+     *
+     * It carries `branch_id` for the Kitchen Queue's *Advance An Order* list, posted by the
+     * schema engine's `options.dependsOn` from the Branch picker on the same page. Same
+     * user-input rules as `pageData()`: resolved through `branchFilter()`, never trusted.
+     */
+    public function getOptions(array $columns = [], array $filters = [])
     {
         $options = [];
 
@@ -269,8 +277,25 @@ class ServiceWindowRepository
                     ->values()
                     ->all(),
 
+                // **Narrowed by the same branch the board above it is showing.** It was not,
+                // and that was a real hole rather than a cosmetic one: a counter scoped to
+                // Bangsar still had every branch's orders in this select, so the screen that
+                // exists to stop somebody reading another branch's ticket would happily let
+                // them advance one. The branch arrives from the Branch picker through
+                // `options.dependsOn`, and is resolved by the same `branchFilter()` the board
+                // uses — one resolver, so the list and the board cannot disagree about which
+                // branch is meant.
+                //
+                // Orders naming no branch stay in the list for the reason they stay on the
+                // board: nothing records which branch cooks a delivery, so they are everyone's.
                 'open_order' => Order::query()
                     ->whereIn('status', [Order::STATUS_CONFIRMED, Order::STATUS_PROCESSING])
+                    ->when(
+                        $this->branchFilter($filters),
+                        fn ($query, $branchId) => $query->where(fn ($q) => $q
+                            ->whereRaw(self::BRANCH_SQL . ' = ?', [(string) $branchId])
+                            ->orWhereRaw(self::BRANCH_SQL . ' IS NULL'))
+                    )
                     ->orderBy('created_at')
                     ->limit(200)
                     ->get(['id', 'order_number', 'grand_total', 'created_at'])
