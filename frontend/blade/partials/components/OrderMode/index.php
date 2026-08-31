@@ -98,7 +98,20 @@ class OrderMode
         //
         // Offered only where a shop actually has a dining room. Most takeaway shops do not, and
         // a tile that leads to "which table?" in a shop with no tables is worse than no tile.
-        $dineIn = $offered !== 'delivery' && $this->bool($settings['offer_dine_in'] ?? false);
+        //
+        // **Two switches, and the second is per branch.** The shop-wide one below permits dining
+        // at all; `outlets.offers_dine_in` decides whether a given branch seats anybody, and it
+        // defaults to off. Collection and delivery have been per branch since outlets existed and
+        // dine-in simply rode on collection, so a takeaway kiosk with a counter and no seating was
+        // offered *Dine in* while the dining-room repeater beside it was already asking that same
+        // branch for its tables.
+        //
+        // The shop-wide answer decides whether the tile is RENDERED; the branch decides whether it
+        // is OFFERED, in the browser, because only the browser knows which branch was chosen at
+        // the gate. Same split as `offers_pickup` / `offers_delivery` — see `branchDoors()`.
+        $dineIn = $offered !== 'delivery'
+            && $this->bool($settings['offer_dine_in'] ?? false)
+            && $this->anyBranchDinesIn();
 
         // A list beats free text when the shop knows its own tables: a diner mistyping 21 for 12
         // sends the food to somebody else's table, and nothing downstream can catch it. Empty
@@ -150,6 +163,7 @@ class OrderMode
                 'partyOne'     => __('Just me'),
                 'seatsHint'    => __('seats :count'),
                 'noneFree'     => __('No table at that branch is free then. Try another time, or a smaller party.'),
+                'notDining'    => __('This branch does not seat diners. Choose another branch above, or switch to Pickup.'),
                 'someTaken'    => __('Tables already booked at that time are not listed.'),
                 'ready'    => $this->translate($settings['pickup_ready_label'] ?? '', $locale)
                     ?: __('Ready to collect in about 20 minutes'),
@@ -163,6 +177,21 @@ class OrderMode
             // the setting's own hint says so.
             'tables'        => $tables,
             'methodOutlets' => $this->methodOutlets(),
+            // **Which doors each branch actually opens** (register O18a). `offers_pickup` and
+            // `offers_delivery` are columns on the outlet, so the tiles offered here must narrow
+            // to the branch the customer chose at the gate — otherwise a branch that does not
+            // deliver still shows Delivery, and the customer walks into the dead end the Outlets
+            // form promises cannot exist.
+            //
+            // Two different questions, and only the second depends on state the server cannot
+            // see: the shop-wide answer above decides which tiles are *rendered at all* (core's
+            // shipping configuration, which the server knows), and this decides which are
+            // *offered* to the one branch the browser has stored.
+            'branchDoors'   => $this->branchDoors(),
+            // Whether the shop is a branch shop at all. A shop with no outlets has no branch to
+            // narrow to, so the tile stands on the shop-wide switch alone — which is exactly what
+            // it did before this column existed, and why a single-site restaurant is untouched.
+            'hasBranches'   => $this->hasBranches(),
             'bookings'      => $this->bool($settings['accept_table_bookings'] ?? false),
             'askCutlery'    => $askCutlery,
             // How long a booking at each branch holds its table, so the browser can work out
@@ -285,6 +314,96 @@ class OrderMode
      *
      * @return array<int, int> method id => outlet id
      */
+    /**
+     * Which doors each branch opens, by outlet id.
+     *
+     * The same query the order gate lists branches from — active, and offering at least one of
+     * the two — so the two components cannot disagree about which branches exist or what they
+     * do. A branch with neither door is absent from both, which is what makes "left out of the
+     * list altogether" true rather than aspirational.
+     *
+     * Fails open to an empty map, which restores the shop-wide behaviour this had before
+     * branches could be chosen: every tile the shop offers is offered everywhere.
+     *
+     * @return array<int, array{pickup: bool, delivery: bool}>
+     */
+    protected function branchDoors(): array
+    {
+        try {
+            return Outlet::query()
+                ->active()
+                ->where(fn ($q) => $q->where('offers_pickup', true)->orWhere('offers_delivery', true))
+                ->get(['id', 'offers_pickup', 'offers_delivery', 'offers_dine_in'])
+                ->mapWithKeys(fn (Outlet $outlet) => [
+                    (int) $outlet->id => [
+                        'pickup'   => (bool) $outlet->offers_pickup,
+                        'delivery' => (bool) $outlet->offers_delivery,
+                        // `dinesIn()` rather than the bare column, so the browser is handed the
+                        // composed answer and cannot forget that dining rides on collection. A
+                        // branch that stops collecting stops seating on the same save, with no
+                        // second rule for the page to remember.
+                        'dineIn'   => $outlet->dinesIn(),
+                    ],
+                ])
+                ->all();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [];
+        }
+    }
+
+    /**
+     * Has this shop got any branches at all?
+     *
+     * Asked separately from {@see self::branchDoors()} because an EMPTY map has two meanings that
+     * must not collapse into one: a shop with no outlets (offer whatever the shop offers — the
+     * behaviour every single-site restaurant has always had), and a query that failed (same
+     * answer, deliberately, because failing open is this feature's rule throughout). Only the
+     * first is a fact about the shop, and only the tile-rendering decision may act on it.
+     *
+     * Fails open to `false`, which keeps the shop-wide switch in charge — a half-deployed import
+     * must not be able to take the Dine in tile off a working restaurant.
+     */
+    protected function hasBranches(): bool
+    {
+        try {
+            return Outlet::query()->active()->exists();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return false;
+        }
+    }
+
+    /**
+     * Does any active branch seat diners?
+     *
+     * Stops the tile being drawn at all for a branch shop where nobody dines in — otherwise, with
+     * this column defaulting to off, every existing multi-branch shop would render a Dine in tile
+     * that vanishes the moment a branch is chosen. A control that appears and then withdraws reads
+     * as a fault; one that was never there reads as a shop that does not do it.
+     *
+     * **A shop with no outlets answers `true`**, because it has no branch to consult and the
+     * shop-wide switch is the whole answer there — the single-site case, unchanged. Failing open
+     * to `true` for the same reason: this decides what is offered, and the checkout guard is what
+     * actually holds.
+     */
+    protected function anyBranchDinesIn(): bool
+    {
+        try {
+            if (! Outlet::query()->active()->exists()) {
+                return true;
+            }
+
+            return Outlet::query()->active()->dineIn()->exists();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return true;
+        }
+    }
+
     protected function methodOutlets(): array
     {
         return ShippingMethodOutlet::map();

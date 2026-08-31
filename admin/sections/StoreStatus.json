@@ -49,9 +49,11 @@
                             {
                                 "ui": { "type": "field", "cols": 6 },
                                 "key": "timezone",
-                                "type": "text",
+                                "type": "autocomplete",
                                 "label": "Shop Timezone",
                                 "placeholder": "e.g. Asia/Kuala_Lumpur",
+                                "clearable": true,
+                                "options": { "$ref": "../shared/timezones.json" },
                                 "hint": "An IANA name. Empty uses the application timezone. Windows are compared in this zone, so a 09:00 opening is 09:00 here whatever the season",
                                 "default": ""
                             },

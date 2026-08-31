@@ -31,7 +31,7 @@
 
         <div class="saffron-order-mode__options">
             @if(in_array('delivery', $modes, true))
-            <label class="saffron-order-mode__option" :class="{ 'is-active': mode === 'delivery' }">
+            <label v-if="branchOffers('delivery')" class="saffron-order-mode__option" :class="{ 'is-active': mode === 'delivery' }">
                 <input type="radio" name="saffron-order-mode" value="delivery"
                        v-model="mode" class="saffron-order-mode__input">
                 <span class="saffron-order-mode__icon" aria-hidden="true">
@@ -51,7 +51,7 @@
             @endif
 
             @if(in_array('pickup', $modes, true))
-            <label class="saffron-order-mode__option" :class="{ 'is-active': mode === 'pickup' }">
+            <label v-if="branchOffers('pickup')" class="saffron-order-mode__option" :class="{ 'is-active': mode === 'pickup' }">
                 <input type="radio" name="saffron-order-mode" value="pickup"
                        v-model="mode" class="saffron-order-mode__input">
                 <span class="saffron-order-mode__icon" aria-hidden="true">
@@ -69,7 +69,7 @@
             @endif
 
             @if(in_array('dine_in', $modes, true))
-            <label class="saffron-order-mode__option" :class="{ 'is-active': mode === 'dine_in' }">
+            <label v-if="branchOffers('dine_in')" class="saffron-order-mode__option" :class="{ 'is-active': mode === 'dine_in' }">
                 <input type="radio" name="saffron-order-mode" value="dine_in"
                        v-model="mode" class="saffron-order-mode__input">
                 <span class="saffron-order-mode__icon" aria-hidden="true">
@@ -199,7 +199,7 @@
                  Guarded in Blade as well, so a shop that does not take bookings never has a
                  `data-checkout-field="covers"` input in its DOM at all. --}}
             @if($bookings)
-            <template v-if="askCovers">
+            <template v-if="askCovers && !branchClosedToDiners">
                 <label class="saffron-order-mode__outlet-label" :for="uid + '-covers'">@{{ labels.party }}</label>
                 <select :id="uid + '-covers'" class="saffron-order-mode__covers"
                         v-model.number="covers" data-checkout-field="covers">
@@ -210,6 +210,15 @@
             </template>
             @endif
 
+            {{-- The branch chosen above has no dining room. Nothing that asks for a table
+                 renders at all — the same honest shape as "every table is taken": there is no
+                 answer to give, so the panel names what to change instead of offering a list
+                 that cannot be right. The `v-else` below carries the whole question, because a
+                 second `v-if` between a `v-if` and its `v-else-if` breaks the chain and hands
+                 the select to the wrong branch. --}}
+            <p v-if="branchClosedToDiners" class="saffron-order-mode__hint mb-0">@{{ labels.notDining }}</p>
+
+            <template v-else>
             <label class="saffron-order-mode__outlet-label" :for="uid + '-table'">@{{ labels.chooseTable }}</label>
 
             {{-- **The branch's own tables, when it has any** (register O19). A table belongs to
@@ -258,6 +267,7 @@
                    v-model="table" data-checkout-field="table_number"
                    :placeholder="labels.tablePlaceholder" maxlength="20" autocomplete="off">
             @endif
+            </template>
         </div>
     </Teleport>
     @endif
@@ -389,7 +399,61 @@
         setup() {
             const mounted = ref(false);
             const modes   = payload.modes || ['delivery'];
+
+            // **Delivery-or-pickup is this component's question and nobody else's.**
+            //
+            // For one afternoon the order gate asked it too, before the menu, and this ref was
+            // seeded from what the gate had stored. That was one question in two places: the
+            // gate's bar and these tiles could show different answers, and the customer had been
+            // made to answer before seeing any food. The gate now asks only *which branch* —
+            // the one thing that genuinely decides what can be cooked — and the mode is chosen
+            // here, where the fee, the minimum and the address panel it governs already live.
+            //
+            // What D-3 actually objected to was the *cost* arriving after a full basket, not the
+            // question arriving at the cart. The gate's bar states the minimums beside the branch
+            // on every page, so the price is known before the food without a second gate.
             const mode    = ref(modes[0]);
+
+            // ── What THIS branch can actually do (register O18a) ────────────────────
+            // `offers_pickup` and `offers_delivery` are per outlet, and the branch was chosen at
+            // the gate before the menu — so the tiles narrow to that branch's own doors. Without
+            // this, a branch that does not deliver still showed Delivery and the customer walked
+            // into a dead end the Outlets form promises cannot exist.
+            //
+            // Read from `localStorage` rather than wired between components: the gate is absent
+            // on a single-branch shop, and a wire that breaks when one end is missing is worse
+            // than a value that is simply not there. No stored branch, an unreadable store, or a
+            // branch the payload does not list all fall through to the shop-wide offering.
+            const gatedBranch = (() => {
+                try {
+                    const raw = localStorage.getItem('ovynt_order_gate');
+                    const saved = raw ? JSON.parse(raw) : null;
+
+                    return saved && typeof saved === 'object' ? saved.branch : null;
+                } catch (e) { return null; }
+            })();
+
+            const doors = (payload.branchDoors || {})[gatedBranch] || null;
+
+            // Dine-in rides on the counter: somebody eating in collects from the pass they are
+            // sitting beside, so a branch with no collection has no dining room either. That
+            // half is composed server-side by `Outlet::dinesIn()` and arrives as `dineIn`, so
+            // this reads one flag per door rather than re-deriving the rule in the browser.
+            const branchOffers = (m) => {
+                if (!doors) return true;
+                if (m === 'delivery') return !!doors.delivery;
+                if (m === 'dine_in') return !!doors.dineIn;
+
+                return !!doors.pickup;
+            };
+
+            // A mode this branch cannot do must never be the one selected — that is the dead end
+            // itself, one step further on.
+            if (!branchOffers(mode.value)) {
+                const first = modes.find(branchOffers);
+
+                if (first) mode.value = first;
+            }
 
             // What core is told. Dine-in is a collection as far as an address and a delivery
             // fee are concerned, and those are the only two things the type decides.
@@ -443,6 +507,29 @@
                 && Object.keys(payload.methodOutlets || {}).length > 0
                 && (payload.outlets || []).some(o => (o.tables || []).length > 0)
             );
+
+            // ── The branch chosen HERE, which need not be the one the gate chose ────
+            //
+            // `branchOffers` above narrows the tiles to the branch stored at the gate. This is
+            // the other end of the same question: core's pickup list on the cart offers **every**
+            // collecting branch, so a customer who answered the gate with Bangsar can still pick
+            // KLCC here — and if KLCC has no dining room the panel would go on offering it
+            // tables. Answered where the branch is actually chosen rather than assumed to equal
+            // the gate's, because they are two separate controls and only one of them is ours.
+            //
+            // `false` while no branch is known, and for a branch the payload does not describe:
+            // "I cannot tell" must never render as "this branch refuses you". `BranchDineInGuard`
+            // is what actually holds; this only spares the customer meeting it at the payment
+            // button, which is the complaint the whole ordering gate exists to answer.
+            const branchClosedToDiners = computed(() => {
+                const outletId = payload.methodOutlets?.[methodId.value];
+
+                if (!outletId) return false;
+
+                const doors = (payload.branchDoors || {})[outletId];
+
+                return !!doors && !doors.dineIn;
+            });
 
             // ── The time, read from the schedule block (O19, phase 2) ───────────────
             //
@@ -686,13 +773,13 @@
             watch(mode, m => { if (m === 'dine_in') noCutlery.value = false; });
 
             return {
-                mode, modes, fulfillmentType, modeInput,
+                mode, modes, fulfillmentType, modeInput, branchOffers,
                 visible,
                 labels: payload.labels,
                 pickupAddress: payload.pickupAddress,
                 outlets, outletId, chosenOutlet,
                 collectAddress, copied, copyAddress,
-                tables, table, tableSlot, branchTables, awaitingBranch,
+                tables, table, tableSlot, branchTables, awaitingBranch, branchClosedToDiners,
                 covers, askCovers, maxCovers, offerableTables, tableOptionLabel,
                 noCutlery,
                 uid: '{{ $uid }}',

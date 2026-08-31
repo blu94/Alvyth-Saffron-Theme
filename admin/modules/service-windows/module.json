@@ -2,7 +2,7 @@
   "name": "Service Hours",
   "type": "service-windows",
   "routeBase": "module/service-windows",
-  "order": 7,
+  "order": 8,
   "icon": "tabler-clock-hour-9",
   "api": "/admin/modules/service-windows",
   "resource": "modules",
@@ -24,14 +24,6 @@
     "$ref": "kitchen.json"
   },
   "navigation": [
-    {
-      "title": "Kitchen Queue",
-      "icon": "tabler-tools-kitchen-3",
-      "to": {
-        "name": "module-type-page-slug",
-        "params": { "slug": "kitchen" }
-      }
-    },
     { "title": "Hours & Holidays", "icon": "tabler-circle", "to": "module-type" },
     { "title": "Add Entry", "icon": "tabler-circle", "to": "module-type-create" }
   ]

@@ -149,6 +149,13 @@
 <body class="saffron-body">
 
     <div id="saffron-app-root">
+        {{-- How you want it and from where, above everything it governs. In the layout rather
+             than as a page-builder section because it must not be optional: a gate an operator
+             can forget to place on the menu page is a gate that is not there. It renders
+             nothing at all for a shop with one mode and no branches, which is every install
+             that has not used the Outlets module. --}}
+        <x-theme.component name="OrderGate" />
+
         @include('partials.layout.header')
 
         <main id="MainContent" class="content-for-layout focus-none" role="main" tabindex="-1">

@@ -2,7 +2,7 @@
   "name": "Outlets",
   "type": "outlets",
   "routeBase": "module/outlets",
-  "order": 5,
+  "order": 6,
   "icon": "tabler-building-store",
   "api": "/admin/modules/outlets",
   "resource": "modules",

@@ -20,6 +20,7 @@
     ]
   },
   "modules": [
+    "kitchen",
     "outlets",
     "modifier-groups",
     "service-windows"

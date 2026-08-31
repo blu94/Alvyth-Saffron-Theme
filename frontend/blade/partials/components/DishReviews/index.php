@@ -3,6 +3,7 @@
 namespace Theme\Components;
 
 use App\Models\Product;
+use App\Services\Storefront\InteractionSettings;
 use Illuminate\Support\Facades\View;
 use Theme\Backend\Support\ThemeSettings;
 
@@ -34,11 +35,22 @@ use Theme\Backend\Support\ThemeSettings;
  */
 class DishReviews
 {
+    public function __construct(protected InteractionSettings $interactions)
+    {
+    }
+
     public function render(array $data, string $locale, string $themeViewPath): string
     {
         $dish = $data['dish'] ?? View::shared('page');
 
         if (! $dish instanceof Product) {
+            return '';
+        }
+
+        // A review is a comment, so the store's own switch governs it: Settings →
+        // Application → Interactions & Sharing turns comments off everywhere, and a
+        // dish is not an exception to everywhere.
+        if (! $this->interactions->commentsEnabled()) {
             return '';
         }
 

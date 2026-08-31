@@ -1,0 +1,13 @@
+{
+  "name": "Dashboard",
+  "type": "kitchen",
+  "routeBase": "module/service-windows",
+  "order": 5,
+  "icon": "tabler-tools-kitchen-3",
+  "api": "/admin/modules/service-windows",
+  "resource": "modules",
+  "to": {
+    "name": "module-type-page-slug",
+    "params": { "type": "service-windows", "slug": "kitchen" }
+  }
+}

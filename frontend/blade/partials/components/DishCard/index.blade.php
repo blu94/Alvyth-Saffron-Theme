@@ -1,4 +1,7 @@
-<article id="{{ $uid }}" class="saffron-dish-card {{ $layout === 'list' ? 'saffron-dish-card--list' : '' }} {{ $isAvailable ? '' : 'saffron-dish-card--unavailable' }} {{ $showWishlist ? 'saffron-dish-card--savable' : '' }}">
+{{-- `data-dish-id` is what the order gate scopes on: a branch that serves only some dishes
+     hides the rest, and it needs to know which card is which dish. An attribute rather than a
+     class, because the id is data and a class would encode it as presentation. --}}
+<article id="{{ $uid }}" data-dish-id="{{ $dish->id }}" class="saffron-dish-card {{ $layout === 'list' ? 'saffron-dish-card--list' : '' }} {{ $isAvailable ? '' : 'saffron-dish-card--unavailable' }} {{ $showWishlist ? 'saffron-dish-card--savable' : '' }}">
     @if($showWishlist)
         {{-- A sibling of the media anchor, not a child: a button inside an anchor is invalid
              markup and the click would navigate to the dish before the toggle ever ran. --}}
