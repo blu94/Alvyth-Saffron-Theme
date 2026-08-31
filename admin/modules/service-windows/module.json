@@ -11,6 +11,11 @@
       "resource": "kitchen"
     }
   },
+  "search": {
+    "columns": ["reason"],
+    "title": "reason",
+    "subtitle": "kind"
+  },
   "table": {
     "$ref": "index.json"
   },
