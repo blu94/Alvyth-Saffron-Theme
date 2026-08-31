@@ -24,6 +24,8 @@ under the one **Saffron** group. It has three links:
 
 ## The list screen
 
+![The Modifier Groups list](/docs/modifier-groups/01-list.webp)
+
 Each row is one question, with these columns:
 
 - **ID** — the automatic reference number.
@@ -48,6 +50,8 @@ list is not what you expect the place to fix it is the dish, or the Attach To Di
 below.
 
 ## Writing a group
+
+![Writing a group](/docs/modifier-groups/02-form.webp)
 
 ### The Question
 
@@ -91,6 +95,8 @@ The order of the rows is the order the questions are asked on the dish sheet, so
 Attach the **parent dish** and every variant of it inherits the question — you do not attach a group to Regular and Large separately.
 
 ## Attaching one question to many dishes at once
+
+![Attach To Dishes](/docs/modifier-groups/03-attach.webp)
 
 Every burger asking "Choose your side" is thirty dishes, and thirty product forms is not a job
 anybody should do by hand. **Modifier Groups → Attach To Dishes** does it in one action.

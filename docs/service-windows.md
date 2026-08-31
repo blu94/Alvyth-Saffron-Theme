@@ -18,6 +18,8 @@ the one **Saffron** group. It has three links:
 
 ## The two kinds of entry
 
+![Writing an entry](/docs/service-windows/02-form.webp)
+
 Every entry starts with one choice, **Entry Type**, and the rest of the form follows it:
 
 | | Weekly hours | Holiday or closure |
@@ -74,6 +76,8 @@ own hours could.
 
 ## The list
 
+![Hours and holidays](/docs/service-windows/01-list.webp)
+
 Weekly rows sort in week order first, then the dated overrides by date. The **Branch** column
 says whose each row is — *Whole shop*, the branch's name, or *Removed branch* for a row whose
 outlet was deleted (such a row does nothing until the branch is restored). The **Entry Type**
@@ -83,6 +87,8 @@ Each row has three actions: the **eye** opens a read-only view of the entry, the
 edits it, and the **bin** deletes it after asking.
 
 ## Kitchen Queue
+
+![The Kitchen Queue](/docs/service-windows/03-kitchen.webp)
 
 Every open order for today — confirmed or being prepared — oldest first. Orders wanted on a
 later date are listed separately under **Booked Ahead**:
@@ -107,6 +113,7 @@ later date are listed separately under **Booked Ahead**:
     Orders placed before this was switched on carry no branch and still appear on every board,
     as do any the shop could not decide. The line beside the picker counts them, so you can see
     at a glance whether anything is unclaimed.
+
   **Advance An Order follows the picker.** Choose a branch and that list offers only that
   branch's open orders, plus any order naming no branch — the same rule the board uses, so the
   two cannot disagree about what you are looking at.

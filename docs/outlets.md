@@ -20,6 +20,8 @@ one **Saffron** group. It has two links:
 
 ## The form
 
+![A branch's form](/docs/outlets/02-form.webp)
+
 ### The outlet
 
 | Field | What it is for |
@@ -101,6 +103,8 @@ the zone itself, so filling these in changes no delivery charge today.
 | **Display Order** | Lower sorts first, in this list and in the customer's branch picker |
 
 ## The list
+
+![The Outlets list](/docs/outlets/01-list.webp)
 
 ID, Outlet, Slug, Phone, Collection, Delivery, Default and Status. The **Status** filter
 narrows it; the search box matches name, slug, address and phone.
