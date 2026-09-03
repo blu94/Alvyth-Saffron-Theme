@@ -3,7 +3,6 @@
 namespace Theme\Sections\General;
 
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Str;
 use Theme\Backend\Support\Motion;
 use Theme\Backend\Support\ThemeSettings;
 
@@ -15,6 +14,9 @@ use Theme\Backend\Support\ThemeSettings;
  */
 class FaqAccordion
 {
+    /** Per-request section counter — deterministic uids, so ETag revalidation can match. */
+    private static int $uidSequence = 0;
+
     public function render(?array $data, string $locale, string $themeViewPath): string
     {
         $data = $data ?? [];
@@ -24,10 +26,15 @@ class FaqAccordion
             return '';
         }
 
+        // The random suffix kept two FAQ sections on one page from colliding on $index —
+        // and made every render byte-unique, killing ETag revalidation (audit P5's rule).
+        // A per-section counter does the first job without the second cost.
+        $section = ++self::$uidSequence;
+
         $items = collect($data['items'] ?? [])
             ->filter(fn ($item) => ($item['status'] ?? 'active') === 'active')
             ->map(fn ($item, $index) => [
-                'uid'      => 'faq-' . $index . '-' . Str::random(5),
+                'uid'      => 'faq-' . $section . '-' . $index,
                 'question' => $this->translate($item['question'] ?? '', $locale),
                 'answer'   => $this->translate($item['answer'] ?? '', $locale),
                 'open'     => (bool) ($item['open_by_default'] ?? false),

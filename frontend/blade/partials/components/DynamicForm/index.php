@@ -24,6 +24,9 @@ use Illuminate\Support\Str;
  */
 class DynamicForm
 {
+    /** Per-request render counter — deterministic uids, so ETag revalidation can match. */
+    private static int $uidSequence = 0;
+
     public function render(array $data, string $locale, string $themeViewPath): string
     {
         $slug = trim((string) ($data['slug'] ?? ''));
@@ -56,7 +59,9 @@ class DynamicForm
 
         return View::make($themeViewPath, [
             'slug'         => $slug,
-            'uid'          => 'saffron-form-' . Str::slug($slug) . '-' . Str::random(6),
+            // Slug plus a counter, not a random suffix: random made every render
+            // byte-unique and killed ETag revalidation (audit P5's rule).
+            'uid'          => 'saffron-form-' . Str::slug($slug) . '-' . ++self::$uidSequence,
             'intro'        => (string) ($data['intro'] ?? ''),
             'variantClass' => $variant === 'inline' ? 'saffron-form--inline' : '',
             'payload'      => $payload,

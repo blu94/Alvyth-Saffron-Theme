@@ -15,6 +15,9 @@ use Theme\Backend\Support\Motion;
  */
 class Hero
 {
+    /** Per-request render counter — deterministic uids, so ETag revalidation can match. */
+    private static int $uidSequence = 0;
+
     public function render(?array $data, string $locale, string $themeViewPath): string
     {
         $data = $data ?? [];
@@ -63,8 +66,10 @@ class Hero
                 'tall'    => 'saffron-hero--tall',
                 default   => '',
             },
-            // Unique per render so two heroes on one page rotate independently.
-            'uid'         => uniqid('saffron-hero-'),
+            // Unique per render so two heroes on one page rotate independently — but
+            // deterministic, because uniqid() made every render byte-unique and killed
+            // ETag revalidation (audit P5's rule).
+            'uid'         => 'saffron-hero-' . ++self::$uidSequence,
             'locale'      => $locale,
             'motionAttrs' => Motion::sectionAttributes($data),
             'data'        => $data,

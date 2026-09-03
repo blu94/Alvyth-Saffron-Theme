@@ -31,7 +31,8 @@
 
     <a href="{{ $url }}" class="saffron-dish-card__media" aria-label="{{ $title }}" tabindex="-1">
         @if($image)
-            <img src="{{ $image }}" alt="{{ $title }}" class="saffron-dish-card__img" loading="lazy" decoding="async">
+            <img src="{{ $image }}" alt="{{ $title }}" class="saffron-dish-card__img" loading="lazy" decoding="async"
+                 @if($imageSrcset) srcset="{{ $imageSrcset }}" sizes="(max-width: 768px) 50vw, 25vw" @endif>
         @else
             <span class="saffron-dish-card__placeholder">
                 <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="1.4"

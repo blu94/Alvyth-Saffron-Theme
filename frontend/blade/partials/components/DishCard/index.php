@@ -22,6 +22,9 @@ use Theme\Backend\Support\ThemeSettings;
  */
 class DishCard
 {
+    /** Per-request card counter — see the uid note beside render()'s uid line. */
+    private static int $uidSequence = 0;
+
     public function __construct(
         protected ApplicationInterface $appSettingsRepo
     ) {}
@@ -183,7 +186,12 @@ class DishCard
         // same line the saved-dishes list draws, and for the same reason (audit A1).
         $showQuickView = ThemeSettings::bool('quick_view_enabled', true);
 
-        $uid = 'dish-card-' . $dish->id . '-' . Str::random(6);
+        // Deterministic uid: Str::random() made every render of any page containing a card
+        // byte-unique, so the storefront's content-hash ETag never matched and 304
+        // revalidation was dead on arrival. The dish id keeps it meaningful; the counter
+        // keeps it unique when one dish renders twice on a page (menu grid plus marquee).
+        // Same fix as Ella's ProductCard (audit P5).
+        $uid = 'dish-card-' . $dish->id . '-' . ++self::$uidSequence;
 
         // Assembled here rather than as an array literal inside `@json(...)` in the
         // template. Blade's json directive splits its argument on top-level commas to find
@@ -229,6 +237,12 @@ class DishCard
         return View::make($themeViewPath, [
             'dish'             => $dish,
             'uid'              => $uid,
+            // Resized renditions for the card image (audit P6). A menu of forty dishes served
+            // forty full-size originals — ~2MB each — where the browser only needed a
+            // thumbnail; with a srcset it picks one. Guarded, because the helper ships with
+            // core: a storefront on an older core must fall back to the plain src rather
+            // than take the whole menu down on an undefined function.
+            'imageSrcset'      => function_exists('image_srcset') ? image_srcset($image) : null,
             'jsPayload'        => $jsPayload,
             'title'            => $title,
             'url'              => $url,

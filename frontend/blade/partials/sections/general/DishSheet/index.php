@@ -30,6 +30,9 @@ use Theme\Backend\Support\ThemeSettings;
  */
 class DishSheet
 {
+    /** Per-request render counter — deterministic uids, so ETag revalidation can match. */
+    private static int $uidSequence = 0;
+
     /**
      * Tabler glyph bodies for the share panel, keyed by the network's settings key.
      *
@@ -340,7 +343,9 @@ class DishSheet
             'available' => $isAvailable,
         ];
 
-        $uid = 'dish-sheet-' . $dish->id . '-' . Str::random(6);
+        // Deterministic, not random: a random suffix made every render byte-unique, which
+        // kept the storefront's content-hash ETag from ever matching (audit P5's rule).
+        $uid = 'dish-sheet-' . $dish->id . '-' . ++self::$uidSequence;
 
         return View::make($themeViewPath, array_merge($shape, [
             'dish'                 => $dish,

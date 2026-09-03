@@ -25,6 +25,9 @@ use Theme\Backend\Support\Motion;
  */
 class Testimonials
 {
+    /** Per-request render counter — deterministic uids, so ETag revalidation can match. */
+    private static int $uidSequence = 0;
+
     public function render(?array $data, string $locale, string $themeViewPath): string
     {
         $data = $data ?? [];
@@ -69,7 +72,9 @@ class Testimonials
             // `col-md-*` span rather than a bespoke CSS grid nobody else in the theme uses.
             'colClass'   => $columns === 2 ? 'col-12 col-md-6' : 'col-12 col-md-6 col-lg-4',
             'align'      => ($data['align'] ?? 'center') === 'start' ? 'start' : 'center',
-            'uid'        => 'testimonials-' . Str::random(6),
+            // A counter, not a random suffix: random made every render byte-unique and
+            // killed ETag revalidation (audit P5's rule).
+            'uid'        => 'testimonials-' . ++self::$uidSequence,
             'locale'     => $locale,
             'data'       => $data,
         ])->render();

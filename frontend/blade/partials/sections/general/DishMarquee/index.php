@@ -27,6 +27,9 @@ use Theme\Backend\Support\ThemeSettings;
  */
 class DishMarquee
 {
+    /** Per-request render counter — deterministic uids, so ETag revalidation can match. */
+    private static int $uidSequence = 0;
+
     public function __construct(
         protected ProductInterface $productRepo,
         protected ApplicationInterface $appSettingsRepo
@@ -129,9 +132,10 @@ class DishMarquee
             'reverse'      => ($data['direction'] ?? 'left') === 'right',
             'source'       => $source,
             'sourceSlug'   => $sourceSlug,
-            // Unique per render so two strips on one page carry their own speed rules
-            // and fill independently.
-            'uid'          => 'saffron-marquee-' . Str::random(6),
+            // Unique per render so two strips on one page carry their own speed rules and
+            // fill independently — but deterministic, because a random suffix made every
+            // render byte-unique and killed ETag revalidation (audit P5's rule).
+            'uid'          => 'saffron-marquee-' . ++self::$uidSequence,
             'motionAttrs'  => Motion::sectionAttributes($data),
             'locale'       => $locale,
             'data'         => $data,
