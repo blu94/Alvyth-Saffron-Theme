@@ -307,8 +307,23 @@
             // Only the branch is seeded. **Delivery-or-pickup is the cart's own question**, and
             // it is deliberately not pre-answered here: the mode decides the fee, the minimum and
             // the address panel, all of which live where the cart already asks.
-            const seedCartMethod = () => {
+            //
+            // **`force` is the difference between answering a blank and overruling a customer.**
+            // Core's pickup list offers EVERY collecting branch, deliberately — `OrderMode`
+            // documents it — so somebody who answered the gate with Bangsar may still choose KLCC
+            // at the cart, and that later answer is the one that reaches the kitchen. Re-seeding
+            // on every change event used to overwrite it: pick KLCC, then pick a time or tick
+            // no-cutlery, and the radio silently went back to Bangsar with the order following it.
+            //
+            // So the unforced seed only ever fills a blank, which is exactly the case it was
+            // written for — core replaces these radios when it re-renders its summary, and a
+            // replaced radio is an unanswered one. Confirming a branch at the gate passes
+            // `force`, because that IS the customer changing their mind and the cart should
+            // follow it.
+            const seedCartMethod = (force = false) => {
                 if (!branch.value) return;
+
+                if (!force && document.querySelector('input[name="cms-co-pickup"]:checked')) return;
 
                 const wanted = Object.keys(payload.methodOutlets || {})
                     .find(methodId => Number(payload.methodOutlets[methodId]) === Number(branch.value));
@@ -327,7 +342,9 @@
                 save();
                 publishMenu();
                 scopeMenu();
-                seedCartMethod();
+                // Forced: the customer just named a branch at the gate, so the cart follows it
+                // even if it already had an answer.
+                seedCartMethod(true);
                 rerenderIfDishRefused();
             };
 
@@ -450,7 +467,9 @@
                 scopeSoon();
 
                 // Core re-renders its summary as the cart validates, which replaces the branch
-                // radios — so the seed is re-applied on the same event core uses.
+                // radios — so the seed is re-applied on the same event core uses. Unforced, so a
+                // re-render that lost the selection is answered and a customer who changed it is
+                // left alone.
                 document.addEventListener('change', (e) => {
                     if (e.target && e.target.name === 'cms-co-pickup') return;
                     seedCartMethod();

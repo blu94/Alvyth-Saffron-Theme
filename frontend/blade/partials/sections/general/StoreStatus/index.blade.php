@@ -13,7 +13,7 @@
             @if($isOpen)
                 <strong>{{ __('Open now') }}</strong>
                 @if($closesAt)
-                    <span class="saffron-store-status__meta">{{ __('until') }} {{ $closesAt }}</span>
+                    <span class="saffron-store-status__meta">{{ __('until :time', ['time' => $closesAt]) }}</span>
                 @endif
                 @if($openMessage !== '')
                     <span class="saffron-store-status__meta">{{ $openMessage }}</span>

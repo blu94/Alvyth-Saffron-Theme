@@ -301,9 +301,16 @@ class ServiceWindowRepository
                             ->whereRaw(self::BRANCH_SQL . ' = ?', [(string) $branchId])
                             ->orWhereRaw(self::BRANCH_SQL . ' IS NULL'))
                     )
-                    ->orderBy('created_at')
+                    // **Newest first, then re-sorted for reading.** The cap has to fall on the
+                    // OLDEST orders, not the newest: taking the first 200 to arrive is how a
+                    // saturated shop ends up unable to select the ticket that just came in —
+                    // the same inversion the board itself was cured of. The list is handed back
+                    // oldest-first, because a counter works down from the longest wait.
+                    ->orderByDesc('created_at')
                     ->limit(200)
                     ->get(['id', 'order_number', 'grand_total', 'created_at'])
+                    ->sortBy('created_at')
+                    ->values()
                     ->map(fn ($o) => [
                         'label' => sprintf(
                             '%s — waiting %s',

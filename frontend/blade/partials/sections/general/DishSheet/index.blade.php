@@ -276,7 +276,7 @@
                     @if(count($variants) > 1)
                         <fieldset class="saffron-dish-sheet__group">
                             <legend class="saffron-dish-sheet__legend">
-                                {{ __('Size') }}
+                                {{ $payload['labels']['sizeKey'] }}
                                 <span class="saffron-dish-sheet__req">{{ __('Required') }}</span>
                             </legend>
                             <div class="saffron-dish-sheet__options">
@@ -463,8 +463,9 @@
 
             // Shown to the customer only. The server re-prices every line on
             // POST /storefront/cart/validate and ignores anything sent from here, so this
-            // total is a preview — and it deliberately includes modifier deltas that core
-            // does not yet charge, which is why the debug warning above exists.
+            // total is a preview — but it is a preview of the price that is actually
+            // charged: `ModifierPricing` adds the same deltas server-side, which is why the
+            // debug warning that used to sit above is gone rather than merely hidden.
             const runningTotal = computed(() => {
                 let unit = basePrice.value;
                 groups.value.forEach(g => {

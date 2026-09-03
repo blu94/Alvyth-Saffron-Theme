@@ -265,6 +265,20 @@ class DishSheet
                 ? ($dish->stock === null || (int) $dish->stock > 0)
                 : $sellable);
 
+        // ...and whether the branch being browsed has run out of it tonight. Applied last and
+        // only ever downward, exactly as `DishCard` applies it: a dish the shop can sell but this
+        // kitchen cannot make is sold out *here*, and no amount of stock elsewhere changes that.
+        //
+        // **The card had this check and the sheet did not**, which made the menu tell the truth
+        // and the page it links to contradict it: the card greyed out and wore its badge, and one
+        // click later the sheet offered a live Add button for the same dish. Reachable by the
+        // card's own link, by search, by a shared URL — and the refusal then arrived at the
+        // payment button, which is the experience `servedHere` below exists to prevent. The two
+        // halves of "can this branch make it" now sit together rather than one floor apart.
+        if ($isAvailable && ! BranchScope::inStock((int) $dish->id)) {
+            $isAvailable = false;
+        }
+
         $notesMax    = (int) ($data['notes_max'] ?? 140);
 
         // ── Sharing ─────────────────────────────────────────────────────────────

@@ -186,7 +186,23 @@ class OutletRepository
 
         // Soft delete, so an outlet that has taken orders keeps resolving on those orders. The
         // pivot is left alone deliberately: restoring the branch should restore its menu.
+        $wasDefault = (bool) $outlet->is_default;
+
         $outlet->delete();
+
+        // **The shop must never be left without a default.** `enforceSingleDefault()` runs on
+        // create and update, so deleting the branch that held it left `is_default` set on nobody
+        // until somebody happened to save another branch — and `DeliveryKitchenRouting` resolves
+        // its third rule through that flag, so a guest delivery went unrouted in the meantime.
+        // The oldest surviving active branch inherits it, which is the same branch a
+        // single-outlet shop would have.
+        if ($wasDefault) {
+            $heir = Outlet::query()->active()->ordered()->first();
+
+            if ($heir) {
+                $heir->forceFill(['is_default' => true])->save();
+            }
+        }
 
         return true;
     }
@@ -216,9 +232,17 @@ class OutletRepository
         // — the switch saves, the form redraws it off, and nothing anywhere reports a failure.
         // `product_ids` was invisible for the opposite reason and it is the same lesson: when a
         // field key and a column are two lists, adding to one is only ever half the change.
+        //
+        // It happened. `delivers_by_own_riders` and `delivery_radius_km` shipped on the form,
+        // in the migration, in `$fillable` and in `BranchDeliveryRadiusGuard` — and not here, so
+        // an operator could tick the switch, type a radius, get a green toast, and watch the form
+        // redraw with the switch off. The whole per-branch radius feature was unreachable through
+        // the UI, and the radius tests did not catch it because they insert their outlets with
+        // raw `DB::table()` and never travel this path.
         $out = collect($data)->only([
             'title', 'slug', 'address', 'phone', 'latitude', 'longitude',
             'offers_pickup', 'offers_delivery', 'offers_dine_in', 'is_default',
+            'delivers_by_own_riders', 'delivery_radius_km',
             'timezone', 'status', 'orders',
         ])->all();
 
@@ -351,11 +375,25 @@ class OutletRepository
             ));
         }
 
+        $before = DB::table('outlet_product_price')
+            ->where('outlet_id', $outlet->id)
+            ->pluck('price', 'product_id')
+            ->map(fn ($price) => (float) $price)
+            ->all();
+
         DB::table('outlet_product_price')->where('outlet_id', $outlet->id)->delete();
 
         if ($clean !== []) {
             DB::table('outlet_product_price')->insert($clean);
         }
+
+        $after = [];
+
+        foreach ($clean as $row) {
+            $after[$row['product_id']] = (float) $row['price'];
+        }
+
+        $this->recordPivotChange($outlet, 'branch prices', $before, $after);
     }
 
     protected function writeSoldOut(Outlet $outlet, array $data): void
@@ -370,22 +408,80 @@ class OutletRepository
             DB::table('products')->whereIn('id', $ids)->pluck('id')->map(fn ($id) => (int) $id)
         )->values();
 
-        DB::table('outlet_product_unavailable')->where('outlet_id', $outlet->id)->delete();
+        $before = DB::table('outlet_product_unavailable')
+            ->where('outlet_id', $outlet->id)
+            ->pluck('product_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
 
-        if ($ids->isEmpty()) {
-            return;
-        }
+        DB::table('outlet_product_unavailable')->where('outlet_id', $outlet->id)->delete();
 
         $now = now();
 
-        DB::table('outlet_product_unavailable')->insert(
-            $ids->map(fn (int $productId) => [
-                'outlet_id'  => $outlet->id,
-                'product_id' => $productId,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ])->all()
+        if ($ids->isNotEmpty()) {
+            DB::table('outlet_product_unavailable')->insert(
+                $ids->map(fn (int $productId) => [
+                    'outlet_id'  => $outlet->id,
+                    'product_id' => $productId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ])->all()
+            );
+        }
+
+        $this->recordPivotChange(
+            $outlet,
+            'sold out today',
+            array_fill_keys($before, true),
+            array_fill_keys($ids->all(), true)
         );
+    }
+
+    /**
+     * Record a pivot write in the activity log.
+     *
+     * **These three lists are written with `DB::table()`, so the model's own `LogsSystemActivity`
+     * never sees them.** Who 86'd a dish and who changed a branch price are the two facts most
+     * likely to be argued over mid-service — "we never took that off" — and they were the only
+     * operator actions in this module leaving no trace at all.
+     *
+     * Logged as a diff rather than a snapshot: the ids added and the ids removed, which is what
+     * somebody reconstructing an evening actually wants. Nothing is logged when nothing changed,
+     * so re-saving a branch to edit its phone number does not fill the log with noise.
+     *
+     * @param  array<int,mixed>  $before  keyed by product id
+     * @param  array<int,mixed>  $after   keyed by product id
+     */
+    protected function recordPivotChange(Outlet $outlet, string $what, array $before, array $after): void
+    {
+        $added   = array_values(array_diff(array_keys($after), array_keys($before)));
+        $removed = array_values(array_diff(array_keys($before), array_keys($after)));
+        $changed = [];
+
+        foreach ($after as $id => $value) {
+            if (array_key_exists($id, $before) && $before[$id] !== $value) {
+                $changed[$id] = ['from' => $before[$id], 'to' => $value];
+            }
+        }
+
+        if ($added === [] && $removed === [] && $changed === []) {
+            return;
+        }
+
+        try {
+            activity()
+                ->performedOn($outlet)
+                ->withProperties(array_filter([
+                    'list'    => $what,
+                    'added'   => $added,
+                    'removed' => $removed,
+                    'changed' => $changed,
+                ]))
+                ->log('Updated ' . $what);
+        } catch (\Throwable $e) {
+            // An audit trail must never be the thing that stops an operator saving a branch.
+            report($e);
+        }
     }
 
     protected function writeTables(Outlet $outlet, array $data): void

@@ -58,6 +58,12 @@ class StructuredData
             $graph[] = $this->product($page, $appSettings, $locale);
         }
 
+        // A story. Checked against `Post`, not `Blog`, because `Blog` extends it and the post
+        // template keys off `Post` too — one test, both routes, no second rule to keep in step.
+        if ($page instanceof \App\Models\Post) {
+            $graph[] = $this->article($page, $locale);
+        }
+
         return View::make($themeViewPath, [
             'json' => $this->encode(['@context' => 'https://schema.org', '@graph' => $graph]),
         ])->render();
@@ -156,6 +162,61 @@ class StructuredData
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * A story.
+     *
+     * The one content type that had no schema of its own: a post carried `Restaurant` and a
+     * `BreadcrumbList` and nothing saying it was an article, so a crawler had a page about a
+     * restaurant with some prose on it. Everything here is already on the page for a reader —
+     * headline, image, date, author — which is the test for whether structured data is honest.
+     *
+     * `datePublished` is the row's own `created_at`; there is no separate publish column on
+     * `posts`, and inventing one from `updated_at` would date every story to its last typo fix.
+     */
+    protected function article(\App\Models\Post $post, string $locale): array
+    {
+        $url   = $this->absoluteUrl($post->store_url);
+        $image = $post->assets?->where('usage', 'BLOG_THUMBNAIL')->first();
+
+        $node = [
+            '@type'            => 'BlogPosting',
+            '@id'              => $url . '#article',
+            'headline'         => $this->translate($post->title, $locale),
+            'url'              => $url,
+            'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
+            // Written exactly as the restaurant node writes its own `@id`, so a crawler merges
+            // the two rather than reading a publisher it has never heard of.
+            'isPartOf'         => ['@id' => url('/') . '#restaurant'],
+            'publisher'        => ['@id' => url('/') . '#restaurant'],
+        ];
+
+        $description = trim(strip_tags((string) $this->translate($post->description, $locale)));
+
+        if ($description !== '') {
+            $node['description'] = \Illuminate\Support\Str::limit($description, 300);
+        }
+
+        if ($image) {
+            $node['image'] = $this->imagePath($image->path);
+        }
+
+        if ($post->created_at) {
+            $node['datePublished'] = $post->created_at->toAtomString();
+        }
+
+        if ($post->updated_at) {
+            $node['dateModified'] = $post->updated_at->toAtomString();
+        }
+
+        $author = trim((string) ($post->author?->name ?? ''));
+
+        if ($author !== '') {
+            $node['author'] = ['@type' => 'Person', 'name' => $author];
+        }
+
+        return $node;
     }
 
     /**

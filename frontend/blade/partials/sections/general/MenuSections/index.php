@@ -164,6 +164,10 @@ class MenuSections
             // appears twice, once as the page heading and once as the section's <h3>. An
             // operator dropping a Menu Sections block on a page always wants the titles, so
             // offering a switch would be a control with one right answer.
+            // Internal, and deliberately not a schema field: `CategoryMenu` renders this same
+            // section with the titles off, because it draws its own. An operator placing the
+            // block always wants them on, so a control here would only offer a way to break
+            // the menu. Documented rather than exposed — it read as a missing setting.
             'showSectionTitles' => $data['show_section_titles'] ?? true,
             // A theme setting, not a section key: the section schema never declared
             // `menu_sticky_nav`, so reading it from $data made the toggle permanently on.

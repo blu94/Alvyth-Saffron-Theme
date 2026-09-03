@@ -116,7 +116,13 @@
               {
                 "ui": { "type": "field", "cols": 6 },
                 "key": "status",
-                "type": "toggle_status",
+                "type": "select",
+                "options": {
+                  "items": [
+                    { "title": "Active", "value": "active" },
+                    { "title": "Draft", "value": "draft" }
+                  ]
+                },
                 "label": "Status",
                 "default": "active"
               }
@@ -125,7 +131,13 @@
           {
             "ui": { "type": "field", "cols": 6 },
             "key": "status",
-            "type": "toggle_status",
+            "type": "select",
+            "options": {
+              "items": [
+                { "title": "Active", "value": "active" },
+                { "title": "Draft", "value": "draft" }
+              ]
+            },
             "label": "Status",
             "default": "active"
           }

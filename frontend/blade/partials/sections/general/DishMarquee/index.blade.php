@@ -25,8 +25,11 @@
                 <ul class="saffron-marquee__list {{ $isClone ? 'saffron-marquee__list--clone' : '' }}" @if($isClone) aria-hidden="true" @endif>
                     @foreach($dishes as $dish)
                         <li class="saffron-marquee__item">
-                            <a href="{{ $dish['url'] }}" class="saffron-marquee__card" @if($isClone) tabindex="-1" @endif>
+                            <a href="{{ $dish['url'] }}" class="saffron-marquee__card @if($dish['soldOut']) is-sold-out @endif" @if($isClone) tabindex="-1" @endif>
                                 <span class="saffron-marquee__media">
+                                    @if($dish['soldOut'])
+                                        <span class="saffron-marquee__badge">{{ $soldOutLabel }}</span>
+                                    @endif
                                     @if($dish['image'] !== '')
                                         <img src="{{ $dish['image'] }}" alt="{{ $dish['title'] }}" class="saffron-marquee__img" loading="lazy" decoding="async">
                                     @else

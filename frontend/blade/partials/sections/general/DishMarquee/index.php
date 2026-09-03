@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 use Theme\Backend\Support\BranchScope;
 use Theme\Backend\Support\Motion;
+use Theme\Backend\Support\ThemeSettings;
 
 /**
  * A strip of signature dishes gliding across the page — the featured-dish scroller
@@ -92,6 +93,12 @@ class DishMarquee
                     ? Str::limit(strip_tags((string) $this->translate($dish->description, $locale)), 90)
                     : '',
                 'price'       => $showPrice ? $this->priceLabel($dish, $currencySymbol, $currencyPosition) : null,
+                // Run out at this branch tonight. Greyed and badged rather than dropped from the
+                // strip, because {@see BranchScope::soldOut()} is a list to grey WITH and never a
+                // list to hide BY — the same treatment the dish card and the dish sheet give it.
+                // Until this existed the strip advertised it at full price, unbadged, and linked
+                // to a page that would not sell it.
+                'soldOut'     => ! BranchScope::inStock((int) $dish->id),
             ])
             ->filter(fn ($dish) => $dish['title'] !== '')
             ->values();
@@ -100,7 +107,13 @@ class DishMarquee
             ? (string) ($data['cta_url']['url'] ?? '')
             : (string) ($data['cta_url'] ?? '');
 
+        // The operator's own wording, from the same theme setting the cards and the sheet read —
+        // one place to change it, rather than a fourth spelling of "Sold out".
+        $soldOutLabel = $this->translate(ThemeSettings::all()['sold_out_label'] ?? '', $locale)
+            ?: __('Sold out for today');
+
         return View::make($themeViewPath, [
+            'soldOutLabel' => $soldOutLabel,
             'heading'      => $this->translate($data['heading'] ?? '', $locale),
             'subheading'   => $this->translate($data['subheading'] ?? '', $locale),
             'dishes'       => $dishes,
@@ -157,6 +170,17 @@ class DishMarquee
             $displayPrice = (float) $variantPrices->min();
             $isFromPrice  = $variantPrices->unique()->count() > 1
                 || ($basePrice > 0 && abs($basePrice - $displayPrice) > 0.001);
+        }
+
+        // What the branch being browsed charges. Applied as a shift to whatever figure was
+        // resolved above, exactly as `DishCard` applies it and from the same resolver — so a
+        // "from" price stays a "from" price and a strip and a grid showing the same dish on the
+        // same page cannot quote two different numbers. Without this the marquee advertised the
+        // shop's price while the cart charged the branch's.
+        $shift = BranchScope::priceShift((int) $dish->id, $basePrice);
+
+        if (abs($shift) > 0.0001) {
+            $displayPrice = max(0.0, $displayPrice + $shift);
         }
 
         if ($displayPrice <= 0) {

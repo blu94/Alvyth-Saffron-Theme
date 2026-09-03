@@ -50,7 +50,7 @@
           "placeholder": "e.g. 1",
           "hint": "1 makes the question compulsory. 0 lets the customer skip it",
           "default": 0,
-          "rules": ["integer", "min:0"]
+          "rules": ["nullable", "integer", "min:0"]
         },
         {
           "ui": { "type": "field", "cols": 4 },
@@ -59,7 +59,7 @@
           "label": "Maximum Selections",
           "placeholder": "Leave empty for unlimited",
           "hint": "Ignored when the selection is single, which always allows exactly one",
-          "rules": ["integer", "min:1"]
+          "rules": ["nullable", "integer", "min:1"]
         }
       ]
     },
@@ -88,7 +88,7 @@
             "width": 700,
             "create": {
               "title": "Add Option",
-              "subtitle": "Leave the price at 0.00 unless you have decided how paid add-ons are charged."
+              "subtitle": "The answer as the customer reads it, and what it adds to the price."
             },
             "update": { "title": "Edit Option" }
           },
@@ -108,7 +108,7 @@
               "type": "number",
               "label": "Price Change",
               "placeholder": "0.00",
-              "hint": "WARNING: nothing charges this yet. The cart is re-priced server-side from the dish and its variant, with no concept of a modifier surcharge, so a non-zero figure is shown to the customer and then not collected. Keep it at 0.00 until paid add-ons are decided.",
+              "hint": "What this answer adds to the dish. Charged: it is added to the line price when the cart is priced, so the customer is quoted and billed the same figure. Leave it at 0.00 for an answer that costs nothing, and use a negative figure to take money off.",
               "default": 0
             },
             {
@@ -128,7 +128,7 @@
               "options": {
                 "url": "/admin/products",
                 "master": "data",
-                "map": { "title": "title.en", "value": "id" }
+                "map": { "title": "title", "value": "id" }
               }
             },
             {
@@ -171,6 +171,9 @@
       {
         "ui": { "type": "row", "dense": true },
         "elements": [
+          {
+            "ui": { "type": "locale-switcher" }
+          },
           {
             "ui": { "type": "field" },
             "key": "status",

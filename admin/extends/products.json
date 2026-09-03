@@ -88,7 +88,7 @@
                   "options": {
                     "url": "/admin/modules/modifier-groups",
                     "master": "data",
-                    "map": { "title": "title.en", "value": "id" }
+                    "map": { "title": "title", "value": "id" }
                   },
                   "rules": ["required", "integer", "exists:modifier_groups,id"]
                 },

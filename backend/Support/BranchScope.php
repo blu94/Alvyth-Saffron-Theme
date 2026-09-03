@@ -2,6 +2,7 @@
 
 namespace Theme\Backend\Support;
 
+use App\Models\Product;
 use Theme\Backend\Models\Outlet;
 
 /**
@@ -382,5 +383,77 @@ class BranchScope
         }
 
         return ! in_array((int) $productId, static::soldOut(), true);
+    }
+
+    /**
+     * The id every branch pivot is keyed by, for a caller holding only ids.
+     *
+     * **Every table in this feature is keyed by the PARENT dish, and every cart line that chose a
+     * size carries the VARIANT.** The admin pickers can only offer parents
+     * (`ProductRepository::getOptions()` filters `whereNull('productable_id')`), so
+     * `outlet_product`, `outlet_product_unavailable`, `outlet_product_price` and
+     * `dish_modifier_group` never hold a variant id — while `DishSheet` puts the variant's id in
+     * the basket the moment a size is chosen, which is correct and is what makes the receipt
+     * price the thing the customer actually bought.
+     *
+     * Look a variant id up in any of those tables and it matches nothing, and *matching nothing
+     * reads as permission*: not 86'd, not exclusive, no compulsory questions. That is the shape of
+     * the defect this method exists to make unrepeatable — {@see self::priceShift()} had resolved
+     * the parent correctly since the day it was written, and the four checks around it had not, so
+     * a branch price reached a Large while a required question did not.
+     *
+     * One query for the whole basket rather than one per line, and ids that are already parents
+     * (the overwhelming majority) map to themselves without needing a row back. `productable` is a
+     * `nullableMorphs`, so the type is checked too — a product pointing at something that is not
+     * another product is not a variant and must map to itself.
+     *
+     * Fails open like everything else here: on any error every id maps to itself, which is exactly
+     * what the callers did before this existed.
+     *
+     * @param  array<int,int|string|null>  $ids
+     * @return array<int,int>  every given id mapped to the dish its pivots are keyed by
+     */
+    public static function parentIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(
+            array_map('intval', $ids),
+            fn (int $id) => $id > 0
+        )));
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $map = array_combine($ids, $ids);
+
+        try {
+            Product::query()
+                ->whereIn('id', $ids)
+                ->where('productable_type', Product::class)
+                ->whereNotNull('productable_id')
+                ->get(['id', 'productable_id'])
+                ->each(function (Product $variant) use (&$map) {
+                    $map[(int) $variant->id] = (int) $variant->productable_id;
+                });
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return $map;
+    }
+
+    /**
+     * The same answer as {@see self::parentIds()} for a caller that already holds the row.
+     *
+     * No query at all: a variant carries its parent's id in a column the model has loaded, which
+     * is why the price shift could always resolve it for free.
+     */
+    public static function parentIdOf(Product $product): int
+    {
+        $parentId = (int) ($product->productable_id ?: 0);
+
+        return $parentId > 0 && $product->productable_type === Product::class
+            ? $parentId
+            : (int) $product->id;
     }
 }

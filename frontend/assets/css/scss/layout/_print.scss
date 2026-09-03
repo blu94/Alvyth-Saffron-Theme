@@ -12,6 +12,18 @@
   #saffron-go-to-top,
   .saffron-status__actions,
   .saffron-post__nav,
+  // The branch gate and the ordering controls. The gate bar renders on every page of a
+  // multi-branch shop, including the one this rule set exists for, so a printed confirmation
+  // carried "Bangsar · Delivery from RM 40.00 [Change]" across the top — and on a first visit
+  // the panel and its scrim printed over the whole page. Added when the gate shipped, which is
+  // three weeks after this block was written: a hide list is only as current as the last
+  // component somebody remembered to add to it.
+  .saffron-gate,
+  .saffron-gate__panel,
+  .saffron-gate__scrim,
+  .saffron-order-mode,
+  .saffron-schedule,
+  .saffron-payment-choice,
   .cms-pager {
     display: none !important;
   }

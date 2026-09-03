@@ -9,6 +9,7 @@ use App\Repositories\Product\ProductInterface;
 use App\Repositories\Setting\Application\ApplicationInterface;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Theme\Backend\Support\BranchScope;
 
 /**
  * The rail beside the dish sheet on layouts 08 and 09 — Saffron's answer to Ella's
@@ -77,15 +78,22 @@ class DishSidebar
     protected function courses(string $locale): array
     {
         try {
+            // Both the existence test and the count are narrowed to what this branch serves, and
+            // they have to agree: a rail counting the whole catalogue under a branch's heading
+            // sends the customer to a course that is empty for them, which is the same defect
+            // `MenuSections` states as "a category this branch serves nothing from is not a menu
+            // section for this customer, it is an empty heading."
             $categories = $this->categoryRepo
                 ->baseIndexQuery(['status' => 'active'])
                 ->whereHas('products', function ($query) {
                     $query->where('products.status', 'active')
                         ->whereNull('products.productable_id');
+                    BranchScope::constrain($query);
                 })
                 ->withCount(['products' => function ($query) {
                     $query->where('products.status', 'active')
                         ->whereNull('products.productable_id');
+                    BranchScope::constrain($query);
                 }])
                 ->orderBy('orders')
                 ->orderBy('id')
@@ -124,9 +132,16 @@ class DishSidebar
     protected function dishes(string $locale, int $currentId, string $symbol, string $position): array
     {
         try {
-            $dishes = $this->productRepo
+            $query = $this->productRepo
                 ->baseIndexQuery(['status' => 'active'])
-                ->when($currentId > 0, fn ($query) => $query->whereKeyNot($currentId))
+                ->when($currentId > 0, fn ($q) => $q->whereKeyNot($currentId));
+
+            // Recommending a dish this branch does not serve is worse than recommending nothing:
+            // the customer clicks it and is told "Not served at :branch" by the page they land on.
+            BranchScope::constrain($query);
+
+            $dishes = $query
+                ->with(['variants' => fn ($q) => $q->where('status', 'active')])
                 ->orderByDesc('products.created_at')
                 ->orderByDesc('products.id')
                 ->limit(self::MAX_DISHES)
@@ -141,7 +156,7 @@ class DishSidebar
             ->map(fn (Product $dish) => [
                 'title' => $this->translate($dish->title, $locale),
                 'url'   => $dish->store_url,
-                'price' => $this->money((float) ($dish->price ?? 0), $symbol, $position),
+                'price' => $this->money($this->sellingPrice($dish), $symbol, $position),
                 'image' => $this->thumbnail($dish),
             ])
             ->filter(fn (array $dish) => $dish['title'] !== '')
@@ -169,6 +184,29 @@ class DishSidebar
         return Str::startsWith($asset->path, 'http')
             ? $asset->path
             : '/storage/' . ltrim($asset->path, '/');
+    }
+
+    /**
+     * What this dish actually costs the customer standing here.
+     *
+     * The parent's own `price` is not that figure for a dish with sizes — `DishCard` puts it
+     * plainly: the parent's number "may not correspond to anything the customer can actually
+     * buy" — so the cheapest active size wins, and the branch's own price shifts it, from the
+     * same resolver the card, the strip and the cart all use.
+     */
+    protected function sellingPrice(Product $dish): float
+    {
+        $base = (float) ($dish->price ?? 0);
+
+        $cheapest = $dish->variants
+            ->where('status', 'active')
+            ->map(fn ($variant) => (float) ($variant->price ?? 0))
+            ->filter(fn (float $price) => $price > 0)
+            ->min();
+
+        $display = $cheapest !== null ? (float) $cheapest : $base;
+
+        return max(0.0, $display + BranchScope::priceShift((int) $dish->id, $base));
     }
 
     protected function money(float $amount, string $symbol, string $position): string

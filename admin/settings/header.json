@@ -33,9 +33,9 @@
           "key": "announcement_text",
           "type": "text",
           "label": "Announcement Text",
-          "placeholder": "e.g. Free delivery on orders over RM40",
+          "placeholder": "e.g. Free delivery on your first order",
           "translatable": true,
-          "default": "Free delivery on orders over RM40"
+          "default": "Free delivery on your first order"
         },
         {
           "ui": {

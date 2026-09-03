@@ -4,6 +4,7 @@ namespace Theme\Backend\Guards;
 
 use App\Contracts\Storefront\CheckoutGuard;
 use Theme\Backend\Models\Outlet;
+use Theme\Backend\Support\BranchScope;
 
 /**
  * An order may only contain dishes the branch it is going to actually serves (register O18a).
@@ -73,6 +74,14 @@ class BranchMenuGuard implements CheckoutGuard
             return null;
         }
 
+        // A line that chose a size carries the variant's id; `outlet_product` only ever holds the
+        // parent's, because the admin picker cannot offer a size. Asking it about a variant gets
+        // "serves it" for a dish this branch does not make, which is the whole defect this guard
+        // exists to catch, wearing a Large. One query for the basket, before the loop.
+        $dishIds = BranchScope::parentIds(
+            array_map(fn ($line) => (int) ($line['id'] ?? 0), $cart)
+        );
+
         $unserved = [];
 
         foreach ($cart as $line) {
@@ -82,13 +91,18 @@ class BranchMenuGuard implements CheckoutGuard
                 continue;
             }
 
-            if ($outlet->serves($productId)) {
+            $dishId = $dishIds[$productId] ?? $productId;
+
+            if ($outlet->serves($dishId)) {
                 continue;
             }
 
             // The dish's own title as the customer read it on the sheet. Falling back to the id
             // would be worse than useless in a refusal — nobody recognises a product id.
-            $unserved[$productId] = trim((string) ($line['title'] ?? '')) ?: __('one of your dishes');
+            //
+            // Keyed by the DISH, so a basket holding two sizes of one unserved dish names it
+            // once rather than twice.
+            $unserved[$dishId] = trim((string) ($line['title'] ?? '')) ?: __('one of your dishes');
         }
 
         if ($unserved === []) {

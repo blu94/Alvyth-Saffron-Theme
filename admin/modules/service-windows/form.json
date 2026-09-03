@@ -235,6 +235,11 @@
         "elements": [
           {
             "ui": {
+              "type": "locale-switcher"
+            }
+          },
+          {
+            "ui": {
               "type": "field",
               "cols": 12,
               "labelClass": "text-subtitle-1 font-weight-bold",

@@ -102,14 +102,14 @@ class ModifierPricing implements CartLinePricer
      *
      * The branch prices a **parent dish**, because that is all the admin picker can offer
      * (`ProductRepository::getOptions()` filters `whereNull('productable_id')`), while a line
-     * that chose a size carries the **variant's** id. So a variant is resolved back to its
-     * parent, the shift is computed from the parent's own price, and the size keeps its premium
-     * on top — see {@see BranchScope::priceShift()} for why a replacement would be wrong.
+     * that chose a size carries the **variant's** id. So the shift is computed from the parent's
+     * own price and the size keeps its premium on top — see {@see BranchScope::priceShift()} for
+     * why a replacement would be wrong.
      *
      * The parent row is fetched only for a variant, and only when this branch prices anything
      * at all, so an ordinary shop pays nothing for a feature it does not use.
      */
-    private function branchShift(Product $product): float
+    private function branchShift(Product $product, int $dishId): float
     {
         $prices = BranchScope::prices();
 
@@ -117,17 +117,15 @@ class ModifierPricing implements CartLinePricer
             return 0.0;
         }
 
-        $parentId = (int) ($product->productable_id ?: $product->id);
-
-        if (! array_key_exists($parentId, $prices)) {
+        if (! array_key_exists($dishId, $prices)) {
             return 0.0;
         }
 
-        $parentBase = $parentId === (int) $product->id
+        $parentBase = $dishId === (int) $product->id
             ? (float) $product->price
-            : (float) (Product::query()->whereKey($parentId)->value('price') ?? 0);
+            : (float) ($this->dish($product)->price ?? 0);
 
-        return BranchScope::priceShift($parentId, $parentBase);
+        return BranchScope::priceShift($dishId, $parentBase);
     }
 
     /**
@@ -156,6 +154,13 @@ class ModifierPricing implements CartLinePricer
      */
     private array $groupsByDish = [];
 
+    /**
+     * Parent rows already fetched this request, keyed by parent id. See {@see self::dish()}.
+     *
+     * @var array<int, Product|null>
+     */
+    private array $parentByDish = [];
+
     public function priceOptions(Product $product, array $options): CartLinePrice
     {
         // ── Can the branch being browsed even make this dish? ───────────────────────
@@ -179,16 +184,25 @@ class ModifierPricing implements CartLinePricer
         // answers "served". So does this. `BranchMenuGuard` re-checks the whole basket at
         // checkout against the outlet the **order** names rather than the one the browser
         // claims, and that is the backstop behind this one.
-        if (! BranchScope::serves($product->id)) {
-            return CartLinePrice::refuse($this->notServedHere($product));
+        //
+        // **Every lookup below is keyed by the dish, never by the line.** A line that chose a
+        // size carries the variant's id, and no branch or modifier table has ever held one, so
+        // asking them about a variant returns nothing — and nothing reads as permission. That is
+        // one mistake with four faces: no surcharge, no compulsory question, not 86'd, not
+        // exclusive. {@see BranchScope::parentIdOf()} answers it once, for free, from a column
+        // the row already carries.
+        $dishId = BranchScope::parentIdOf($product);
+
+        if (! BranchScope::serves($dishId)) {
+            return CartLinePrice::refuse($this->notServedHere($this->dish($product)));
         }
 
         // Served here, but the kitchen ran out tonight. Checked after the exclusivity question
         // and not folded into it: a customer whose dish is 86'd should be told it sold out, not
         // that this branch does not serve it — the second is false and sends them looking for a
         // branch that does.
-        if (! BranchScope::inStock($product->id)) {
-            return CartLinePrice::refuse($this->soldOutHere($product));
+        if (! BranchScope::inStock($dishId)) {
+            return CartLinePrice::refuse($this->soldOutHere($this->dish($product)));
         }
 
         // What this branch charges, if it charges its own price for this dish.
@@ -198,9 +212,9 @@ class ModifierPricing implements CartLinePricer
         // what makes the receipt agree with the dish sheet. Computed against `$product->price`
         // — the exact value core used as the base a few lines above — so the result is the
         // branch's price by construction rather than by arithmetic that has to be kept in step.
-        $surcharge = $this->branchShift($product);
+        $surcharge = $this->branchShift($product, $dishId);
 
-        $groups = $this->groupsFor($product);
+        $groups = $this->groupsFor($product, $dishId);
 
         // No questions on this dish, or the tables are not there. Either way nothing to price
         // and nothing to refuse — the line stands at its base price, shifted by whatever this
@@ -362,10 +376,10 @@ class ModifierPricing implements CartLinePricer
      *
      * @return array<int, array<string,mixed>>
      */
-    private function groupsFor(Product $product): array
+    private function groupsFor(Product $product, int $dishId): array
     {
-        if (array_key_exists($product->id, $this->groupsByDish)) {
-            return $this->groupsByDish[$product->id] ?? [];
+        if (array_key_exists($dishId, $this->groupsByDish)) {
+            return $this->groupsByDish[$dishId] ?? [];
         }
 
         try {
@@ -373,20 +387,23 @@ class ModifierPricing implements CartLinePricer
                 ->where('modifier_groups.status', 'active')
                 ->with(['modifiers' => fn ($q) => $q->where('status', 'active')])
                 ->join('dish_modifier_group', 'dish_modifier_group.modifier_group_id', '=', 'modifier_groups.id')
-                ->where('dish_modifier_group.product_id', $product->id)
+                ->where('dish_modifier_group.product_id', $dishId)
                 ->orderBy('dish_modifier_group.orders')
                 ->select('modifier_groups.*', 'dish_modifier_group.required_override as pivot_required_override')
                 ->get();
         } catch (\Throwable $e) {
             report($e);
 
-            return $this->groupsByDish[$product->id] = [];
+            return $this->groupsByDish[$dishId] = [];
         }
 
-        $locale    = app()->getLocale();
-        $dishTitle = $this->translate($product->title, $locale) ?: (string) $product->sku;
+        $locale = app()->getLocale();
 
-        return $this->groupsByDish[$product->id] = $groups->map(function (ModifierGroup $group) use ($locale, $dishTitle) {
+        // Resolved inside the map, so a dish that asks nothing — most of a menu — never pays for
+        // the parent row a variant's title would need.
+        return $this->groupsByDish[$dishId] = $groups->map(function (ModifierGroup $group) use ($locale, $product) {
+            $dishTitle = $this->dishTitle($product, $locale);
+
             $override = $group->pivot_required_override;
             $override = $override === null ? null : (bool) $override;
 
@@ -407,6 +424,56 @@ class ModifierPricing implements CartLinePricer
                 ])->values()->all(),
             ];
         })->values()->all();
+    }
+
+    /**
+     * The dish a line belongs to — the parent when the line chose a size, the line itself
+     * otherwise.
+     *
+     * **Only ever called when something has to be said or priced with the parent's own values**,
+     * which is a refusal sentence, a question label, or a branch that prices this dish. The id
+     * alone answers every other question and costs nothing ({@see BranchScope::parentIdOf()}), so
+     * an ordinary order never reaches this at all.
+     *
+     * Memoised per parent, so a basket holding a Regular and a Large of the same dish fetches one
+     * row. Falls back to the line's own product if the parent cannot be read: a refusal naming the
+     * size is poor, and no refusal at all because a lookup threw would be worse.
+     */
+    private function dish(Product $product): Product
+    {
+        $parentId = BranchScope::parentIdOf($product);
+
+        if ($parentId === (int) $product->id) {
+            return $product;
+        }
+
+        if (array_key_exists($parentId, $this->parentByDish)) {
+            return $this->parentByDish[$parentId] ?? $product;
+        }
+
+        try {
+            $this->parentByDish[$parentId] = Product::query()->find($parentId);
+        } catch (\Throwable $e) {
+            report($e);
+
+            $this->parentByDish[$parentId] = null;
+        }
+
+        return $this->parentByDish[$parentId] ?? $product;
+    }
+
+    /**
+     * The dish's name as the customer chose it, for a sentence that has to name it.
+     *
+     * The **parent's** title, because a variant's own title is a size: *"Please answer 'Choose
+     * your side' for Large"* names nothing anybody recognises, and the question was never asked of
+     * the size in the first place.
+     */
+    private function dishTitle(Product $product, string $locale): string
+    {
+        $dish = $this->dish($product);
+
+        return $this->translate($dish->title, $locale) ?: (string) $dish->sku;
     }
 
     /**

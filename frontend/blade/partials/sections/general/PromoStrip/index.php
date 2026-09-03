@@ -30,7 +30,6 @@ class PromoStrip
                 'text'    => $this->translate($item['text'] ?? '', $locale),
                 'code'    => trim((string) ($item['code'] ?? '')),
                 'link'    => is_array($item['link'] ?? null) ? (string) ($item['link']['url'] ?? '') : (string) ($item['link'] ?? ''),
-                'icon'    => (string) ($item['icon'] ?? ''),
             ])
             ->filter(fn ($item) => $item['title'] !== '' || $item['text'] !== '')
             ->values();

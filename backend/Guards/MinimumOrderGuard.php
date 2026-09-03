@@ -51,13 +51,24 @@ class MinimumOrderGuard implements CheckoutGuard
             return null;
         }
 
-        return $mode === 'pickup'
-            ? __('Collection orders start at :amount. Please add a little more.', [
-                'amount' => $this->money($minimum),
-            ])
-            : __('Delivery orders start at :amount. Please add a little more, or switch to pickup.', [
-                'amount' => $this->money($minimum),
-            ]);
+        // A diner is recorded as collecting — `fulfillment_type` knows only two values — so the
+        // pickup floor is the right figure for them. The pickup *sentence* is not: telling
+        // somebody at a table that "collection orders start at" an amount, and inviting them to
+        // switch to delivery, describes a shop they are not in. The mode decides the money; the
+        // `dining` field decides the words, the same key `BranchDineInGuard` reads.
+        if ($mode === 'pickup') {
+            return ($fields['dining'] ?? null) === 'dine_in'
+                ? __('Table orders start at :amount. Please add a little more.', [
+                    'amount' => $this->money($minimum),
+                ])
+                : __('Collection orders start at :amount. Please add a little more.', [
+                    'amount' => $this->money($minimum),
+                ]);
+        }
+
+        return __('Delivery orders start at :amount. Please add a little more, or switch to pickup.', [
+            'amount' => $this->money($minimum),
+        ]);
     }
 
     /** The configured floor for this mode, or null when the operator set none. */

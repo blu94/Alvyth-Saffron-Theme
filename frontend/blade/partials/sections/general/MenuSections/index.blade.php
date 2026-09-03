@@ -64,7 +64,7 @@
                     @if($section['hasMore'])
                         <div class="saffron-menu__section-more">
                             <a href="{{ $section['url'] }}" class="saffron-btn saffron-btn--outline saffron-btn--sm">
-                                {{ __('See all in') }} {{ $section['title'] }}
+                                {{ __('See all in :section', ['section' => $section['title']]) }}
                             </a>
                         </div>
                     @endif

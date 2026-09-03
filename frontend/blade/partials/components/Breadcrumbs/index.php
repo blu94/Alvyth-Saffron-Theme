@@ -73,8 +73,15 @@ class Breadcrumbs
         if ($page instanceof Product) {
             $this->pushListing($trail, 'CATEGORIES', $locale);
 
+            // The same filter on both paths. The eager-loaded branch used to take whatever came
+            // first — and the dish sheet eager-loads `categories` unfiltered, so on every dish
+            // page (the common case, not the fallback) a drafted category could win and the
+            // trail linked to a page that 404s. A crumb is a promise that the link works.
             $category = $page->relationLoaded('categories')
-                ? $page->categories->first()
+                ? $page->categories
+                    ->where('status', 'active')
+                    ->sortBy('orders')
+                    ->first()
                 : $page->categories()->where('status', 'active')->orderBy('orders')->first();
 
             if ($category) {

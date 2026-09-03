@@ -467,13 +467,17 @@ class OrderMode
             $until = $now->copy()->addDays($horizon);
 
             $rows = TableBooking::query()
-                // Written out rather than reached through `TableBooking::scopeHolding()`, which
-                // filters on a bare `status`. Both tables in the join below have that column, so
-                // the scope's unqualified clause is ambiguous — MySQL refuses the query, the
-                // catch below turns the refusal into an empty map, and the picker silently
-                // offers every table as free. Caught by the test that asserts a held span
-                // reaches the page; nothing about the page looked wrong.
-                ->where('table_bookings.status', TableBooking::STATUS_BOOKED)
+                // Through the scope again, now that it qualifies its own column. It used to be
+                // written out here because the scope filtered on a bare `status` and both tables
+                // in the join below carry one — an ambiguous clause MySQL refuses outright, which
+                // the catch below turned into an empty map and a picker offering every table as
+                // free. The scope takes the table name for exactly that reason.
+                //
+                // Worth calling rather than copying: "still holding" now also means the order has
+                // not been cancelled, and a hand-written copy of that rule is a second place for
+                // it to drift. The picker and the writer must agree about which tables are free,
+                // or the page offers a table checkout then refuses.
+                ->holding()
                 ->join('outlet_tables', 'outlet_tables.id', '=', 'table_bookings.outlet_table_id')
                 ->whereNull('outlet_tables.deleted_at')
                 ->where('outlet_tables.status', 'active')

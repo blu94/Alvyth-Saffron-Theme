@@ -50,6 +50,7 @@ class SearchDrawer
             // an empty list means "this branch serves nothing", which are opposite answers.
             'branchMenu'   => $this->branchMenu(),
             'browseAllUrl' => $this->browseAllUrl(),
+            'searchUrl'    => $this->searchUrl(),
             'labels'       => [
                 // Every string the Vue app can show. Held here rather than in the script so a
                 // Malay menu does not surface English error text — the mistake this theme
@@ -76,7 +77,11 @@ class SearchDrawer
     {
         return \App\Models\Category::query()
             ->where('status', 'active')
-            ->has('products')
+            // Narrowed to what this branch serves, like the results below it. The chips are the
+            // shortcuts shown before anything is typed, and an unconstrained one leads to a
+            // category that is empty for this customer — the drawer's results were already
+            // scoped, so only the shortcuts could still mislead.
+            ->whereHas('products', fn ($q) => BranchScope::constrain($q))
             ->orderBy('orders')
             ->limit(8)
             ->get(['id', 'title', 'slug'])
@@ -102,6 +107,27 @@ class SearchDrawer
     {
         $listing = \App\Models\Page::query()
             ->where('type', 'CATEGORIES')
+            ->where('status', 'active')
+            ->first();
+
+        return $listing ? url($listing->store_url) : null;
+    }
+
+    /**
+     * Where the Enter key goes, carrying the term — the shop's own PRODUCTS page.
+     *
+     * Resolved from the page record for exactly the reasons {@see self::browseAllUrl()} is: the
+     * slug is translatable and an operator may have renamed it, and a locale-prefixed visitor on
+     * `/ms/...` must not be dropped onto the default locale's copy. Both were true of the
+     * hard-coded `/products?q=` this replaces.
+     *
+     * Null when the shop has no products page, and the blade then keeps the diner in the drawer
+     * with the results already on screen — which is a better answer than navigating to a 404.
+     */
+    protected function searchUrl(): ?string
+    {
+        $listing = \App\Models\Page::query()
+            ->where('type', 'PRODUCTS')
             ->where('status', 'active')
             ->first();
 

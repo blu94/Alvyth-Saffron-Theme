@@ -1,5 +1,5 @@
 @if(!empty($items))
-<section id="{{ $uid }}" class="saffron-testimonials">
+<section id="{{ $uid }}" class="saffron-testimonials" {!! $motionAttrs !!}>
     <div class="saffron-container">
         @if($heading !== '' || $subheading !== '')
             <header class="saffron-testimonials__head {{ $align === 'center' ? 'saffron-testimonials__head--center' : '' }}">

@@ -1,8 +1,21 @@
 (function() {
     window.ThemeApi = window.ThemeApi || {};
 
+    // Reading storage can THROW, not merely return null: a browser set to block site data
+    // raises SecurityError on the getter itself. Unwrapped, that took down every ThemeApi call
+    // — search, cart validation, forms, reviews — before the request was even built, which is a
+    // whole storefront lost to a privacy setting. A signed-in customer in that browser has no
+    // token to find anyway, so falling back to an anonymous request is the honest degrade.
+    const storedToken = () => {
+        try {
+            return localStorage.getItem('customer_access_token');
+        } catch (e) {
+            return null;
+        }
+    };
+
     const getHeaders = () => {
-        const token = localStorage.getItem('customer_access_token');
+        const token = storedToken();
         const headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json',

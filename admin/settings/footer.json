@@ -158,7 +158,7 @@
                       "options": {
                         "url": "/admin/forms",
                         "master": "data",
-                        "map": { "title": "title.en", "value": "slug" }
+                        "map": { "title": "title", "value": "slug" }
                       }
                     },
                     {
@@ -370,6 +370,7 @@
           "key": "footer_copyright",
           "type": "text",
           "label": "Copyright Text",
+          "placeholder": "e.g. © 2026 Nasi Lemak House. All rights reserved.",
           "translatable": true,
           "default": "© 2026 Ovynt. All rights reserved."
         }

@@ -104,7 +104,11 @@ class CollectionGrid
                 'show_tags'        => SectionSetting::bool($data['show_tags'] ?? null, $settings['dish_show_tags'] ?? null, true),
                 'show_description' => SectionSetting::bool($data['show_description'] ?? null, $settings['dish_show_description'] ?? null, true),
                 'show_add_button'  => true,
-                'add_button_label' => 'Add',
+                // Translated, and it never was: a Malay shop's listing pages printed an
+                // English "Add" with no setting anywhere to change it. The card blocks offer
+                // their own translatable field; these two commerce grids have none, so the
+                // string at least has to go through the translator.
+                'add_button_label' => __('Add'),
                 'sold_out_label'   => $settings['sold_out_label'] ?? '',
             ],
             'locale'       => $locale,

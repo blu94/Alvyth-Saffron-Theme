@@ -19,6 +19,17 @@
             "type": "field",
             "cols": 6
           },
+          "key": "reviews_enabled",
+          "type": "switch",
+          "label": "Show Customer Reviews On A Dish",
+          "hint": "A star rating, the reviews left so far, and a form to add one. New reviews are held until you approve them under Comments & Reviews — a customer whose order contains the dish is published straight away and shown as a verified buyer. Shown only while Enable Comments is on under Settings → Application → Interactions & Sharing, which governs the whole storefront",
+          "default": true
+        },
+        {
+          "ui": {
+            "type": "field",
+            "cols": 6
+          },
           "key": "menu_layout",
           "type": "select",
           "label": "Menu Layout",
@@ -270,7 +281,7 @@
           "key": "accept_table_bookings",
           "type": "switch",
           "label": "Accept Table Bookings",
-          "hint": "OFF (the default) means dine-in is for customers already sitting down: they are not offered a time at all, because a table nobody has reserved can be taken by the next party through the door. Turn it ON only once bookings are enforced — while they are not, offering a time promises a reservation nothing records",
+          "hint": "OFF (the default) means dine-in is for customers already sitting down: they are not offered a time at all. Turn it ON to take reservations — a booked table is really held, inside the order's own transaction, so a second party cannot be given the same table at the same time. Today is never bookable; today's diners are walk-ins",
           "default": false
         },
         {
@@ -440,17 +451,6 @@
       "name": "Kitchen Alerts",
       "subtitle": "Whether the Kitchen Queue speaks up when an order arrives. The screen refreshes itself either way — this decides whether anybody in the room finds out without looking at it.",
       "elements": [
-        {
-          "ui": {
-            "type": "field",
-            "cols": 6
-          },
-          "key": "reviews_enabled",
-          "type": "switch",
-          "label": "Show Customer Reviews On A Dish",
-          "hint": "A star rating, the reviews left so far, and a form to add one. New reviews are held until you approve them under Comments & Reviews — a customer whose order contains the dish is published straight away and shown as a verified buyer. Shown only while Enable Comments is on under Settings → Application → Interactions & Sharing, which governs the whole storefront",
-          "default": true
-        },
         {
           "ui": {
             "type": "field",

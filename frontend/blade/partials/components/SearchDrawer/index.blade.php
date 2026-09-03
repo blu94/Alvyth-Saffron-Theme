@@ -134,13 +134,19 @@
                 debounce = setTimeout(() => search(query.value), 300);
             };
 
-            // Enter goes to the full menu carrying the term. `/products` is the PRODUCTS page
-            // type and reads `q` — the collection index does not, which is why Enter must not
-            // send a diner there.
+            // Enter goes to the shop's own products page carrying the term, which that page's
+            // grid now reads. The URL comes from the driver rather than being written here: the
+            // slug is translatable, and a hard-coded `/products` also dropped the locale prefix,
+            // so a diner browsing `/ms/...` landed on the default locale's menu.
+            //
+            // With no products page there is nowhere honest to send them, so Enter keeps them in
+            // the drawer with the live results already on screen rather than navigating to a 404.
+            const searchUrl = @json($searchUrl);
+
             const onSubmit = () => {
                 const q = query.value.trim();
-                if (q.length > 0) {
-                    window.location.href = '/products?q=' + encodeURIComponent(q);
+                if (q.length > 0 && searchUrl) {
+                    window.location.href = searchUrl + '?q=' + encodeURIComponent(q);
                 }
             };
 

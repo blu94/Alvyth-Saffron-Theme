@@ -41,6 +41,17 @@
      cart clearing that section carries never runs on it. Cleared here too — idempotent
      when both run, and a paid order must never leave its items counting in the badge. --}}
 (function () {
+    // **Only for a visitor who has just paid.** This page is a URL like any other: it sits in
+    // history and in bookmarks, so clearing unconditionally emptied the basket of somebody who
+    // pressed Back into it while building a new order, with nothing on screen explaining where
+    // their food had gone. The redirect from checkout carries the order, so its absence means
+    // this is a revisit and there is nothing of ours to clear.
+    var params = new URLSearchParams(window.location.search);
+
+    if (!params.get('order') && !params.get('order_id') && !params.get('session_id')) {
+        return;
+    }
+
     var tries = 0;
     var timer = setInterval(function () {
         if (window.OvyntStore) {
@@ -48,7 +59,12 @@
             window.OvyntStore.saveCart();
             clearInterval(timer);
         } else if (++tries > 30) {
-            localStorage.setItem('ovynt_cart', '[]');
+            // Wrapped: a browser set to block site data throws here, and an unwrapped throw
+            // skips the clearInterval below it and leaves this running every 100ms forever.
+            try {
+                localStorage.setItem('ovynt_cart', '[]');
+            } catch (e) { /* blocked storage: the badge is wrong until the cart page reprices */ }
+
             clearInterval(timer);
         }
     }, 100);

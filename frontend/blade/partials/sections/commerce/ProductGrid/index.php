@@ -64,12 +64,37 @@ class ProductGrid
         }
 
         // Each filter applies only when present — an absent one must not narrow anything.
+        //
+        // `q` is the search drawer's Enter key. It sends the diner here carrying their term, and
+        // until this existed the term was simply dropped: they typed "laksa", pressed Enter, and
+        // were handed the entire unfiltered menu as though it were the result. Ella's copy of
+        // this grid has always read `q` — Saffron's is the one that resolves on this theme, and
+        // it did not, so the drawer's own comment described a page that was not this one.
+        if ($search = trim((string) $request->query('q', ''))) {
+            $term = '%' . mb_strtolower($search) . '%';
+
+            $query->where(function ($q) use ($term) {
+                $q->whereRaw('LOWER(title) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(description) LIKE ?', [$term])
+                    ->orWhereHas('tags', fn ($t) => $t->whereRaw('LOWER(title) LIKE ?', [$term]));
+            });
+        }
+
         if ($category = $request->query('category')) {
             $query->whereHas('categories', fn ($q) => $q->where('categories.id', $category));
         }
 
         if ($request->query('availability') === 'in_stock') {
             $query->where(fn ($q) => $q->whereNull('stock')->orWhere('stock', '>', 0));
+
+            // ...and not run out at the branch being browsed. Without this the filter and the
+            // cards contradicted each other on one screen: a dish 86'd here passed "Available
+            // today" and then rendered wearing the sold-out badge the card puts on it.
+            $soldOut = BranchScope::soldOut();
+
+            if ($soldOut !== []) {
+                $query->whereNotIn('products.id', $soldOut);
+            }
         }
 
         if ($type = $request->query('type')) {
@@ -120,7 +145,11 @@ class ProductGrid
                 'show_tags'        => SectionSetting::bool($data['show_tags'] ?? null, $settings['dish_show_tags'] ?? null, true),
                 'show_description' => SectionSetting::bool(null, $settings['dish_show_description'] ?? null, true),
                 'show_add_button'  => (bool) ($data['show_add_to_cart'] ?? true),
-                'add_button_label' => 'Add',
+                // Translated, and it never was: a Malay shop's listing pages printed an
+                // English "Add" with no setting anywhere to change it. The card blocks offer
+                // their own translatable field; these two commerce grids have none, so the
+                // string at least has to go through the translator.
+                'add_button_label' => __('Add'),
                 'sold_out_label'   => $settings['sold_out_label'] ?? '',
             ],
             'locale'       => $locale,

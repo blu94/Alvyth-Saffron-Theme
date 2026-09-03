@@ -207,7 +207,7 @@
                                         "key": "show_add_button",
                                         "type": "switch",
                                         "label": "Show Add Button",
-                                        "hint": "Links to the dish page until the dish sheet ships",
+                                        "hint": "The button on each dish card. It opens the dish page, where sizes and any questions are answered before the dish reaches the basket",
                                         "default": true
                                     },
                                     {

@@ -35,6 +35,12 @@
             </button>
         </div>
 
+        {{-- Outside the form, because submitting closes the form. Inside it, the thank-you was
+             set and unmounted in the same tick, so a held review told its author nothing — they
+             looked for it in the list, could not find it, and wrote it again. `PostComments`
+             has had it out here since it was written; this component kept the broken shape. --}}
+        <p class="saffron-reviews__success" v-if="formSuccess">@{{ formSuccess }}</p>
+
         <form class="saffron-reviews__form" v-if="showForm" @submit.prevent="submitReview">
             <div class="saffron-reviews__field">
                 <span class="saffron-reviews__label">{{ __('Your rating') }}</span>
@@ -75,7 +81,6 @@
             </label>
 
             <p class="saffron-reviews__error" v-if="formError">@{{ formError }}</p>
-            <p class="saffron-reviews__success" v-if="formSuccess">@{{ formSuccess }}</p>
 
             <button type="submit" class="saffron-btn saffron-btn--accent" :disabled="submitting">
                 @{{ submitting ? labels.sending : labels.submit }}

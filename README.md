@@ -19,19 +19,22 @@ change or an unanswered product decision — both are itemised in
 | 1 | Skeleton from Ella; menu rendering categories and dishes; dish cards | **done** |
 | 2 | Dish sheet: variants + free modifier groups; options to the cart | **done** |
 | 3 | Modifier admin (groups, answers, dish pivot) | **done** — including bulk attach. Paid add-ons are now a *theme* item: §17.3 is answered, the operator decides per answer and core will not price modifiers |
-| 4 | One ordering mode end to end, fee, minimum order | not started |
+| 4 | One ordering mode end to end, fee, minimum order | **done** — delivery, collection and dine-in, each with its own minimum, refused server-side |
 | 5 | Kitchen queue + dish availability screens | **done** — see the note on the queue below; Kitchen State is also on each order's own edit screen |
-| 6–8 | Core §14 items 1–6 | items **2** (checkout fields persist) and **6** (service hours refuse an order, through this theme's `ServiceWindowGuard`) are **done**; 1, 3, 4 and 5 outstanding (core) |
-| 9 | Notifications, order tracker, receipts, reorder | not started |
-| 10 | RBAC, `.agent/docs/restaurant.md` | docs **done**; `kitchen` resource outstanding |
+| 6–8 | Core §14 items 1–6 | **done** — checkout fields persist, service hours refuse an order, stock decrements, options validate server-side, delivery zones and pay-on-arrival all landed |
+| 9 | Notifications, order tracker, receipts, reorder | **done** — one message per kitchen move, in the kitchen's words |
+| 10 | RBAC, `.agent/docs/restaurant.md` | **done** — the `kitchen` resource ships, so a counter can hold the queue and nothing else |
 
 **Sections:** `Hero`, `MenuSections`, `DishGrid`, `DishMarquee`, `DishSheet`, `StoreStatus`,
-`PromoStrip`, `OutletInfo`, `FaqAccordion`, `Newsletter`.
+`PromoStrip`, `OutletInfo`, `FaqAccordion`, `Newsletter`, `Testimonials`.
 **Core sections this theme claims:** `commerce/ProductDetails` (renders the dish sheet),
 `commerce/ProductGrid` and `commerce/CollectionGrid` (render the menu's own card) — see
 "Listings and category pages" below.
 **Components:** `DishCard`, `CategoryMenu`, `SearchDrawer`, `DynamicForm` (any Forms-module
-form, inline), `Breadcrumbs`, `StructuredData` (JSON-LD).
+form, inline), `Breadcrumbs`, `StructuredData` (JSON-LD), `DishReviews`, `PostComments`,
+`DishSidebar`, `GeoAttribution`, `OrderGate` (the branch asked before the menu), `OrderMode`
+(delivery / collection / dine-in, the table and the cutlery), `OrderSchedule` (when the customer
+wants it) and `PaymentChoice` (pay now or pay on arrival).
 **Saved dishes:** a heart on every dish card and dish sheet, a header counter and the
 **Saved dishes** page, behind one *Restaurant → Saved Dishes* switch. See "Saved dishes" below.
 **Animation:** every section above except `DishSheet` eases into view on scroll, with its own
@@ -42,10 +45,12 @@ collection flow only once there is more than one, and the chosen branch rides to
 `data-checkout-field="outlet_id"` and onto the kitchen ticket as `@ Bangsar`),
 `modifier-groups` (the questions, plus an **Attach To Dishes** page that puts
 one question on many dishes at once), `service-windows` (weekly hours *and* dated holidays in
-one list, plus the Kitchen Queue page). Three Outlets fields — the per-branch menu, timezone and
-coordinates — are stored and read by nothing yet; `docs/outlets.md` and
-`.agent/docs/restaurant.md` both say which and why.
-**Extends:** `products` — a Modifiers tab on the dish's own form — and `orders` — a Kitchen
+one list, plus the Kitchen Queue page) and `kitchen` (a sidebar entry pointing at that queue, so
+counter staff reach it without opening Service Hours). Nothing on the Outlets form is unread any
+more: the per-branch menu became the dish's own Availability tab, the timezone drives that
+branch's own hours, and the coordinates centre its delivery circle.
+**Extends:** `products` — Availability and Modifiers tabs on the dish's own form —
+`shipping-methods` — the branch a collection method represents — and `orders` — a Kitchen
 tab that moves an order through New / Preparing / Ready / Out for delivery / Delivered from
 its own edit screen, the same write the Kitchen Queue's Advance card makes. Both via core's
 module extension seam (`admin/extends/{products,orders}.json` +
@@ -53,7 +58,10 @@ module extension seam (`admin/extends/{products,orders}.json` +
 `OrderController` to call that seam, which core now does. Ready and Out for delivery are one
 status pair, so the tab is the only place on the order that tells them apart; an untouched tab
 leaves the sidebar's Order Status / Fulfillment Status exactly as saved.
-**Tables:** `modifier_groups`, `modifiers`, `dish_modifier_group`, `service_windows`.
+**Tables:** `modifier_groups`, `modifiers`, `dish_modifier_group`, `service_windows`, `outlets`,
+`outlet_tables`, `outlet_product` (which branch makes a dish), `outlet_product_price` (what a
+branch charges), `outlet_product_unavailable` (what it has run out of tonight) and
+`table_bookings`.
 
 Two screens were retired rather than kept. **Dish Availability** toggled `Product.status`,
 which unpublishes — so marking a dish sold out took it off the menu instead of greying it
@@ -589,13 +597,12 @@ Three tones (sand / dark / accent) and two layouts (centered / split).
 
 Verified against core, not assumed. Each is a limit on what this theme can promise.
 
-- **A delivery fee is still priced per zone, not per distance.** Shipping zones match on
-  country and state only, so every address in a state pays the same fee and an order forty
-  kilometres out is accepted on the same terms as one two kilometres out. Fine with a
-  state-wide courier, wrong with your own riders. Decided 2026-08-17: the shape is the
-  **operator's** choice per zone — state, a postcode list, or a distance radius from the outlet,
-  mixable within one shop — rather than this project picking one delivery model on their behalf.
-  Not built (register O7b).
+- **A delivery fee can now be priced per distance, and the shape is the operator's choice per
+  zone** — state, a postcode list, or a distance radius from the outlet, mixable within one shop
+  (O7b, built). On top of that a branch may say it delivers with its **own riders** and how far
+  they go: `BranchDeliveryRadiusGuard` refuses an address outside that circle, measured from the
+  branch's own coordinates. A shop that never sets either keeps state-wide zone pricing, which
+  is the right answer with a state-wide courier and the wrong one with a moped.
 - **Dine in is per branch** (2026-08-25). `outlets.offers_dine_in` decides whether a branch seats
   anybody, because collection and delivery had been per branch since outlets existed and dining
   was one shop-wide switch riding on collection — so a takeaway kiosk with a counter and no
@@ -626,20 +633,20 @@ Verified against core, not assumed. Each is a limit on what this theme can promi
   offers both. A cash order is deliberately **never** given a stock-hold deadline: the sweep
   cancels `pending` + `unpaid`, and a cash order wearing that shape would be cancelled from under
   the kitchen an hour after it was placed.
-- **Service hours do not yet distinguish delivery from pickup.** A window's **Applies To**
-  (`delivery` / `pickup`) is stored and displayed but still not consulted by the refusal. It
-  was blocked on there being no ordering mode to compare against; now that an order carries
-  one, `ServiceWindowGuard` can read it — the guard is where "lunch is delivery only" becomes
-  real, and it is the obvious next step rather than a constraint.
+- **Service hours distinguish delivery from pickup** (D-7, built). A window's **Applies To**
+  (`delivery` / `pickup`) is read by `ServiceWindowGuard`, so "lunch is delivery only" refuses a
+  collection order at lunchtime and says which mode the window serves. It was blocked on there
+  being no ordering mode to compare against; the mode picker unblocked it.
 - **There is no `MENU` page type**, and a theme cannot add one — page types live in core's
   `storage/app/defaults/schema/pages/`. So there is deliberately **no `pages/menu.blade.php`**;
   `ThemeController` would never resolve it. The menu is a `MENU_SECTIONS_SECTION` block
   placed on an ordinary page through the page builder, which is also how the spec's §9.2
   describes it.
-- **`vite.config.storefront.ts` hard-codes its output into `theme/ella/`.** The
-  `storefront.min.js` / `storefront.min.css` vendor bundle in this theme is a copy of that
-  build output. Rebuilding it for Saffron needs a theme argument on that config — a core
-  change, not a theme one.
+- **`vite.config.storefront.ts` builds into whichever theme you name.** It used to hard-code
+  `theme/ella/`, so the `storefront.min.js` / `storefront.min.css` vendor bundle here was a copy
+  of Ella's build output; core now reads an `OVYNT_THEME` env var, so the bundle can be rebuilt
+  for Saffron directly. The copy currently shipped is byte-identical to Ella's, which is correct
+  — nothing in it is theme-specific.
 - **An option key naming no question the dish asks is carried, not refused.** A line's answers
   are now fully validated against that dish's own questions, but `Size` is injected by core
   itself for a dish with variants and `Notes` is free text — from the pricer's point of view

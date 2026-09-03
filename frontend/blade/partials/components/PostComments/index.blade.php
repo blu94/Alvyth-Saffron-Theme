@@ -34,7 +34,9 @@
         <p class="saffron-comments__success" v-if="formSuccess">@{{ formSuccess }}</p>
 
         <form class="saffron-comments__form" v-if="showForm" @submit.prevent="submit">
-            <div class="saffron-comments__row">
+            {{-- A signed-in reader is not asked to retype what the session already knows, the
+                 same rule the dish reviews follow three files away. --}}
+            <div class="saffron-comments__row" v-if="!isLoggedIn">
                 <label class="saffron-comments__field">
                     <span class="saffron-comments__label">{{ __('Your name') }}</span>
                     <input type="text" v-model="formName" class="saffron-comments__input"
@@ -102,6 +104,10 @@
     const { createApp, ref, onMounted } = Vue;
 
     const postId = @json($postId);
+    // Whether the reader is signed in, resolved exactly as `DishReviews` resolves it — the
+    // shared store the whole storefront already reads. A signed-in commenter is not asked to
+    // retype a name and an email the session is holding.
+    const isLoggedIn = !!(window.OvyntStore && window.OvyntStore.user && window.OvyntStore.user.id);
     const labels = @json($labels);
     const showLikes = @json($showLikes);
 
@@ -187,8 +193,8 @@
                 formSuccess.value = '';
 
                 if (!formBody.value.trim())  { formError.value = labels.noBody;  return; }
-                if (!formName.value.trim())  { formError.value = labels.noName;  return; }
-                if (!formEmail.value.trim()) { formError.value = labels.noEmail; return; }
+                if (!isLoggedIn && !formName.value.trim())  { formError.value = labels.noName;  return; }
+                if (!isLoggedIn && !formEmail.value.trim()) { formError.value = labels.noEmail; return; }
 
                 submitting.value = true;
                 try {
@@ -197,8 +203,8 @@
                         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                         body: JSON.stringify({
                             body:  formBody.value.trim(),
-                            name:  formName.value.trim(),
-                            email: formEmail.value.trim(),
+                            name:  !isLoggedIn ? formName.value.trim() : undefined,
+                            email: !isLoggedIn ? formEmail.value.trim() : undefined,
                         }),
                     });
 
@@ -234,7 +240,7 @@
                 loading, comments, total, currentPage, lastPage, load,
                 likes, liked, toggleLike,
                 showForm, toggleForm, formName, formEmail, formBody, formError, formSuccess, submitting, submit,
-                labels,
+                labels, isLoggedIn,
             };
         },
     }).mount('#{{ $uid }}');

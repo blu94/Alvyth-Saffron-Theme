@@ -383,6 +383,7 @@
           "type": "text",
           "label": "Latitude",
           "placeholder": "e.g. 3.1279",
+          "rules": ["nullable", "numeric", "between:-90,90"],
           "hint": "Between -90 and 90. Find it by right-clicking the branch in Google Maps and copying the first number. Required when this branch delivers with its own riders — the circle is measured from here"
         },
         {
@@ -394,6 +395,7 @@
           "type": "text",
           "label": "Longitude",
           "placeholder": "e.g. 101.6708",
+          "rules": ["nullable", "numeric", "between:-180,180"],
           "hint": "Between -180 and 180. The second of the two numbers Google Maps copies"
         }
       ],

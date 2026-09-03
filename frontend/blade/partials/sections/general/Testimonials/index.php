@@ -4,6 +4,7 @@ namespace Theme\Sections\General;
 
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Theme\Backend\Support\Motion;
 
 /**
  * Quotes from diners (register E9).
@@ -57,6 +58,10 @@ class Testimonials
         $columns = in_array($columns, [2, 3], true) ? $columns : 3;
 
         return View::make($themeViewPath, [
+            // The section's own scroll reveal. This was the one marketing section that
+            // shipped without the effect/speed/stagger/delay quartet, so it sat still
+            // beside animated neighbours with nothing in the admin to change that.
+            'motionAttrs' => Motion::sectionAttributes($data),
             'heading'    => $this->translate($data['heading'] ?? '', $locale),
             'subheading' => $this->translate($data['subheading'] ?? '', $locale),
             'items'      => $items,

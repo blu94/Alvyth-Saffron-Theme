@@ -32,9 +32,23 @@ use Theme\Backend\Support\ThemeSettings;
  * Exactly the shape `OrderRepository::reduceStock()` uses for the last portion of a dish, for
  * exactly the same reason.
  *
- * Locking the **table** rather than the booking rows is deliberate: there is no booking row to
- * lock when the table is free, and a gap lock on an empty range is what deadlocks two
- * simultaneous first-ever writers (the trap `SequenceAllocator` documents).
+ * **Both halves are locking reads, and for a while only the first one was.** Serialising the two
+ * writers was necessary and never sufficient: under InnoDB's default REPEATABLE READ a
+ * *non-locking* `SELECT` is served from the transaction's snapshot, and that snapshot is pinned by
+ * the transaction's first read — which, by the time this runs, `span()` and `tableFor()` have
+ * already taken. So the second caller waited properly for the lock and then asked its question
+ * through a lens from before the first caller committed: it saw the table free and booked it too.
+ * Two confirmed bookings, one table, one slot, with the lock working exactly as designed. A
+ * locking read is defined to bypass the snapshot and read the latest committed row, which is the
+ * only thing that makes a re-read behind a lock mean anything.
+ *
+ * Locking the **table** rather than only the booking rows is deliberate, and the two locks do
+ * different jobs. There is no booking row to lock when the table is free, and a gap lock on an
+ * empty range is what deadlocks two simultaneous first-ever writers (the trap
+ * `SequenceAllocator` documents) — so the table row is what serialises them. That in turn is what
+ * makes the range lock on `table_bookings` safe here: only one transaction is ever inside this
+ * section, because the other is parked on the table row and cannot be holding a conflicting range.
+ * **Neither lock is redundant; do not remove one on the strength of the other.**
  *
  * ## What it refuses, and what it ignores
  *
@@ -118,9 +132,15 @@ class TableReservation implements OrderWriter
         // what serialises two customers wanting the same table and nothing else.
         OutletTable::query()->whereKey($table->id)->lockForUpdate()->first();
 
+        // ...and the re-read behind it must ALSO be a locking read. A plain `exists()` here is
+        // served from this transaction's snapshot, pinned back in `span()`, so it cannot see a
+        // booking committed while we waited for the lock above — the second caller found the
+        // table free and took it too. See the class note: locking the table serialises the
+        // writers, and this is what makes the answer current.
         $taken = TableBooking::query()
             ->holding()
             ->overlapping($table->id, $startsAt, $endsAt)
+            ->lockForUpdate()
             ->exists();
 
         if ($taken) {
@@ -151,7 +171,11 @@ class TableReservation implements OrderWriter
      */
     protected function span(string $scheduledAt, ?int $outletId, array $settings): array
     {
-        $timezone = app(ServiceWindowRepository::class)->timezone();
+        // The BRANCH's clock, not the shop's. `ServiceWindowGuard` already validates the slot on
+        // the branch's timezone, and a writer holding the span on a different one puts the two a
+        // few hours apart: a branch east of the shop could be booked for what is locally today,
+        // which is the one thing "today is never bookable" exists to prevent.
+        $timezone = app(ServiceWindowRepository::class)->timezone($outletId);
 
         try {
             $startsAt = Carbon::parse($scheduledAt, $timezone);

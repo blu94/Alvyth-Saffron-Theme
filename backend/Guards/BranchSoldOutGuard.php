@@ -6,6 +6,7 @@ use App\Contracts\Storefront\CheckoutGuard;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Theme\Backend\Models\Outlet;
+use Theme\Backend\Support\BranchScope;
 
 /**
  * Refuses an order containing a dish the branch has 86'd — run out of tonight.
@@ -82,9 +83,16 @@ class BranchSoldOutGuard implements CheckoutGuard
             return null;
         }
 
+        // A line that chose a size carries the variant's id, and the 86 list only ever holds the
+        // parent's — the operator's picker cannot offer a size. Asked about a variant this table
+        // answers "not 86'd", which is how a dish the kitchen has run out of reached the till
+        // wearing a size. Resolved for the whole basket in one query, and the refusal below then
+        // names the parent dish, which is the name the customer read on the menu.
+        $dishIds = array_values(array_unique(BranchScope::parentIds($ids->all())));
+
         $soldOut = DB::table('outlet_product_unavailable')
             ->where('outlet_id', $outletId)
-            ->whereIn('product_id', $ids)
+            ->whereIn('product_id', $dishIds)
             ->pluck('product_id')
             ->map(fn ($id) => (int) $id)
             ->all();

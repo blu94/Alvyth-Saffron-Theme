@@ -56,7 +56,7 @@
                         "key": "text",
                         "type": "textarea",
                         "label": "Text",
-                        "placeholder": "e.g. Minimum spend RM30. Delivery only.",
+                        "placeholder": "e.g. Minimum spend applies. Delivery only.",
                         "translatable": true
                     },
                     {

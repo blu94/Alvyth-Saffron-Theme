@@ -45,18 +45,41 @@
     @if($canonical)<link rel="canonical" href="{{ $canonical }}">@endif
     <meta name="robots" content="{{ $robotsTag }}">
 
-    @if(!empty($availableLocales))
-        @php
+    @php
+        // Alternates are a claim that the same content exists at each of these addresses, so
+        // they are printed only for a page that actually resolved. A 404 was declaring language
+        // alternates for a URL that exists in no language at all.
+        //
+        // Judged on the page's own type, not on a status code: `ThemeController` computes the
+        // status but does not pass it to the view, and the hard-error path renders with no
+        // `$page` at all — so both routes into an error template have to be recognised here.
+        $errorTypes = ['404', '500', 'MAINTENANCE'];
+        $emitAlternates = !empty($availableLocales)
+            && isset($page)
+            && ! in_array((string) ($page->type ?? ''), $errorTypes, true);
+
+        if ($emitAlternates) {
             $segments = explode('/', trim(request()->path(), '/'));
+
             if (!empty($segments) && array_key_exists($segments[0], $availableLocales)) {
                 array_shift($segments);
             }
+
             $newPath = implode('/', $segments);
-        @endphp
+
+            // ...and the query string rides along. Without it every page of a paginated listing
+            // named page one as its alternate, which tells a crawler the wrong thing about nine
+            // pages out of ten.
+            $altQuery = request()->getQueryString();
+            $altSuffix = $altQuery ? '?' . $altQuery : '';
+        }
+    @endphp
+
+    @if($emitAlternates)
         @foreach($availableLocales as $code => $name)
-            <link rel="alternate" hreflang="{{ $code }}" href="{{ $code === $defaultLocale ? url($newPath) : url($code . '/' . $newPath) }}">
+            <link rel="alternate" hreflang="{{ $code }}" href="{{ ($code === $defaultLocale ? url($newPath) : url($code . '/' . $newPath)) . $altSuffix }}">
         @endforeach
-        <link rel="alternate" hreflang="x-default" href="{{ url($newPath) }}">
+        <link rel="alternate" hreflang="x-default" href="{{ url($newPath) . $altSuffix }}">
     @endif
 
     <meta property="og:type" content="{{ $ogType }}">

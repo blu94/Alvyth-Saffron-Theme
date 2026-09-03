@@ -31,10 +31,24 @@ one **Saffron** group. It has two links:
 | **Phone** | Shown with the address. Include the country code so a customer can tap to call |
 | **Timezone** | Used when this branch keeps opening hours of its own — Service Hours entries naming this branch are judged on this clock. A branch without its own hours, or with this left empty, follows the shop's timezone from Settings |
 
-### What this outlet serves
+### What this branch serves, and what it has run out of
 
-Off by default, and off is what almost every branch wants: it serves the whole menu. The
-switch and its dish picker are recorded but **do not change the online menu yet** — see below.
+Almost every branch serves the whole menu, and an empty form here means exactly that. Three
+lists change it, and they are different questions:
+
+| List | What it says | What the customer sees |
+|---|---|---|
+| **Dishes Only This Branch Makes** | Set on the dish itself, under Products → the dish → Availability. Shown here read-only, so you can see what is exclusive to this branch without leaving the screen | The dish is **hidden** from every other branch |
+| **Prices Charged Here** | This branch charges its own price for a dish. Every dish left off the list costs what it costs everywhere | The branch's price, on the menu and in the cart alike. A size keeps its premium on top |
+| **Sold Out Here Today** | What this kitchen has run out of tonight. The one thing a restaurant does every service | The dish **stays** on the menu, greyed, wearing its sold-out badge |
+
+The difference between the first and the third is the one worth remembering: exclusivity is a
+catalogue fact and hides the dish; selling out is a service fact and greys it. A dish that
+vanishes reads as a broken website to somebody who came for it; a greyed one reads as a kitchen
+having a busy night.
+
+All three are enforced when the order is placed, not merely drawn on the menu — a basket built
+before you changed them is refused at checkout with a sentence naming the dish.
 
 ### How it takes orders
 
@@ -87,6 +101,43 @@ the menu restriction uses: the hiding is what the customer sees, the refusal is 
 path, not a setting to keep: it is fine for one restaurant and wrong the moment two of them
 differ, because a diner would be offered Table 15 in a room with eight tables. With neither, the
 customer types whatever their table is called.
+
+### Taking table bookings
+
+Turn on **Accept Table Bookings** under *Themes → Saffron → Restaurant* and a diner is offered a
+day, a time and a table instead of being assumed to be standing in the room.
+
+| Setting | What it decides |
+|---|---|
+| **Accept Table Bookings** | Off by default. On, dine-in customers choose when they are coming |
+| **Booking Duration** | How long a table is held. A 19:00 booking on a 60-minute duration holds the table until 20:00 |
+| **Bookable From** | How many days ahead the first bookable day is. **Today is never bookable** — today's diners are walk-ins, which is what stops a reservation colliding with somebody already sitting down |
+| **Booking Horizon** | How far ahead a customer may book |
+
+Each branch may override the duration and the horizon; a branch that sets neither follows the
+shop.
+
+**A booked table is really held.** The reservation is written inside the order's own
+transaction, under a lock on the table, so two parties cannot be given the same table at the
+same time however close together they press the button. If the table has gone in the seconds
+between the page being drawn and the order being placed, the second customer is refused with a
+sentence naming the table, and no order is written at all.
+
+**A table turns at the hour.** A booking ending at 20:00 and one starting at 20:00 do not
+clash — that is a table turning, which is the commonest thing a dining room does all evening.
+
+**Seats decide what is offered.** A party of six is not shown a table for two. A table with no
+seats figure fits anybody.
+
+**A cancelled order frees its table immediately**, everywhere, without anyone having to
+remember to release it: a booking holds its table only while the order behind it still stands.
+An order that was never paid — a customer who abandoned the payment page — keeps its table,
+deliberately, because *not paid yet* is the normal state of a perfectly good booking at a shop
+that takes payment at the door.
+
+> **There is no screen listing tonight's bookings yet.** They live on the orders themselves, so
+> today the way to see the evening is the order list. If a table is being held by an order you
+> know is dead, cancel that order and the table comes back.
 
 ### Where it is
 
