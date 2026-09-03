@@ -216,11 +216,6 @@ class OrderMode
             'offered'       => $offered,
             'pickupAddress' => $pickupAddress,
             'payload'       => $payload,
-            'outlets'       => $outlets,
-            // More than one is what makes it a choice. One is an answer, and an answer belongs
-            // in a hidden input, not a control with a single option.
-            'showPicker'    => count($outlets) > 1,
-            'dineIn'        => $dineIn,
             'askCutlery'    => $askCutlery,
             'modes'         => $modes,
             'tables'        => $tables,
@@ -294,26 +289,6 @@ class OrderMode
         }
     }
 
-    /**
-     * Which outlet each pickup-type shipping method stands for.
-     *
-     * The branch question is **core's** now — one pickup method per branch — so the only thing
-     * the browser learns when a customer picks one is a method id. The link from that to an
-     * outlet lives in the method's own `meta.checkout_fields.outlet_id`, written by this
-     * theme's `ShippingMethodOutlet` handler and normally read server-side at checkout. The
-     * table list has to resolve it *before* the order exists, so the map is handed to the page.
-     *
-     * Ids only, and nothing else about the method: this is a lookup, not a second branch picker.
-     *
-     * Delegated to the handler that WRITES the key, so the meta path is spelled once. The
-     * schedule block needs the same map — a per-branch booking lead is unresolvable without it —
-     * and two components spelling out `meta.checkout_fields.outlet_id` is how one of them keeps
-     * the old spelling after the other moves. It fails open there for the reason it does here: a
-     * storefront rendering against a half-deployed import falls back to the shop-wide table list
-     * rather than taking the cart page down.
-     *
-     * @return array<int, int> method id => outlet id
-     */
     /**
      * Which doors each branch opens, by outlet id.
      *
@@ -404,6 +379,26 @@ class OrderMode
         }
     }
 
+    /**
+     * Which outlet each pickup-type shipping method stands for.
+     *
+     * The branch question is **core's** now — one pickup method per branch — so the only thing
+     * the browser learns when a customer picks one is a method id. The link from that to an
+     * outlet lives in the method's own `meta.checkout_fields.outlet_id`, written by this
+     * theme's `ShippingMethodOutlet` handler and normally read server-side at checkout. The
+     * table list has to resolve it *before* the order exists, so the map is handed to the page.
+     *
+     * Ids only, and nothing else about the method: this is a lookup, not a second branch picker.
+     *
+     * Delegated to the handler that WRITES the key, so the meta path is spelled once. The
+     * schedule block needs the same map — a per-branch booking lead is unresolvable without it —
+     * and two components spelling out `meta.checkout_fields.outlet_id` is how one of them keeps
+     * the old spelling after the other moves. It fails open there for the reason it does here: a
+     * storefront rendering against a half-deployed import falls back to the shop-wide table list
+     * rather than taking the cart page down.
+     *
+     * @return array<int, int> method id => outlet id
+     */
     protected function methodOutlets(): array
     {
         return ShippingMethodOutlet::map();

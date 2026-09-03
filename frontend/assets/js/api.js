@@ -40,6 +40,32 @@
         return data;
     };
 
+    // Laravel's trans_choice, for the subset this theme's strings use: explicit {n} matches,
+    // [a,b] / [a,*] intervals, then a bare singular|plural pair. The server picks a line from
+    // the SAME translated string (the dish sheet's review count goes through trans_choice),
+    // so a count rendered in the browser cannot pluralise differently from one rendered in
+    // Blade, whatever forms the locale's translator wrote.
+    window.ThemeApi.transChoice = (choice, count) => {
+        const parts = String(choice).split('|');
+        const bare = [];
+        for (const part of parts) {
+            const m = part.match(/^\s*(?:\{\s*(-?\d+)\s*\}|\[\s*(-?\d+)\s*,\s*(-?\d+|\*)\s*\])\s*([\s\S]*)$/);
+            if (!m || (m[1] === undefined && m[2] === undefined)) {
+                bare.push(part.trim());
+                continue;
+            }
+            if (m[1] !== undefined && count === Number(m[1])) return m[4];
+            if (m[2] !== undefined) {
+                const from = Number(m[2]);
+                const to = m[3] === '*' ? Infinity : Number(m[3]);
+                if (count >= from && count <= to) return m[4];
+            }
+        }
+        if (bare.length > 0) return bare[count === 1 || bare.length === 1 ? 0 : 1];
+        // Every line carried a rule and none matched; the last line is the broadest.
+        return parts[parts.length - 1].replace(/^\s*(\{[^}]*\}|\[[^\]]*\])\s*/, '');
+    };
+
     // Encrypt a password in the browser before it leaves the page. A second
     // layer under HTTPS, not a replacement: the raw password never appears in a
     // request body, so it cannot be captured by a reverse-proxy access log, an
@@ -269,12 +295,14 @@
             return res.json();
         },
         
-        postComment: async (type, id, body, email, name, parentId) => {
+        postComment: async (type, id, body, email, name, parentId, rating) => {
             const payload = { body };
             if (email) payload.email = email;
             if (name) payload.name = name;
             if (parentId) payload.parent_id = parentId;
-            
+            // A dish review carries stars; a plain comment or reply never does.
+            if (rating) payload.rating = rating;
+
             const res = await fetch(`/api/storefront/interactions/${type}/${id}/comment`, {
                 method: 'POST',
                 headers: getHeaders(),

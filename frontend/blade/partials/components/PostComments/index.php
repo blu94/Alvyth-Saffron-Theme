@@ -74,8 +74,10 @@ class PostComments
                 'cancel'   => __('Cancel'),
                 'submit'   => __('Post comment'),
                 'sending'  => __('Sending…'),
-                'comment'  => __('comment'),
-                'comments' => __('comments'),
+                // A whole choice string, picked client-side by `ThemeApi.transChoice` — the
+                // same shape the dish sheet renders server-side with `trans_choice`, so a
+                // locale with more than two plural forms is not flattened to an either/or.
+                'countChoice' => __('{1} :count comment|[2,*] :count comments'),
                 'like'     => __('Like this story'),
                 'unlike'   => __('Remove your like'),
                 'noBody'   => __('Please write your comment.'),

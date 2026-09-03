@@ -76,8 +76,11 @@ class DishReviews
                 'cancel'   => __('Cancel'),
                 'submit'   => __('Submit review'),
                 'sending'  => __('Sending…'),
-                'review'   => __('review'),
-                'reviews'  => __('reviews'),
+                // The same choice string the dish sheet renders with `trans_choice`, handed
+                // over whole: the script picks a line with `ThemeApi.transChoice`, so a
+                // locale with more than two plural forms translates ONE string and both
+                // surfaces agree.
+                'countChoice' => __('{1} :count review|[2,*] :count reviews'),
                 'rate'     => __('Rate :n out of 5', ['n' => ':n']),
                 'noRating' => __('Please choose a star rating.'),
                 'noBody'   => __('Please write your review.'),

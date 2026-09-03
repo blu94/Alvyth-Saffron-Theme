@@ -24,7 +24,7 @@
                     </span>
                     <template v-if="ratingCount > 0">
                         <span>@{{ avgRating }} {{ __('out of 5') }}</span>
-                        <span class="saffron-reviews__count">@{{ ratingCount }} @{{ ratingCount === 1 ? labels.review : labels.reviews }}</span>
+                        <span class="saffron-reviews__count">@{{ countLabel }}</span>
                     </template>
                     <span v-else class="saffron-reviews__count">{{ __('No reviews yet') }}</span>
                 </p>
@@ -133,7 +133,7 @@
 
 <script>
 (function () {
-    const { createApp, ref, onMounted } = Vue;
+    const { createApp, ref, computed, onMounted } = Vue;
 
     createApp({
         setup() {
@@ -159,6 +159,13 @@
             const currentPage = ref(1);
             const lastPage    = ref(1);
 
+            // Pluralised the way the server pluralises it — same choice string, same picker
+            // semantics — rather than a JS either/or that flattens richer locales.
+            const countLabel = computed(() =>
+                window.ThemeApi.transChoice(labels.countChoice, ratingCount.value)
+                    .replace(':count', ratingCount.value)
+            );
+
             const showForm    = ref(false);
             const formRating  = ref(0);
             const hoverRating = ref(0);
@@ -172,8 +179,10 @@
             async function loadReviews(page = 1) {
                 loading.value = true;
                 try {
-                    const res  = await fetch(`/api/storefront/interactions/products/${dishId}?page=${page}`);
-                    const data = await res.json();
+                    // Through the shared client rather than a bare fetch, so the signed-in
+                    // customer's token rides along — without it, verified_buyer is decided
+                    // for an anonymous reader and never shows the author their own badge.
+                    const data = await window.ThemeApi.interactions.getComments('products', dishId, page);
                     reviews.value     = data.comments || [];
                     avgRating.value   = data.avg_rating ?? null;
                     ratingCount.value = data.rating_count ?? 0;
@@ -198,44 +207,36 @@
                 submitting.value = true;
 
                 try {
-                    const res = await fetch(`/api/storefront/interactions/products/${dishId}/comment`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                        body: JSON.stringify({
-                            body: formBody.value.trim(),
-                            rating: formRating.value,
-                            name: !isLoggedIn ? formName.value.trim() : undefined,
-                            email: !isLoggedIn ? formEmail.value.trim() : undefined,
-                        }),
-                    });
+                    const data = await window.ThemeApi.interactions.postComment(
+                        'products', dishId, formBody.value.trim(),
+                        !isLoggedIn ? formEmail.value.trim() : null,
+                        !isLoggedIn ? formName.value.trim() : null,
+                        null,
+                        formRating.value
+                    );
 
-                    if (res.ok) {
-                        const data = await res.json();
+                    // A held review is not in the list that is about to reload, so say so.
+                    // Otherwise the author looks for their own review, cannot find it, and
+                    // writes it again.
+                    formSuccess.value = data?.comment?.status === 'pending'
+                        ? labels.held
+                        : labels.live;
 
-                        // A held review is not in the list that is about to reload, so say so.
-                        // Otherwise the author looks for their own review, cannot find it, and
-                        // writes it again.
-                        formSuccess.value = data?.comment?.status === 'pending'
-                            ? labels.held
-                            : labels.live;
-
-                        formBody.value = '';
-                        formRating.value = 0;
-                        formName.value = '';
-                        formEmail.value = '';
-                        showForm.value = false;
-                        await loadReviews(1);
-                    } else {
-                        const err = await res.json();
-                        const messages = err.errors ? Object.values(err.errors).flat() : [];
-                        formError.value = messages[0] || err.message || labels.failed;
-                    }
+                    formBody.value = '';
+                    formRating.value = 0;
+                    formName.value = '';
+                    formEmail.value = '';
+                    showForm.value = false;
+                    await loadReviews(1);
                 } catch (e) {
-                    formError.value = labels.offline;
+                    // The client throws { data } for a refusal and a bare error when the
+                    // request never reached the server; only the first carries a message.
+                    if (e && e.data) {
+                        const messages = e.data.errors ? Object.values(e.data.errors).flat() : [];
+                        formError.value = messages[0] || e.data.message || labels.failed;
+                    } else {
+                        formError.value = labels.offline;
+                    }
                 } finally {
                     submitting.value = false;
                 }
@@ -244,7 +245,7 @@
             onMounted(() => loadReviews(1));
 
             return {
-                loading, reviews, avgRating, ratingCount, currentPage, lastPage, loadReviews,
+                loading, reviews, avgRating, ratingCount, countLabel, currentPage, lastPage, loadReviews,
                 showForm, formRating, hoverRating, formName, formEmail, formBody,
                 formError, formSuccess, submitting, submitReview, isLoggedIn,
                 rateLabel: labels.rate,

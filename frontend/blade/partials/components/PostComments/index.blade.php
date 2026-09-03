@@ -4,7 +4,7 @@
             <div>
                 <h2 class="saffron-comments__title">{{ __('Comments') }}</h2>
                 <p class="saffron-comments__summary">
-                    <span v-if="total > 0">@{{ total }} @{{ total === 1 ? labels.comment : labels.comments }}</span>
+                    <span v-if="total > 0">@{{ countLabel }}</span>
                     <span v-else>{{ __('No comments yet') }}</span>
                 </p>
             </div>
@@ -101,7 +101,7 @@
 
 <script>
 (function () {
-    const { createApp, ref, onMounted } = Vue;
+    const { createApp, ref, computed, onMounted } = Vue;
 
     const postId = @json($postId);
     // Whether the reader is signed in, resolved exactly as `DishReviews` resolves it — the
@@ -121,6 +121,13 @@
             const likes = ref(0);
             const liked = ref(false);
 
+            // Pluralised the way the server pluralises it — same choice string, same picker
+            // semantics — rather than a JS either/or that flattens richer locales.
+            const countLabel = computed(() =>
+                window.ThemeApi.transChoice(labels.countChoice, total.value)
+                    .replace(':count', total.value)
+            );
+
             const showForm = ref(false);
             const formName = ref('');
             const formEmail = ref('');
@@ -135,9 +142,10 @@
             const load = async (page = 1) => {
                 loading.value = true;
                 try {
-                    const res = await fetch(`/api/storefront/interactions/posts/${postId}?page=${page}`);
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    const data = await res.json();
+                    // Through the shared client rather than a bare fetch, so the signed-in
+                    // reader's token rides along — without it, `has_liked` below is answered
+                    // for an anonymous visitor and the heart never lights for its owner.
+                    const data = await window.ThemeApi.interactions.getComments('posts', postId, page);
                     const list = data.comments ?? data.data ?? [];
                     comments.value  = Array.isArray(list) ? list : (list.data ?? []);
                     total.value     = data.total ?? comments.value.length;
@@ -166,13 +174,7 @@
                 liked.value = !was;
                 likes.value = Math.max(0, likes.value + (was ? -1 : 1));
                 try {
-                    const res = await fetch(`/api/storefront/interactions/posts/${postId}/react`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        body: JSON.stringify({}),
-                    });
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    const data = await res.json();
+                    const data = await window.ThemeApi.interactions.toggleReaction('posts', postId);
                     if (data.action) liked.value = data.action !== 'removed';
                 } catch (e) {
                     liked.value = was;
@@ -198,19 +200,11 @@
 
                 submitting.value = true;
                 try {
-                    const res = await fetch(`/api/storefront/interactions/posts/${postId}/comment`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        body: JSON.stringify({
-                            body:  formBody.value.trim(),
-                            name:  !isLoggedIn ? formName.value.trim() : undefined,
-                            email: !isLoggedIn ? formEmail.value.trim() : undefined,
-                        }),
-                    });
-
-                    if (!res.ok) { formError.value = labels.failed; return; }
-
-                    const data = await res.json();
+                    const data = await window.ThemeApi.interactions.postComment(
+                        'posts', postId, formBody.value.trim(),
+                        !isLoggedIn ? formEmail.value.trim() : null,
+                        !isLoggedIn ? formName.value.trim() : null
+                    );
                     // A held comment will not be in the list that reloads, which is exactly why
                     // the two outcomes say different things. Compared against the status the
                     // API actually returns — `pending` or `active`, never `published`, which
@@ -228,7 +222,9 @@
 
                     await load(1);
                 } catch (e) {
-                    formError.value = labels.offline;
+                    // The client throws { data } for a refusal and a bare error when the
+                    // request never reached the server.
+                    formError.value = e && e.data ? labels.failed : labels.offline;
                 } finally {
                     submitting.value = false;
                 }
@@ -237,7 +233,7 @@
             onMounted(() => { load(1); });
 
             return {
-                loading, comments, total, currentPage, lastPage, load,
+                loading, comments, total, countLabel, currentPage, lastPage, load,
                 likes, liked, toggleLike,
                 showForm, toggleForm, formName, formEmail, formBody, formError, formSuccess, submitting, submit,
                 labels, isLoggedIn,
