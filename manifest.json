@@ -23,7 +23,8 @@
     "kitchen",
     "outlets",
     "modifier-groups",
-    "service-windows"
+    "service-windows",
+    "table-bookings"
   ],
   "checkout": {
     "guards": [

@@ -135,9 +135,10 @@ An order that was never paid — a customer who abandoned the payment page — k
 deliberately, because *not paid yet* is the normal state of a perfectly good booking at a shop
 that takes payment at the door.
 
-> **There is no screen listing tonight's bookings yet.** They live on the orders themselves, so
-> today the way to see the evening is the order list. If a table is being held by an order you
-> know is dead, cancel that order and the table comes back.
+> **Tonight's bookings have their own screen.** **Table Bookings**, in this theme's sidebar
+> group, lists the evening — which tables are spoken for, from when to when, for how many —
+> and its **Release** button gives a table back without touching the order. Its own guide,
+> *Table Bookings*, sits beside this one in Documentation.
 
 ### Where it is
 

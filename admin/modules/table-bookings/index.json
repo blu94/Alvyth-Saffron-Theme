@@ -1,0 +1,103 @@
+{
+  "expandable": false,
+  "headerActions": {
+    "elements": [
+      {
+        "key": "reload",
+        "ui": { "type": "button", "icon": "tabler-refresh", "color": "success", "rounded": true },
+        "tooltip": "Refresh List",
+        "action": "reload",
+        "class": "ms-2"
+      }
+    ]
+  },
+  "filters": {
+    "elements": [
+      {
+        "ui": { "type": "field" },
+        "key": "day",
+        "label": "When",
+        "placeholder": "Select When",
+        "type": "select",
+        "default": "today",
+        "options": {
+          "items": [
+            { "title": "Today", "value": "today" },
+            { "title": "Next 7 days", "value": "week" },
+            { "title": "Past", "value": "past" },
+            { "title": "All", "value": "all" }
+          ]
+        }
+      },
+      {
+        "ui": { "type": "field" },
+        "key": "state",
+        "label": "State",
+        "placeholder": "Select State",
+        "type": "select",
+        "options": {
+          "url": "/admin/modules/table-bookings/options",
+          "master": "state",
+          "params": { "columns[]": "state" }
+        }
+      },
+      {
+        "ui": { "type": "field" },
+        "key": "outlet_id",
+        "label": "Branch",
+        "placeholder": "All branches",
+        "type": "select",
+        "options": {
+          "url": "/admin/modules/table-bookings/options",
+          "master": "booking_branch",
+          "params": { "columns[]": "booking_branch" }
+        }
+      }
+    ]
+  },
+  "elements": [
+    { "ui": { "type": "display" }, "label": "ID", "key": "id", "sortable": false, "width": "60px" },
+    { "ui": { "type": "display" }, "label": "Branch", "key": "branch", "sortable": false },
+    { "ui": { "type": "display" }, "label": "Table", "key": "table_label", "sortable": false, "width": "110px" },
+    { "ui": { "type": "display" }, "label": "Guests", "key": "covers", "sortable": false, "align": "center", "width": "90px" },
+    { "ui": { "type": "display" }, "label": "From", "key": "from_text", "sortable": false, "align": "center" },
+    { "ui": { "type": "display" }, "label": "Until", "key": "until_text", "sortable": false, "align": "center" },
+    { "ui": { "type": "display" }, "label": "Order", "key": "order_number", "sortable": false },
+    {
+      "ui": { "type": "display" },
+      "label": "State",
+      "key": "state",
+      "sortable": false,
+      "align": "center",
+      "type": "status",
+      "colors": { "holding": "warning", "freed": "success", "released": "secondary" }
+    }
+  ],
+  "actions": {
+    "elements": [
+      {
+        "key": "open_order",
+        "ui": { "type": "button", "icon": "tabler-receipt", "color": "info", "rounded": true },
+        "label": "Order",
+        "tooltip": "Open the order behind this booking",
+        "action": "navigate",
+        "to": "/orders/{order_id}"
+      },
+      {
+        "key": "release",
+        "ui": { "type": "button", "icon": "tabler-door-exit", "color": "warning", "rounded": true, "show_if": "state,holding" },
+        "label": "Release",
+        "tooltip": "Give the table back without touching the order",
+        "action": "request",
+        "method": "POST",
+        "api": "/admin/modules/table-bookings/page/release",
+        "fields": ["id"],
+        "params": {
+          "confirm": true,
+          "confirmText": "Release this table? The order stays exactly as it is — only the table is given back, and the span becomes bookable again immediately."
+        }
+      }
+    ],
+    "class": "fit"
+  }
+}

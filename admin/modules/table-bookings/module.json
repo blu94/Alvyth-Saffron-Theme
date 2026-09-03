@@ -1,0 +1,16 @@
+{
+  "name": "Table Bookings",
+  "type": "table-bookings",
+  "routeBase": "module/table-bookings",
+  "order": 9,
+  "icon": "tabler-calendar-event",
+  "api": "/admin/modules/table-bookings",
+  "resource": "modules",
+  "readonly": true,
+  "pages": {
+    "release": { "verb": "update" }
+  },
+  "table": {
+    "$ref": "index.json"
+  }
+}
