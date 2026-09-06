@@ -665,4 +665,6 @@ Verified against core, not assumed. Each is a limit on what this theme can promi
 
 ## Licence
 
-Proprietary. © Ovynt.
+Proprietary. Copyright (c) 2026 Ovynt Labs — see [LICENSE](LICENSE). One production installation
+per licence; no redistribution, resale or derivative works. See
+[LICENSING.md](https://github.com/blu94/Ovynt/blob/main/LICENSING.md).
