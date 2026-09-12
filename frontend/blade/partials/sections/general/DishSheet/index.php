@@ -100,13 +100,12 @@ class DishSheet
     protected function reviewSummary(Product $dish): array
     {
         try {
-            $aggregate = $this->interactionRepo->getProductReviewAggregate($dish);
-            $count     = $aggregate->count();
+            // Stored on the product by core (item 18), so a dish sheet never loads its
+            // reviews just to average them.
+            $count = (int) $dish->rating_count;
 
             return [
-                'average' => $count > 0
-                    ? round($aggregate->avg(fn ($c) => (float) ($c->data['rating'] ?? 0)), 1)
-                    : null,
+                'average' => $count > 0 ? (float) $dish->rating_avg : null,
                 'count'   => $count,
             ];
         } catch (\Throwable $e) {
