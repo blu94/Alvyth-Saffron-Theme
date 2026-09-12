@@ -78,7 +78,7 @@ class StructuredData
         $entity = [
             '@type' => 'Restaurant',
             '@id'   => url('/') . '#restaurant',
-            'name'  => (string) ($appSettings['site_title'] ?? config('app.name', 'Ovynt')),
+            'name'  => (string) ($appSettings['site_title'] ?? config('app.name', 'Alvyth')),
             'url'   => url('/'),
         ];
 

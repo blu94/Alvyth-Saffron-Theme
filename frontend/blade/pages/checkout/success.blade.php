@@ -54,15 +54,15 @@
 
     var tries = 0;
     var timer = setInterval(function () {
-        if (window.OvyntStore) {
-            window.OvyntStore.cartList.splice(0, window.OvyntStore.cartList.length);
-            window.OvyntStore.saveCart();
+        if (window.AlvythStore) {
+            window.AlvythStore.cartList.splice(0, window.AlvythStore.cartList.length);
+            window.AlvythStore.saveCart();
             clearInterval(timer);
         } else if (++tries > 30) {
             // Wrapped: a browser set to block site data throws here, and an unwrapped throw
             // skips the clearInterval below it and leaves this running every 100ms forever.
             try {
-                localStorage.setItem('ovynt_cart', '[]');
+                localStorage.setItem('alvyth_cart', '[]');
             } catch (e) { /* blocked storage: the badge is wrong until the cart page reprices */ }
 
             clearInterval(timer);

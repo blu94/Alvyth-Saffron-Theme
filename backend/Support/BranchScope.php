@@ -18,7 +18,7 @@ use Theme\Backend\Models\Outlet;
  * ## Where the branch comes from, and why it is read this way
  *
  * The customer chooses it at the gate, which stores it in `localStorage` and mirrors it into a
- * plain `ovynt_branch` cookie so a normal page load carries it.
+ * plain `alvyth_branch` cookie so a normal page load carries it.
  *
  * **Read through `request()->cookie()`, which works because core exempts this cookie from
  * encryption.** `EncryptCookies` decrypts every incoming cookie and silently *drops* the ones it
@@ -26,7 +26,7 @@ use Theme\Backend\Models\Outlet;
  * log. This class therefore read the `$_COOKIE` superglobal instead, which worked but stepped
  * around the framework and was invisible to anything mocking the request.
  *
- * The real fix is one entry in `bootstrap/app.php` — `encryptCookies(except: ['ovynt_branch'])` —
+ * The real fix is one entry in `bootstrap/app.php` — `encryptCookies(except: ['alvyth_branch'])` —
  * and it is now there, so the superglobal read is gone rather than left standing beside it. If
  * that exemption is ever removed, this returns `null` for every visitor and every shop silently
  * shows its whole menu again; {@see tests/Feature/Storefront/Restaurant/BranchMenuTest} is what
@@ -65,7 +65,7 @@ class BranchScope
     protected static bool $pricesResolved = false;
 
     /** The cookie the order gate mirrors its choice into. */
-    public const COOKIE = 'ovynt_branch';
+    public const COOKIE = 'alvyth_branch';
 
     /**
      * The branch being browsed, or null when the customer has not chosen one.

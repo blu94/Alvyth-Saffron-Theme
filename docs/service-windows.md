@@ -164,7 +164,7 @@ That choice is **per device**, not per account: the counter tablet can have soun
 same login on the office laptop has it off. It is remembered on that device, including after a
 reload.
 
-**Turning it on and off for the whole shop** — **Themes → Ovynt Saffron Theme → Restaurant →
+**Turning it on and off for the whole shop** — **Themes → Alvyth Saffron Theme → Restaurant →
 Kitchen Alerts**:
 
 | Setting | What it does |

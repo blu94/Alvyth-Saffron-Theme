@@ -20,7 +20,7 @@
         return (string) ($value ?? '');
     };
 
-    $siteTitle = $appSettings['site_title'] ?? 'Ovynt';
+    $siteTitle = $appSettings['site_title'] ?? 'Alvyth';
 
     $announcementOn   = $settings['announcement_enabled'] ?? true;
     $announcementText = $t($settings['announcement_text'] ?? '');
@@ -370,13 +370,13 @@
             // Bound to the global reactive store shipped in storefront.min.js. It is the
             // single source of cart truth on the client; never keep a second copy here.
             const cartCount = computed(() => {
-                if (!window.OvyntStore) return 0;
-                return window.OvyntStore.cartList.reduce((total, item) => total + (item.quantity || 0), 0);
+                if (!window.AlvythStore) return 0;
+                return window.AlvythStore.cartList.reduce((total, item) => total + (item.quantity || 0), 0);
             });
 
             const savedCount = computed(() => {
-                if (!window.OvyntStore) return 0;
-                return window.OvyntStore.wishList.length;
+                if (!window.AlvythStore) return 0;
+                return window.AlvythStore.wishList.length;
             });
 
             // A second tab adding a dish must be reflected here, so mirror localStorage
@@ -384,12 +384,12 @@
             // Both lists are synced by the same handler: saving a dish in one tab and
             // opening Saved Dishes in another was otherwise a stale count.
             const syncedLists = {
-                ovynt_cart:     () => window.OvyntStore.cartList,
-                ovynt_wishlist: () => window.OvyntStore.wishList,
+                alvyth_cart:     () => window.AlvythStore.cartList,
+                alvyth_wishlist: () => window.AlvythStore.wishList,
             };
 
             const onStorage = (e) => {
-                if (!window.OvyntStore || !syncedLists[e.key]) return;
+                if (!window.AlvythStore || !syncedLists[e.key]) return;
                 try {
                     const next = JSON.parse(e.newValue || '[]');
                     if (Array.isArray(next)) {

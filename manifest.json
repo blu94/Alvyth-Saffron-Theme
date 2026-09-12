@@ -1,7 +1,7 @@
 {
-  "name": "Ovynt Saffron Theme",
+  "name": "Alvyth Saffron Theme",
   "slug": "saffron",
-  "title": "Ovynt Saffron Theme",
+  "title": "Alvyth Saffron Theme",
   "preview": "/preview.png",
   "schema_paths": {
     "settings": "admin/settings/index.json",

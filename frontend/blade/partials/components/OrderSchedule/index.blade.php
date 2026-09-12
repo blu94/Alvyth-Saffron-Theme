@@ -505,15 +505,15 @@
                 });
             });
 
-            // `OvyntStore` is a shared Vue.reactive object, so once it exists its cart
+            // `AlvythStore` is a shared Vue.reactive object, so once it exists its cart
             // mutations re-run this computed. Until it exists nothing is tracked, so a
             // short poll bumps `storeTick` to force one re-read — the same script-order
             // race the checkout-success page papers over the same way.
             const storeTick = ref(0);
             const cartCount = computed(() => {
                 void storeTick.value;
-                if (!window.OvyntStore) return 0;
-                return window.OvyntStore.cartList.length;
+                if (!window.AlvythStore) return 0;
+                return window.AlvythStore.cartList.length;
             });
 
             // ── A diner is not scheduling anything (register O19) ───────────────────
@@ -562,7 +562,7 @@
                 let tries = 0;
                 const timer = setInterval(() => {
                     storeTick.value++;
-                    if (window.OvyntStore || ++tries > 30) clearInterval(timer);
+                    if (window.AlvythStore || ++tries > 30) clearInterval(timer);
                 }, 100);
             });
 

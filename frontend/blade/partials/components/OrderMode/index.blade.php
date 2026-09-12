@@ -426,7 +426,7 @@
             // branch the payload does not list all fall through to the shop-wide offering.
             const gatedBranch = (() => {
                 try {
-                    const raw = localStorage.getItem('ovynt_order_gate');
+                    const raw = localStorage.getItem('alvyth_order_gate');
                     const saved = raw ? JSON.parse(raw) : null;
 
                     return saved && typeof saved === 'object' ? saved.branch : null;
@@ -695,8 +695,8 @@
             // server cannot know whether it is empty at render time; asking how someone wants
             // an order they have not started is noise.
             const cartCount = computed(() => {
-                if (!window.OvyntStore) return 0;
-                return window.OvyntStore.cartList.reduce((n, l) => n + (l.quantity || 0), 0);
+                if (!window.AlvythStore) return 0;
+                return window.AlvythStore.cartList.reduce((n, l) => n + (l.quantity || 0), 0);
             });
 
             const visible = computed(() => mounted.value && cartCount.value > 0);

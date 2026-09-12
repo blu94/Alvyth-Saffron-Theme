@@ -1,7 +1,7 @@
 @extends('layout')
 
 @section('content')
-{{-- Carried by the core Login Form section. Ovynt encrypts the password in the browser
+{{-- Carried by the core Login Form section. Alvyth encrypts the password in the browser
      before it leaves, so the form must be the core one rather than a hand-rolled POST. --}}
 <div class="saffron-container">
     @if(isset($page) && $page->rows && $page->rows->count() > 0)

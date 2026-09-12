@@ -228,8 +228,8 @@
             const thumbLabel = (i) => (payload.labels.thumbnail || '').replace(':n', String(i + 1));
 
             const addToCart = () => {
-                if (!window.OvyntStore) {
-                    console.error('OvyntStore is not loaded — storefront.min.js is missing from this theme.');
+                if (!window.AlvythStore) {
+                    console.error('AlvythStore is not loaded — storefront.min.js is missing from this theme.');
                     return;
                 }
 
@@ -239,7 +239,7 @@
                 // answer. If options are ever added here, build the object in a stable key
                 // order — the client dedups cart lines on JSON.stringify(options) while the
                 // server ksorts before hashing.
-                window.OvyntStore.addToCart(payload.dish, 1, {});
+                window.AlvythStore.addToCart(payload.dish, 1, {});
                 added.value = true;
                 window.setTimeout(() => { added.value = false; }, 1600);
             };
@@ -248,11 +248,11 @@
             // computed over it re-renders every card showing this dish — save from the menu
             // and the same dish's card in a Dish Grid below fills in too.
             const saved = computed(() => {
-                if (!window.OvyntStore) return false;
-                return window.OvyntStore.isInWishlist(payload.dish.id);
+                if (!window.AlvythStore) return false;
+                return window.AlvythStore.isInWishlist(payload.dish.id);
             });
 
-            // Deliberately not `OvyntStore.toggleWishlist()`. That method copies the line by
+            // Deliberately not `AlvythStore.toggleWishlist()`. That method copies the line by
             // name — id, title, price, image — and drops everything else, so the saved dish
             // would arrive on the Saved Dishes page with no route back to its own sheet. The
             // page is rendered from localStorage alone; the server never sees the list and
@@ -260,10 +260,10 @@
             // saveWishlist() is the store's own persistence path — it is exactly what Ella's
             // wishlist page does to remove a line — so nothing here bypasses the contract.
             const toggleSave = () => {
-                const store = window.OvyntStore;
+                const store = window.AlvythStore;
 
                 if (!store) {
-                    console.error('OvyntStore is not loaded — storefront.min.js is missing from this theme.');
+                    console.error('AlvythStore is not loaded — storefront.min.js is missing from this theme.');
                     return;
                 }
 

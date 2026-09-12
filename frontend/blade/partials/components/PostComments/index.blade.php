@@ -107,7 +107,7 @@
     // Whether the reader is signed in, resolved exactly as `DishReviews` resolves it — the
     // shared store the whole storefront already reads. A signed-in commenter is not asked to
     // retype a name and an email the session is holding.
-    const isLoggedIn = !!(window.OvyntStore && window.OvyntStore.user && window.OvyntStore.user.id);
+    const isLoggedIn = !!(window.AlvythStore && window.AlvythStore.user && window.AlvythStore.user.id);
     const labels = @json($labels);
     const showLikes = @json($showLikes);
 

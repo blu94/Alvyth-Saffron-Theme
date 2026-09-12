@@ -18,7 +18,7 @@
         return '_self';
     };
 
-    $siteTitle = $appSettings['site_title'] ?? 'Ovynt';
+    $siteTitle = $appSettings['site_title'] ?? 'Alvyth';
 
     $tagline   = $t($settings['footer_tagline'] ?? '');
     $address   = $t($settings['footer_address'] ?? '');

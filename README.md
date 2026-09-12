@@ -1,6 +1,6 @@
-# Ovynt Saffron Theme
+# Alvyth Saffron Theme
 
-A restaurant and food-ordering theme for [Ovynt](https://github.com/blu94/Ovynt), built to
+A restaurant and food-ordering theme for [Alvyth](https://github.com/blu94/Alvyth), built to
 [`RESTAURANT-THEME-SPEC.md`](../../RESTAURANT-THEME-SPEC.md). Structurally derived from the
 Ella theme: same layout shape, settings-schema system, section-driver pattern and Vue-CDN
 conventions.
@@ -407,8 +407,8 @@ dishes** page listing what a customer meant to come back for. One switch turns t
 feature on or off — **Restaurant → Saved Dishes** — because three switches for one feature is
 three places to leave it half-on.
 
-**The list lives in the customer's browser**, in `localStorage.ovynt_wishlist`, through the
-same `window.OvyntStore` the cart uses. It does not follow them to another device and the
+**The list lives in the customer's browser**, in `localStorage.alvyth_wishlist`, through the
+same `window.AlvythStore` the cart uses. It does not follow them to another device and the
 server never sees it. Turning the switch off hides every control and the page explains itself;
 it does **not** delete anything, so the entries come back when the switch does.
 
@@ -420,7 +420,7 @@ prevent (audit A1), and a saved-dishes list is exactly where it would come back.
 where those questions get answered.
 
 Each saved line carries its own `url`, which is why the theme writes the entry itself instead
-of calling `OvyntStore.toggleWishlist()` — that method copies id, title, price and image by
+of calling `AlvythStore.toggleWishlist()` — that method copies id, title, price and image by
 name and drops everything else, and a list rendered from `localStorage` alone has no other way
 back to the dish. The write still goes through the store's own `saveWishlist()`, so nothing
 bypasses its persistence. Both lists are also mirrored across tabs by the header's `storage`
@@ -644,7 +644,7 @@ Verified against core, not assumed. Each is a limit on what this theme can promi
   describes it.
 - **`vite.config.storefront.ts` builds into whichever theme you name.** It used to hard-code
   `theme/ella/`, so the `storefront.min.js` / `storefront.min.css` vendor bundle here was a copy
-  of Ella's build output; core now reads an `OVYNT_THEME` env var, so the bundle can be rebuilt
+  of Ella's build output; core now reads an `ALVYTH_THEME` env var, so the bundle can be rebuilt
   for Saffron directly. The copy currently shipped is byte-identical to Ella's, which is correct
   — nothing in it is theme-specific.
 - **An option key naming no question the dish asks is carried, not refused.** A line's answers
@@ -665,6 +665,6 @@ Verified against core, not assumed. Each is a limit on what this theme can promi
 
 ## Licence
 
-Proprietary. Copyright (c) 2026 Ovynt Labs — see [LICENSE](LICENSE). One production installation
+Proprietary. Copyright (c) 2026 Alvyth Labs — see [LICENSE](LICENSE). One production installation
 per licence; no redistribution, resale or derivative works. See
-[LICENSING.md](https://github.com/blu94/Ovynt/blob/main/LICENSING.md).
+[LICENSING.md](https://github.com/blu94/Alvyth/blob/main/LICENSING.md).

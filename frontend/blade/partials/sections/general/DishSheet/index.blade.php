@@ -565,9 +565,9 @@
             const addToCart = () => {
                 if (!validate()) return;
 
-                if (!window.OvyntStore) {
+                if (!window.AlvythStore) {
                     formError.value = payload.labels.cartUnavailable;
-                    console.error('OvyntStore is not loaded — storefront.min.js is missing from this theme.');
+                    console.error('AlvythStore is not loaded — storefront.min.js is missing from this theme.');
                     return;
                 }
 
@@ -584,7 +584,7 @@
                     image: payload.dish.image || null,
                 };
 
-                window.OvyntStore.addToCart(line, quantity.value, buildOptions());
+                window.AlvythStore.addToCart(line, quantity.value, buildOptions());
 
                 added.value = true;
                 formError.value = '';
@@ -592,21 +592,21 @@
             };
 
             // Saved dishes. Same store, same shape and the same reason for not calling
-            // OvyntStore.toggleWishlist() as the dish card: that method drops every key it
+            // AlvythStore.toggleWishlist() as the dish card: that method drops every key it
             // does not name, and the saved-dishes page needs the url to link back here.
             // The price saved is whatever the sheet is showing — the parent's, or the
             // selected size's — which makes it indicative rather than a quote. The list is
             // a reminder; the dish page prices it again on arrival.
             const saved = computed(() => {
-                if (!window.OvyntStore) return false;
-                return window.OvyntStore.isInWishlist(payload.dish.id);
+                if (!window.AlvythStore) return false;
+                return window.AlvythStore.isInWishlist(payload.dish.id);
             });
 
             const toggleSave = () => {
-                const store = window.OvyntStore;
+                const store = window.AlvythStore;
 
                 if (!store) {
-                    console.error('OvyntStore is not loaded — storefront.min.js is missing from this theme.');
+                    console.error('AlvythStore is not loaded — storefront.min.js is missing from this theme.');
                     return;
                 }
 

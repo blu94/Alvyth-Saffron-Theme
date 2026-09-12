@@ -65,7 +65,7 @@
     const { createApp, ref, computed, watch, onMounted } = Vue;
 
     const payload = @json($payload);
-    const STORE_KEY = 'ovynt_order_gate';
+    const STORE_KEY = 'alvyth_order_gate';
 
     createApp({
         setup() {
@@ -128,7 +128,7 @@
 
             // **The cookie is the authority, and `localStorage` is only a fallback.**
             //
-            // Every server-side decision on this page was made from the `ovynt_branch` cookie:
+            // Every server-side decision on this page was made from the `alvyth_branch` cookie:
             // which rows the grids were filled with, whether the dish sheet drew an Add button,
             // what search returned. The bar, until now, was drawn from `localStorage` alone — two
             // stores with nothing keeping them in step.
@@ -146,7 +146,7 @@
             // whichever store had gone stale is healed on the next paint.
             const cookieBranch = () => {
                 try {
-                    const match = document.cookie.match(/(?:^|;\s*)ovynt_branch=([^;]*)/);
+                    const match = document.cookie.match(/(?:^|;\s*)alvyth_branch=([^;]*)/);
 
                     if (!match) return null;
 
@@ -173,7 +173,7 @@
                 try {
                     const year = 60 * 60 * 24 * 365;
 
-                    document.cookie = 'ovynt_branch=' + encodeURIComponent(branch.value ?? '')
+                    document.cookie = 'alvyth_branch=' + encodeURIComponent(branch.value ?? '')
                         + ';path=/;max-age=' + (branch.value ? year : 0) + ';SameSite=Lax';
                 } catch (e) { /* the menu simply stays unscoped server-side */ }
             };
@@ -199,7 +199,7 @@
 
             // ── What the basket would lose ──────────────────────────────────────────
             const cartLines = () => {
-                try { return window.OvyntStore ? window.OvyntStore.cartList : []; } catch (e) { return []; }
+                try { return window.AlvythStore ? window.AlvythStore.cartList : []; } catch (e) { return []; }
             };
 
             const dropping = computed(() => {
@@ -375,7 +375,7 @@
             // > way `scopeSoon()` is.** The predicate asks only *is this dish hidden at the chosen
             // > branch*, never *did the server already refuse it* — and after a reload the answer
             // > is still yes, so the page would reload for ever. Anything that widens when this
-            // > runs has to compare against the branch the SERVER rendered with (the `ovynt_branch`
+            // > runs has to compare against the branch the SERVER rendered with (the `alvyth_branch`
             // > cookie as it was at parse time, before `save()` overwrites it) and reload only on
             // > a genuine difference.
             const rerenderIfDishRefused = () => {
@@ -415,8 +415,8 @@
                     const keep = cartLines().filter(line => servedBy(draftBranch.value, line.id));
 
                     try {
-                        window.OvyntStore.cartList.splice(0, window.OvyntStore.cartList.length, ...keep);
-                        window.OvyntStore.saveCart();
+                        window.AlvythStore.cartList.splice(0, window.AlvythStore.cartList.length, ...keep);
+                        window.AlvythStore.saveCart();
                     } catch (e) { /* the guard still refuses server-side */ }
                 }
 

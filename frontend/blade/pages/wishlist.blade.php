@@ -1,7 +1,7 @@
 @extends('layout')
 
 @section('content')
-{{-- A saved-dishes list. Backed by window.OvyntStore's wishList in localStorage, so it is
+{{-- A saved-dishes list. Backed by window.AlvythStore's wishList in localStorage, so it is
      device-local until a customer signs in. The server never sees the list and cannot
      resolve anything for it, which is why each line carries its own url — put there by the
      heart on the dish card and the dish sheet. --}}
@@ -101,7 +101,7 @@
                     // Bound straight to the shared reactive store rather than copied into a
                     // local ref: removing a dish here must also unfill its heart on any card
                     // still on screen, and a second copy of the list is how those two drift.
-                    const lines = computed(() => window.OvyntStore ? window.OvyntStore.wishList : []);
+                    const lines = computed(() => window.AlvythStore ? window.AlvythStore.wishList : []);
 
                     const money = (amount) => {
                         const n = Number(amount || 0).toFixed(2);
@@ -109,7 +109,7 @@
                     };
 
                     const remove = (id) => {
-                        const store = window.OvyntStore;
+                        const store = window.AlvythStore;
                         if (!store) return;
 
                         const at = store.wishList.findIndex((line) => line.id === id);

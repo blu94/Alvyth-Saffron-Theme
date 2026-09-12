@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $seo_title ?? 'Ovynt Saffron Theme' }}</title>
+    <title>{{ $seo_title ?? 'Alvyth Saffron Theme' }}</title>
     @php
         $seoData = $page?->seo?->data ?? [];
         $seoLoc  = $locale ?? app()->getLocale();
@@ -83,13 +83,13 @@
     @endif
 
     <meta property="og:type" content="{{ $ogType }}">
-    <meta property="og:title" content="{{ $ogTitle ?: ($seo_title ?? 'Ovynt') }}">
+    <meta property="og:title" content="{{ $ogTitle ?: ($seo_title ?? 'Alvyth') }}">
     <meta property="og:url" content="{{ request()->url() }}">
     @if($ogDesc)<meta property="og:description" content="{{ $ogDesc }}">@endif
     @if($ogImage)<meta property="og:image" content="{{ asset($ogImage) }}">@endif
 
     <meta name="twitter:card" content="{{ $twitterCard }}">
-    <meta name="twitter:title" content="{{ $twitterTitle ?: ($seo_title ?? 'Ovynt') }}">
+    <meta name="twitter:title" content="{{ $twitterTitle ?: ($seo_title ?? 'Alvyth') }}">
     @if($twitterDesc)<meta name="twitter:description" content="{{ $twitterDesc }}">@endif
     @if($twitterImage)<meta name="twitter:image" content="{{ asset($twitterImage) }}">@endif
 
@@ -112,8 +112,8 @@
 
     @php
         // The deployed directory is slugged from the manifest `title`, not from `slug` —
-        // "Ovynt Saffron Theme" installs to storage/app/themes/ovynt-saffron-theme/.
-        $themeSlug = $themeConfig['slug'] ?? 'ovynt-saffron-theme';
+        // "Alvyth Saffron Theme" installs to storage/app/themes/alvyth-saffron-theme/.
+        $themeSlug = $themeConfig['slug'] ?? 'alvyth-saffron-theme';
         // Bumped by "Clear System Cache" so a manual clear re-busts every asset URL on
         // top of the per-file mtime.
         $assetRevSuffix = ($assetRev ?? '') !== '' ? '-' . $assetRev : '';

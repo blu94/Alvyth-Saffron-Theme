@@ -34,7 +34,7 @@ use Theme\Backend\Support\ThemeSettings;
 class ServiceWindowRepository
 {
     /**
-     * Kitchen states, and how each maps onto Ovynt's three orthogonal status axes.
+     * Kitchen states, and how each maps onto Alvyth's three orthogonal status axes.
      *
      * A kitchen thinks in states the generic vocabulary does not name. Resisting a fourth
      * status column is deliberate: `ReportRepository` counts revenue by `payment_status` and
@@ -1324,7 +1324,7 @@ class ServiceWindowRepository
         [$key, $stateLabel] = $wording;
 
         // `themeKey()`, not a hardcoded `theme:saffron.…`. The deployed slug comes from the
-        // manifest *title*, so this theme installs as `ovynt-saffron-theme` while its manifest
+        // manifest *title*, so this theme installs as `alvyth-saffron-theme` while its manifest
         // says `saffron` — a written-out prefix is a key the registry never issued, and the
         // notification silently goes nowhere.
         app(Notifier::class)->toUser(

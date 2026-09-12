@@ -148,9 +148,9 @@
                  its directives inside `//` lines too: written as JS, the example in this very
                  comment re-created the error it describes. --}}
             const labels = @json($labels);
-            // `OvyntStore.user` is set by core for a signed-in customer. A guest gives a name
+            // `AlvythStore.user` is set by core for a signed-in customer. A guest gives a name
             // and an email instead; core requires both and will 422 without them.
-            const isLoggedIn = !!(window.OvyntStore && window.OvyntStore.user && window.OvyntStore.user.id);
+            const isLoggedIn = !!(window.AlvythStore && window.AlvythStore.user && window.AlvythStore.user.id);
 
             const loading     = ref(true);
             const reviews     = ref([]);

@@ -74,8 +74,8 @@
             // Hidden until there is something to pay for, like every other block in this
             // summary: asking how somebody wants to pay for an empty cart is noise.
             const cartCount = computed(() => {
-                if (!window.OvyntStore) return 0;
-                return window.OvyntStore.cartList.reduce((n, l) => n + (l.quantity || 0), 0);
+                if (!window.AlvythStore) return 0;
+                return window.AlvythStore.cartList.reduce((n, l) => n + (l.quantity || 0), 0);
             });
 
             onMounted(() => { mounted.value = true; });
