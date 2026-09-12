@@ -10,3 +10,7 @@ theme.zip
 # Claude Code's per-checkout permission grants. Machine-local, and personal to whoever
 # is working here — never someone else's to inherit.
 .claude/
+
+# Graphify knowledge graph. Regenerated locally from source by
+# `graphify update .`; never a source of truth, and large.
+/graphify-out
